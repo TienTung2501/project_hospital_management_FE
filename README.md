@@ -34,3 +34,46 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Cac buoc set up du an:
+
+## Cac buoc set up form dang nhap:
+
+## Luong du lieu thuc hien submit dang nhap
+
+## Cac buoc set up session:
+B1: Tao secrret key:
+-- Vao terminal dung lenh sau de tao secrret key: 
+    -- openssl rand -base64 32 ---
+    -> copy key-> vao file .env ->tao bien 
+    -- SESSION_SECRET=your_secret_key
+-- Tao file session.ts ben trong lib
+    -- const secretKey = process.env.SESSION_SECRET
+    -> sau do copy noi dung sau day vao:
+
+    import 'server-only'
+    import { SignJWT, jwtVerify } from 'jose'
+    import { SessionPayload } from '@/app/lib/definitions'
+    
+    const secretKey = process.env.SESSION_SECRET
+    const encodedKey = new TextEncoder().encode(secretKey)
+    
+    export async function encrypt(payload: SessionPayload) {
+    return new SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(encodedKey)
+    }
+    
+    export async function decrypt(session: string | undefined = '') {
+    try {
+        const { payload } = await jwtVerify(session, encodedKey, {
+        algorithms: ['HS256'],
+        })
+        return payload
+    } catch (error) {
+        console.log('Failed to verify session')
+    }
+    }
+    #pass:123456

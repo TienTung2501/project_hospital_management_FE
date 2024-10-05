@@ -4,7 +4,7 @@ import * as z from "zod";
 import bcrypt from "bcrypt";
 import { LoginSchema } from "@/schema";
 import { getUserByEmail } from "@/lib/Data/user/user";
-import { createSession, deleteSession } from "@/lib/session";
+import { createSession } from "@/lib/session";
 
 
 export const login = async (values: z.infer<typeof LoginSchema>) => {
@@ -19,7 +19,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
   if (user && await bcrypt.compare(password, user.password)) {
     // TODO:
     // 4. Create user session
-    //await createSession(user.email,user.role)
+    await createSession(user.email,user.role)
     
     // 5. Redirect user
   return { success: "Login successful!" };

@@ -2,6 +2,7 @@ import 'server-only'
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { SessionPayload } from '@/lib/definitions'
+import { redirect } from 'next/navigation'
 
 const secretKey = process.env.SESSION_SECRET
 if (!secretKey) {
@@ -98,5 +99,5 @@ export async function updateSession() {
 
 // Xóa session cookie
 export function deleteSession() {
-  cookies().delete('session')
+  cookies().delete('session');
 }

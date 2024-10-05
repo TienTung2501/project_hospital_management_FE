@@ -6,7 +6,7 @@ import { RegisterSchema } from "@/schema";
 import { addUser, getUserList } from "@/lib/Data/user/user";
 import { UserType } from "@/types/index";
 import { createSession } from '@/lib/session';
-import { redirect } from 'next/navigation';
+
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
   const validateFields = RegisterSchema.safeParse(values);
@@ -33,6 +33,5 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
  // 4. Create user session
   await createSession(newUser.email,newUser.role)
  // 5. Redirect user
-  redirect('/profile')
-  //return { success: "User created!" };
+  return { success: "User created!" };
 };

@@ -6,15 +6,9 @@
     "role": "admin"
   },
   {
-    "email": "tientung033.nttvn@gmail.com",
-    "password": "$2b$10$DadRZXGfMDSrSWBNDQQZTeIREuS06J6AsgCKB./lfCElaNi5RO3KW",
-    "name": "Nguyen Tien Tung",
-    "role": "admin"
-  },
-  {
     "email": "vvu22096@gmail.com",
-    "password": "$2b$10$.mfHv3N.wBaKNlgORvYbSOiuzBLqzVFQ.O/Eq3Hbt2p4Qu6NcyKJ2",
+    "password": "$2b$10$yWmKVCE0/b3JJTr29x3vDOkFElasiRKvBPw4ifY0D78FMINglK6Bm",
     "name": "Classic Wooden Wall Clock",
-    "role": "admin"
+    "role": "customer"
   }
 ]

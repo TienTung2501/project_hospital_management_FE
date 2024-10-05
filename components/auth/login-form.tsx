@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { login } from '@/actions/login';
 import { useToast } from '@/hooks/use-toast';
 import { FormError } from '../form-error';
+import { ToastAction } from '@radix-ui/react-toast';
 
 
 const LoginForm = () => {
@@ -54,10 +55,11 @@ const LoginForm = () => {
               variant:"success",
               title: "Login Success",
               description: data.success,
+              action: <ToastAction altText="Try again">Ok</ToastAction>
             });
             // Điều hướng sau khi thành công
             setTimeout(() => {
-              window.location.href = '/profile';
+              window.location.href = '/dashboard';
             }, 2000);  // Chờ 2 giây để người dùng thấy thông báo trước khi chuyển trang
           }
         })

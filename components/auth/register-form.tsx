@@ -24,6 +24,8 @@ import { FormError } from '@/components/form-error';
 import { FormSuccess } from '../form-success';
 
 import { register } from '@/actions/register';
+import { ToastAction } from '@radix-ui/react-toast';
+import { toast } from '@/hooks/use-toast';
 
 const RegisterForm = () => {
   const [error,setError]=useState<string|undefined>("");
@@ -43,9 +45,24 @@ const RegisterForm = () => {
     setSuccess("");
     startTransition(()=>{
       register(values)
-      .then((data)=>{
-        setError(data.error);
-        setSuccess(data.success);
+      .then((data) => {
+        if (data.error) {
+          setError(data.error);
+         
+        } else if (data.success) {
+          setError('');
+          // Hiển thị toast cho thành công
+          toast({
+            variant:"success",
+            title: "Login Success",
+            description: data.success,
+            action: <ToastAction altText="Try again">Ok</ToastAction>,
+          });
+          // Điều hướng sau khi thành công
+          setTimeout(() => {
+            window.location.href = '/profile';
+          }, 2000);  // Chờ 2 giây để người dùng thấy thông báo trước khi chuyển trang
+        }
       })
     });
   }

@@ -1,4 +1,6 @@
 import 'server-only'
+
+// file này để viết logic kiểm tra xác thực nếu chưa xác thực thì cho vào đăng nhập nếu xác thực rồi thì 
  
 import { cookies } from 'next/headers'
 import { decrypt } from '@/lib/session'
@@ -12,7 +14,7 @@ export const verifySession = cache(async () => {
   const session = await decrypt(cookie)
  
   if (!session?.email) {
-    redirect('/login')
+    redirect('/auth/login')
   }
  
   return { isAuth: true, email: session.email }

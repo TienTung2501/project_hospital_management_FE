@@ -5,11 +5,6 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 
-import { redirect } from "next/navigation";
-import { getUser } from "@/lib/dal";
-import { UserType } from "@/types";
-import AdminLayout from "./dashboard/admin/layout";
-import CustomerLayout from "./dashboard/customer/layout";
 
 // Sử dụng font Poppins với nhiều trọng lượng
 const poppinsFont = Poppins({

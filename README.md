@@ -1,7 +1,14 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
+## Clone code from git to your system:
+```bash
+git clone: https://github.com/TienTung2501/project_hospital_management_FE.git (if you use HTTP) or git@github.com:TienTung2501/project_hospital_management_FE.git (if use use SSH)
+```
+## cd to the folder directory:
+```bash
+cd project_hospital_management_FE
+```
+ 
+## Getting Started ( before you run this step you must be install node in you computer detail follow the website https://nodejs.org/en/learn/getting-started/introduction-to-nodejs)
 First, run the development server:
 
 ```bash

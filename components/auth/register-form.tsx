@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { FormError } from '@/components/form-error';
 import { FormSuccess } from '../form-success';
 
-import { register } from '@/actions/register';
+import { register } from '@/actions/auth/register';
 import { ToastAction } from '@radix-ui/react-toast';
 import { toast } from '@/hooks/use-toast';
 

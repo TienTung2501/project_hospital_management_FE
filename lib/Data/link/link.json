@@ -1,0 +1,9 @@
+[
+    { "role":"superadmin",
+      "link": ["admin","setting","cartegory","cartegory/user","cartegory/bed","cartegory/department","cartegory/permission","cartegory/medical","cartegory/position","cartegory/room","cartegory/room_catalogue","cartegory/medical_catalogue","cartegory/service","cartegory/service_catalogue","cartegory/location"]
+    },
+    {
+      "role":"manager",
+      "link": ["setting"]
+    }
+  ]

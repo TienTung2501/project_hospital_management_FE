@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-import { login } from '@/actions/login';
+import { login } from '@/actions/auth/login';
 import { useToast } from '@/hooks/use-toast';
 import { FormError } from '../form-error';
 import { ToastAction } from '@radix-ui/react-toast';

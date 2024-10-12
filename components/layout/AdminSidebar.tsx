@@ -1,110 +1,82 @@
-import Link from "next/link";
-
+import React from 'react'
+import Link from "next/link"
 import {
-    Home,
-    LineChart,
-    Package,
-    Package2,
-    Settings,
-    ShoppingCart,
-    Users2,
-  } from "lucide-react"
+  Bell,
+  Home,
+  LineChart,
+  Package,
+  Package2,
+  ShoppingCart,
+  Users,
+} from "lucide-react"
 
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip"
-  import React from 'react'
-  
-  const Sidebar = () => {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-            <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-            <Link
-                href="#"
-                className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-            >
-                <Package2 className="h-4 w-4 transition-all group-hover:scale-110" />
-                <span className="sr-only">Home</span>
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { LinkBaseRoleType, UserType } from '@/types'
+
+
+interface SidebarProps{
+  links:LinkBaseRoleType|null|undefined
+}
+
+const Sidebar = ({links}:SidebarProps) => {
+  const linkList: string[] = links?.link ?? [];
+  return (
+    <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <Package2 className="h-6 w-6" />
+              <span className="">Acme Inc</span>
             </Link>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <Home className="h-5 w-5" />
-                    <span className="sr-only">Dashboard</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Dashboard</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <ShoppingCart className="h-5 w-5" />
-                    <span className="sr-only">Orders</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Orders</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <Package className="h-5 w-5" />
-                    <span className="sr-only">Products</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Products</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <Users2 className="h-5 w-5" />
-                    <span className="sr-only">Customers</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Customers</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <LineChart className="h-5 w-5" />
-                    <span className="sr-only">Analytics</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Analytics</TooltipContent>
-            </Tooltip>
+            <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
+              <Bell className="h-4 w-4" />
+              <span className="sr-only">Toggle notifications</span>
+            </Button>
+          </div>
+          <div className="flex-1">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              
+            {
+                linkList.map((link, index) => (
+                  <Link
+                    key={index} // Hoặc sử dụng một giá trị duy nhất như `link`
+                    href={`/main/${link}`}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                  >
+                    <Home className="h-4 w-4" />
+                    {link.charAt(0).toUpperCase() + link.slice(1).toLowerCase()}
+                  </Link>
+                ))
+              }
             </nav>
-            <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                <Link
-                    href="#"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Settings</span>
-                </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right">Settings</TooltipContent>
-            </Tooltip>
-            </nav>
-        </aside>
-    )
-  }
-  export default Sidebar
-  
+          </div>
+          <div className="mt-auto p-4">
+            <Card x-chunk="dashboard-02-chunk-0">
+              <CardHeader className="p-2 pt-0 md:p-4">
+                <CardTitle>Upgrade to Pro</CardTitle>
+                <CardDescription>
+                  Unlock all features and get unlimited access to our support
+                  team.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
+                <Button size="sm" className="w-full">
+                  Upgrade
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+  )
+}
+
+export default Sidebar

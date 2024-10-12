@@ -5,19 +5,19 @@ import { redirect } from 'next/navigation'; // Server-side redirection
 import React from 'react';
 
 interface CustomLayoutProps {
-  currentUser: UserType; // Prop for passing user data
+ // currentUser: UserType; // Prop for passing user data
   children: React.ReactNode;
 }
 
-const CustomLayout = ({ currentUser, children }: CustomLayoutProps) => {
+const CustomLayout = ({  children }: CustomLayoutProps) => {
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <CustomSidebar />
-      <div className="flex flex-col">
-        <CustomHeader />
-        {children}
-      </div>
-    </div>
+       <div className="flex min-h-screen w-full flex-col bg-muted/40">
+          <CustomSidebar />
+          <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+            <CustomHeader />
+            {children}
+          </div>
+     </div>
   );
 };
 

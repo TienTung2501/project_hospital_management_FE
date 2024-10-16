@@ -1,6 +1,7 @@
 "use client"
 import { Button } from '@/components/ui/button'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import axios from 'axios';
 
  
 
@@ -48,60 +49,26 @@ import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/data-table'
 import createColumns from '@/components/column-custom'
 import { create_department } from '@/actions/cartegory/department/createdepartment';
+import { DepartmentType } from '@/types';
 
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
   { value: 20, label: "20 bản ghi" },
   { value: 40, label: "40 bản ghi" },
 ]
-const data: Payment[] = [
-    {
-      name: "Khoa Ngoại",
-      description: "success",
-      isActive: true,
-      id: "m5gr84i9",
-    },
-    {
-      name: "Khoa Ngoại",
-      description: "success",
-      isActive: true,
-      id: "3u1reuv4",
-    },
-    {
-      name: "Khoa Ngoại",
-      description: "processing",
-      isActive: true,
-      id: "derv1ws0",
-    },
-    {
-      name: "Khoa Ngoại",
-      description: "success",
-      isActive: true,
-      id: "5kma53ae",
-    },
-    {
-      name: "Khoa Ngoại",
-      description: "failed",
-      isActive: true,
-      id: "bhqecj4p",
-    },
-  ];
-  
  
-export type Payment = {
-  id: string
-  name: string
-  description: string;
-  isActive:boolean
-}
 const Department = () => {
+  //data
+  const [departments,setDepartments]=useState<DepartmentType[]>([]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{ id: string|BigInt; name: string } | null>(null);
-  const [items, setItems] = useState(data);
+  //const [items, setItems] = useState(data);
 
   const [editData, setEditData] = useState<{ name: string; description: string; id: string } | null>(null);
   const [error,setError]=useState<string|undefined>("");
   const { toast } = useToast()
+  const [loading, setLoading] = useState(true);
   const [isPending,startTransition]=useTransition();
   const handleSelectRecords = (value: number | null) => {
     console.log("Selected value:", value)
@@ -116,18 +83,18 @@ const Department = () => {
   });
   const { reset, handleSubmit } = form;
   const handleEdit = (id: string|BigInt) => {
-    const itemToEdit = data.find((item) => item.id === id);
-    if (itemToEdit) {
-      // Set edit data
-      setEditData(itemToEdit);
-      // Reset form with the selected item's data
-      reset({
-        name: itemToEdit.name,
-        description: itemToEdit.description || "",
-      });
-      // Open dialog
-      setIsOpen(true);
-    }
+    // const itemToEdit = data.find((item) => item.id === id);
+    // if (itemToEdit) {
+    //   // Set edit data
+    //   setEditData(itemToEdit);
+    //   // Reset form with the selected item's data
+    //   reset({
+    //     name: itemToEdit.name,
+    //     description: itemToEdit.description || "",
+    //   });
+    //   // Open dialog
+    //   setIsOpen(true);
+    // }
   };
   const onSubmitEdit = (formData: { email: string; description: string }) => {
     // Xử lý logic cập nhật tại đây
@@ -136,23 +103,20 @@ const Department = () => {
 };
   
   const handleDelete = (id: string| BigInt) => {
-    const payment:Payment|undefined=data.find((payment) => payment.id === id);
-    const name=payment?.name;
-    if(name){
+    // const payment:Payment|undefined=data.find((payment) => payment.id === id);
+    // const name=payment?.name;
+    // if(name){
 
-      setDeleteItem({ id, name}); // Save the item to be deleted
-    }
+    //   setDeleteItem({ id, name}); // Save the item to be deleted
+    // }
     // Logic to delete the item
   };
    // Function to confirm and delete item
    const confirmDelete = () => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
-    setDeleteItem(null); // Close the dialog after deletion
+    // setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
+    // setDeleteItem(null); // Close the dialog after deletion
   };
   // Gọi createColumns
-  const columns = createColumns(data, handleEdit, handleDelete);
-  
-  
   const onSubmit = (values: z.infer<typeof CreateDepartmentSchema>) => {
     startTransition(() => {
       create_department(values)
@@ -175,6 +139,35 @@ const Department = () => {
         })
     });
   };
+
+useEffect(() => {
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/departments`);
+      console.log(response.data.data.data);
+      // Kiểm tra xem phản hồi có phải là mảng không
+      if (Array.isArray(response.data.data.data)) {
+        const departments: DepartmentType[] = response.data.data.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          status: item.status,
+        })); // Chỉ lấy các thuộc tính cần thiết
+        setDepartments(departments); 
+      } else {
+        throw new Error('Invalid response format'); // Nếu không đúng định dạng
+      }
+    } catch (error) {
+      setError('Error fetching departments'); // Xử lý lỗi
+      console.error('Error fetching departments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDepartments();
+}, []);
+const columns = departments.length > 0 ? createColumns(departments, handleEdit, handleDelete) : [];
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -348,7 +341,15 @@ const Department = () => {
         </div>
       </div>
       <div>
-      <DataTable data={data} columns={columns} />
+
+              {loading ? (
+          <p>Loading...</p>
+        ) : (
+          
+          <DataTable data={departments} columns={columns} />
+        )}
+
+      
       </div>
       </div>
   </main>

@@ -56,13 +56,12 @@ export interface LinkBaseRoleType {
     updated_at: Date; // Ngày cập nhật
   };
   export type DepartmentType = {
-    id: bigint; // ID tự tăng, khóa chính
-    name: string; // Tên khoa
-    description?: string; // Mô tả (optional)
-    status: number; // 1-đang hoạt động, 0-bị dừng hoạt động
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
+    id: bigint; // hoặc bigint
+    name: string; 
+    description?: string; 
+    status: number; 
   };
+  
 
   export type RoomCatalogueType = {
     id: bigint; // ID tự tăng, khóa chính

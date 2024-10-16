@@ -18,12 +18,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/combobox';
 
-// Dữ liệu giả cho danh sách thuốc
+// Dữ liệu giả cho danh sách Nhóm thuốc
 const medicationDataList: MedicationCatalogue[] = [
   {
     id: BigInt(1),
     name: 'Paracetamol',
-    description: 'Thuốc giảm đau và hạ sốt.',
+    description: 'Nhóm thuốc giảm đau và hạ sốt.',
     created_at: new Date('2023-01-01'),
     updated_at: new Date('2023-01-05'),
   },
@@ -96,7 +96,7 @@ const MedicationPage = () => {
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold md:text-xl">Quản lý thuốc</h1>
+      <h1 className="text-lg font-semibold md:text-xl">Quản lý nhóm dược</h1>
       
       <div className="flex justify-between">
       <Combobox<number>
@@ -133,9 +133,9 @@ const MedicationPage = () => {
             <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên thuốc</FormLabel>
+                  <FormLabel>Tên Nhóm thuốc</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Tên thuốc" />
+                    <Input {...field} placeholder="Tên nhóm dược" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -163,18 +163,18 @@ const MedicationPage = () => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editData ? "Chỉnh sửa thuốc" : "Thêm thuốc"}</DialogTitle>
+            <DialogTitle>{editData ? "Chỉnh sửa Nhóm thuốc" : "Thêm Nhóm thuốc"}</DialogTitle>
             <DialogDescription>
-              Nhập thông tin thuốc và nhấn Lưu.
+              Nhập thông tin Nhóm thuốc và nhấn Lưu.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên thuốc</FormLabel>
+                  <FormLabel>Tên Nhóm thuốc</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Tên thuốc" />
+                    <Input {...field} placeholder="Tên Nhóm thuốc" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -201,9 +201,9 @@ const MedicationPage = () => {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xóa thuốc</AlertDialogTitle>
+            <AlertDialogTitle>Xóa Nhóm thuốc</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa thuốc <strong>{deleteItem?.name}</strong> không?
+              Bạn có chắc chắn muốn xóa Nhóm thuốc <strong>{deleteItem?.name}</strong> không?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

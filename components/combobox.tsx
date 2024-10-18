@@ -25,16 +25,21 @@ interface ComboboxOption<T> {
   label: string
 }
 
-// Tạo Combobox với generic type <T>
 interface ComboboxProps<T> {
-  options: ComboboxOption<T>[]
-  placeholder?: string
-  onSelect: (value: T | null) => void
+  options: ComboboxOption<T>[];
+  placeholder?: string;
+  onSelect: (value: T | null) => void;
+  defaultValue?: T | null;
 }
 
-export function Combobox<T>({ options, placeholder = "Select...", onSelect }: ComboboxProps<T>) {
-  const [open, setOpen] = React.useState(false)
-  const [selectedValue, setSelectedValue] = React.useState<T | null>(null)
+export function Combobox<T>({
+  options,
+  placeholder = "Select...",
+  onSelect,
+  defaultValue = null,
+}: ComboboxProps<T>) {
+  const [open, setOpen] = React.useState(false);
+  const [selectedValue, setSelectedValue] = React.useState<T | null>(defaultValue);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -64,10 +69,10 @@ export function Combobox<T>({ options, placeholder = "Select...", onSelect }: Co
                   onSelect={(currentValue) => {
                     const selectedOption = options.find(
                       (option) => String(option.value) === currentValue
-                    )
-                    setSelectedValue(selectedOption ? selectedOption.value : null)
-                    onSelect(selectedOption ? selectedOption.value : null)
-                    setOpen(false)
+                    );
+                    setSelectedValue(selectedOption ? selectedOption.value : null);
+                    onSelect(selectedOption ? selectedOption.value : null);
+                    setOpen(false);
                   }}
                 >
                   {option.label}
@@ -84,5 +89,5 @@ export function Combobox<T>({ options, placeholder = "Select...", onSelect }: Co
         </Command>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

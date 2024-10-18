@@ -57,7 +57,20 @@ const numberOptions = [
   { value: 40, label: "40 bản ghi" },
 ]
  
+const statusOptions = [
+  { value: 0, label: "Không hoạt động" },
+  { value: 1, label: "Hoạt động" },
+  { value: 2, label: "Tât cả" },
+]
+ 
 const Department = () => {
+  // Các giá trị lọc
+  const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
+  const [keyword, setKeyword] = useState('');
+  const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
+  const [totalRecords, setTotalRecords] = useState(1);
+  const [pageIndex, setPageIndex] = useState(1);
+
   //data
   const [departments,setDepartments]=useState<DepartmentType[]>([]);
 
@@ -70,8 +83,16 @@ const Department = () => {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true);
   const [isPending,startTransition]=useTransition();
-  const handleSelectRecords = (value: number | null) => {
+  const handleSelecLimit = (value: number | null) => {
     console.log("Selected value:", value)
+    if (value) {
+      setLimit(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+    }
+  }
+  const handleSelectStatus = (value: number | null) => {
+      setStatus(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
   }
   
   const form=useForm<z.infer<typeof CreateDepartmentSchema>>({
@@ -140,34 +161,46 @@ const Department = () => {
     });
   };
 
-useEffect(() => {
   const fetchDepartments = async () => {
+    setLoading(true) // Bắt đầu trạng thái loading
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/departments`);
-      console.log(response.data.data.data);
-      // Kiểm tra xem phản hồi có phải là mảng không
-      if (Array.isArray(response.data.data.data)) {
-        const departments: DepartmentType[] = response.data.data.data.map((item: any) => ({
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: limit, // Số bản ghi trên mỗi trang
+          page: pageIndex, // Trang hiện tại
+          status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+          keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+        },
+      })
+      const { data } = response.data.data
+
+      if (Array.isArray(data)) {
+        const fetchedDepartments: DepartmentType[] = data.map((item: any) => ({
           id: item.id,
           name: item.name,
           description: item.description,
           status: item.status,
-        })); // Chỉ lấy các thuộc tính cần thiết
-        setDepartments(departments); 
+        })) // Chỉ lấy các thuộc tính cần thiết
+    
+        setDepartments(fetchedDepartments) // Cập nhật danh sách phòng ban
+        setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
       } else {
-        throw new Error('Invalid response format'); // Nếu không đúng định dạng
+        throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
       }
-    } catch (error) {
-      setError('Error fetching departments'); // Xử lý lỗi
-      console.error('Error fetching departments:', error);
+    } catch (err) {
+      setError('Error fetching departments') // Xử lý lỗi
+      console.error('Error fetching departments:', err)
     } finally {
-      setLoading(false);
+      setLoading(false) // Kết thúc trạng thái loading
     }
-  };
+  }
+  useEffect( () => {
+    fetchDepartments()
+  }, [limit, pageIndex,status]) // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
 
-  fetchDepartments();
-}, []);
-const columns = departments.length > 0 ? createColumns(departments, handleEdit, handleDelete) : [];
+
+  const columns = departments.length > 0 ? createColumns(departments, handleEdit, handleDelete) : [];
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -185,22 +218,27 @@ const columns = departments.length > 0 ? createColumns(departments, handleEdit, 
 {/* Phần bên trái */}
           <Combobox<number>
           options={numberOptions}
-          onSelect={handleSelectRecords}
+          onSelect={handleSelecLimit}
           placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
+          defaultValue={limit} // Default to 20 records
           />
 
         {/* Phần bên phải */}
         <div className="flex items-center space-x-5">
           <div className='flex'>
             <Combobox<number>
-              options={numberOptions}
-              onSelect={handleSelectRecords}
+              options={statusOptions}
+              onSelect={handleSelectStatus}
+              defaultValue={null} // No default selection for status
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>
           <div className="flex items-center space-x-2 bg-white">
-            <Input type="text" placeholder="Tìm kiếm" />
-            <Button type="submit">Lọc</Button>
+            <Input type="text" placeholder="Tìm kiếm" 
+              value={keyword} // Đặt giá trị từ state keyword
+              onChange={(e) => setKeyword(e.target.value)}
+              />
+            <Button  onClick={() => fetchDepartments()}>Lọc</Button>
           </div>
           
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -340,13 +378,23 @@ const columns = departments.length > 0 ? createColumns(departments, handleEdit, 
         </div>
         </div>
       </div>
-      <div>
+      <div className='flex item-center justify-center'>
 
               {loading ? (
-          <p>Loading...</p>
+          <p className='flex item-center justify-center'>Loading...</p>
         ) : (
           
-          <DataTable data={departments} columns={columns} />
+            <DataTable
+            data={departments}
+            columns={columns}
+            totalRecords={totalRecords}
+            pageIndex={pageIndex}
+            pageSize={limit}
+            onPageChange={(newPageIndex) => {
+              console.log("pageindex:", newPageIndex)
+              setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+            }}
+        />
         )}
 
       

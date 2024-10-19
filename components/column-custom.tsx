@@ -1,8 +1,8 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox"; // Import component Checkbox
-import { Button } from "@/components/ui/button"; // Import component Button
-import { Switch } from "@/components/ui/switch"; // Import component Switch
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
 // Enum for column types
@@ -11,11 +11,15 @@ enum ColumnType {
   Button = "button",
   Switch = "switch",
   Currency = "currency",
-  Date = "date", // Thêm kiểu Date
+  Date = "date",
 }
 
 // Function to render cell content based on column type
-const renderCellContent = (value: any, columnType: ColumnType) => {
+const renderCellContent = (
+  value: any, 
+  columnType: ColumnType, 
+  onStatusChange?: (newValue: number) => void
+) => {
   switch (columnType) {
     case ColumnType.Text:
       return <div className="capitalize">{value}</div>;
@@ -28,8 +32,8 @@ const renderCellContent = (value: any, columnType: ColumnType) => {
     case ColumnType.Switch:
       return (
         <Switch
-          checked={value}
-          onCheckedChange={(checked: boolean) => console.log(`Switch is now ${checked}`)}
+          checked={value === 1} // Assuming 1 is the "active" status
+          onCheckedChange={(newValue) => onStatusChange?.(newValue ? 1 : 0)} // Chuyển đổi boolean về number
         />
       );
     case ColumnType.Button:
@@ -45,21 +49,22 @@ const renderCellContent = (value: any, columnType: ColumnType) => {
         </div>
       );
     default:
-      return <div>{value}</div>; // Fallback for other types
+      return <div>{value}</div>;
   }
 };
 
 // Define an interface that includes id
 interface DataType {
-  id: string|BigInt; // Add id property
-  [key: string]: any; // Allow other properties with any type
+  id: string | BigInt;
+  [key: string]: any;
 }
 
 // Generic function to create columns with a constraint on T
 const createColumns = <T extends DataType>(
   data: T[],
-  onEdit: (id: string|BigInt) => void, // Add onEdit function as parameter
-  onDelete: (id: string |BigInt) => void // Add onDelete function as parameter
+  onEdit: (id: string | BigInt) => void,
+  onDelete: (id: string | BigInt) => void,
+  onStatusChange: (id: string | BigInt, newValue: number) => void // Update type for newValue
 ): ColumnDef<T>[] => {
   const columns: ColumnDef<T>[] = [
     {
@@ -82,7 +87,11 @@ const createColumns = <T extends DataType>(
       enableHiding: false,
     },
   ];
-
+    if (!Array.isArray(data) || data.length === 0) {
+      // Xử lý trường hợp không có dữ liệu
+      console.warn("No data available to create columns.");
+      return [];
+  }
   const keys = Object.keys(data[0]).filter((key) => key !== "id");
 
   keys.forEach((key) => {
@@ -91,24 +100,24 @@ const createColumns = <T extends DataType>(
     // Determine column type based on key name
     if (key === "amount") {
       columnType = ColumnType.Currency;
-    } else if (key === "status"||key==="healthInsuranceApplied") {
+    } else if (key === "status" || key === "healthInsuranceApplied") {
       columnType = ColumnType.Switch;
     } else if (key === "buttonLabel") {
       columnType = ColumnType.Button;
     } else if (key.toLowerCase().includes("date") || key === "created_at" || key === "updated_at") {
-      columnType = ColumnType.Date; // Set column type to Date if the key includes "date"
+      columnType = ColumnType.Date;
     }
 
     columns.push({
       accessorKey: key,
       header: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize header
-      cell: ({ row }) => renderCellContent(row.getValue(key), columnType),
+      cell: ({ row }) => renderCellContent(row.getValue(key), columnType, key === "status" ? (newValue) => onStatusChange(row.original.id, newValue ? 1 : 0) : undefined), // Chuyển đổi boolean về number
     });
   });
 
   // Add actions column
   columns.push({
-    id: "actions", // ID for the actions column
+    id: "actions",
     header: "Actions",
     cell: ({ row }) => (
       <div className="space-x-2 w-fit">

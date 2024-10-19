@@ -48,8 +48,8 @@ import  {Combobox}  from '@/components/combobox'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/data-table'
 import createColumns from '@/components/column-custom'
-import { create_department } from '@/actions/cartegory/department/createdepartment';
 import { DepartmentType } from '@/types';
+import { delete_department,update_status_department,update_department,create_department } from '@/actions/cartegory/department/index';
 
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
@@ -74,11 +74,12 @@ const Department = () => {
   //data
   const [departments,setDepartments]=useState<DepartmentType[]>([]);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string|BigInt; name: string } | null>(null);
+  const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
+  const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<DepartmentType | null>(null);
   //const [items, setItems] = useState(data);
 
-  const [editData, setEditData] = useState<{ name: string; description: string; id: string } | null>(null);
+  const [editData, setEditData] = useState<DepartmentType|null>(null);
   const [error,setError]=useState<string|undefined>("");
   const { toast } = useToast()
   const [loading, setLoading] = useState(true);
@@ -95,72 +96,188 @@ const Department = () => {
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
   }
   
-  const form=useForm<z.infer<typeof CreateDepartmentSchema>>({
+  const formCreate=useForm<z.infer<typeof CreateDepartmentSchema>>({
     resolver:zodResolver(CreateDepartmentSchema),
     defaultValues:{
       name:"",
       description:"",
     },
   });
-  const { reset, handleSubmit } = form;
+  const formUpdate=useForm<z.infer<typeof CreateDepartmentSchema>>({
+    resolver:zodResolver(CreateDepartmentSchema),
+    defaultValues:{
+      name:"",
+      description:"",
+    },
+  });
+  const { reset: resetFormCreate } = formCreate; 
+  const { reset: resetFormUpdate } = formUpdate;
   const handleEdit = (id: string|BigInt) => {
-    // const itemToEdit = data.find((item) => item.id === id);
-    // if (itemToEdit) {
-    //   // Set edit data
-    //   setEditData(itemToEdit);
-    //   // Reset form with the selected item's data
-    //   reset({
-    //     name: itemToEdit.name,
-    //     description: itemToEdit.description || "",
-    //   });
-    //   // Open dialog
-    //   setIsOpen(true);
-    // }
+    setError("");
+    const itemToEdit = departments.find((item) => item.id === id);
+    if (itemToEdit) {
+      // Set edit data
+      setEditData(itemToEdit);
+      // Reset form with the selected item's data
+      // Open dialog
+       // Reset form with the selected item's data
+      resetFormUpdate({
+        name: itemToEdit.name,
+        description: itemToEdit.description,
+      });
+      setIsOpenDialogUpdate(true);
+      resetFormUpdate();
+    }
   };
-  const onSubmitEdit = (formData: { email: string; description: string }) => {
-    // Xử lý logic cập nhật tại đây
-    console.log("Updated data:", { ...editData, ...formData });
-    setIsOpen(false); // Đóng dialog sau khi cập nhật
+
+const onSubmitUpdate = (values:z.infer<typeof CreateDepartmentSchema>) => {
+  if (!editData) return; // Ensure there is data to edit
+  setError("");
+  startTransition(()=>{
+    update_department(editData?.id,values)
+    .then((data) => {
+      if (data.error) {
+        setError(data.error);
+        toast({
+          variant:"destructive",
+          title: "Lỗi khi cập nhật",
+          description: data.error,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+       
+      } else if (data.success) {
+        setError('');
+        // Hiển thị toast cho thành công
+        toast({
+          variant:"success",
+          title: "Cập nhật thành công",
+          description: data.success,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+        // Điều hướng sau khi thành công
+        resetFormUpdate();
+        setIsOpenDialogUpdate(false);
+        fetchDepartments();
+      }
+    })
+  });
 };
-  
-  const handleDelete = (id: string| BigInt) => {
-    // const payment:Payment|undefined=data.find((payment) => payment.id === id);
-    // const name=payment?.name;
-    // if(name){
+const onSubmitCreate=(values:z.infer<typeof CreateDepartmentSchema>)=>{
+  setError("");
+  startTransition(()=>{
+    create_department(values)
+    .then((data) => {
+      if (data.error) {
+        setError(data.error);
+        toast({
+          variant:"destructive",
+          title: "Lỗi khi thêm",
+          description: data.error,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+       
+      } else if (data.success) {
+        setError('');
+        // Hiển thị toast cho thành công
+        toast({
+          variant:"success",
+          title: "Thêm thành công",
+          description: data.success,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+        // Điều hướng sau khi thành công
+        resetFormCreate();
+        setIsOpenDialogCreate(false);
+        fetchDepartments();
+      }
+    })
+  });
+}
+const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
 
-    //   setDeleteItem({ id, name}); // Save the item to be deleted
-    // }
-    // Logic to delete the item
-  };
-   // Function to confirm and delete item
-   const confirmDelete = () => {
-    // setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
-    // setDeleteItem(null); // Close the dialog after deletion
-  };
-  // Gọi createColumns
-  const onSubmit = (values: z.infer<typeof CreateDepartmentSchema>) => {
-    startTransition(() => {
-      create_department(values)
-        .then((data) => {
-          if (data.error) {
-            setError(data.error);
-           
-          } else if (data.success) {
-            setError('');
-            form.reset();
-            // Hiển thị toast cho thành công
-            toast({
-              variant:"success",
-              title: "Thêm thành công",
-              description: data.success,
-              action: <ToastAction altText="Thử lại">Ok</ToastAction>
-            });
-            // Tắt sau khi thành công
-          }
-        })
+  try {
+    const result = await update_status_department(id, newStatus);
+    if (result.error) {
+      toast({
+        variant: "destructive",
+        title: "Cập nhật thất bại",
+        description: result.error,
+      });
+    } else {
+      toast({
+        variant: "success",
+        title: "Cập nhật thành công",
+        description: "Trạng thái khoa đã được cập nhật.",
+      });
+
+      // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
+      setDepartments(prevDepartments =>
+        prevDepartments.map(department =>
+          department.id === id ? { ...department, status: newStatus } : department
+        )
+      );
+    }
+  } catch (error) {
+    console.error("Error updating status:", error);
+    toast({
+      variant: "destructive",
+      title: "Lỗi",
+      description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
     });
-  };
+  } 
+};
 
+
+const handleDelete = (id: string | BigInt) => {
+  const department: DepartmentType | undefined = departments.find((department) => department.id === id);
+  const name = department?.name;
+  if (name) {
+    setDeleteItem(department); // Lưu phần tử cần xóa
+  }
+};
+
+   // Function to confirm and delete item
+   const confirmDelete = async () => {
+    if (!deleteItem) return;
+  
+    try {
+      const response = await delete_department(deleteItem.id); // Gọi API để xóa phần tử từ backend
+  
+      if (response.success) {
+        // Xóa thành công, cập nhật danh sách departments
+        setDepartments((prevDepartments) => prevDepartments.filter((department) => department.id !== deleteItem.id));
+  
+        // Thông báo thành công
+        toast({
+          variant: "success",
+          title: "Xóa thành công",
+          description: `Khoa ${deleteItem.name} đã được xóa thành công.`,
+          action: <ToastAction altText="Ok">Ok</ToastAction>,
+        });
+        fetchDepartments();
+      } else {
+        // Thông báo lỗi nếu có
+        toast({
+          variant: "destructive",
+          title: "Lỗi khi xóa",
+          description: response.error || "Đã xảy ra lỗi khi xóa khoa.",
+          action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting department:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi khi xóa",
+        description: "Đã xảy ra lỗi khi xóa khoa.",
+        action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+      });
+    } finally {
+      // Đóng dialog sau khi xóa hoặc có lỗi
+      setDeleteItem(null);
+    }
+  };
+  
   const fetchDepartments = async () => {
     setLoading(true) // Bắt đầu trạng thái loading
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
@@ -200,7 +317,7 @@ const Department = () => {
   }, [limit, pageIndex,status]) // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
 
 
-  const columns = departments.length > 0 ? createColumns(departments, handleEdit, handleDelete) : [];
+  const columns = departments.length > 0 ? createColumns(departments, handleEdit, handleDelete, handleSwitchChange) : [];
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -241,10 +358,10 @@ const Department = () => {
             <Button  onClick={() => fetchDepartments()}>Lọc</Button>
           </div>
           
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>
                       <DialogContent className="sm:max-w-[425px]">
-                      <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)}
+                      <Form {...formUpdate}>
+                      <form onSubmit={formUpdate.handleSubmit(onSubmitUpdate)}
                         className="space-y-4"
                         >
                           <DialogHeader>
@@ -254,7 +371,7 @@ const Department = () => {
                           </DialogDescription>
                           </DialogHeader>
                             <FormField
-                              control={form.control}
+                              control={formUpdate.control}
                               name="name"
                               render={({field})=>(
                                 <FormItem>
@@ -273,7 +390,7 @@ const Department = () => {
                               )}
                             />
                             <FormField
-                              control={form.control}
+                              control={formUpdate.control}
                               name="description"
                               render={({field})=>(
                                 <FormItem>
@@ -299,13 +416,13 @@ const Department = () => {
                     </Form>
                       </DialogContent>
                   </Dialog>
-                <Dialog>
+                <Dialog open={isOpenDialogCreate} onOpenChange={setIsOpenDialogCreate}>
                   <DialogTrigger asChild>
                   <Button className='ml-5'>+ Thêm mới</Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
-                  <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)}
+                  <Form {...formCreate}>
+                      <form onSubmit={formCreate.handleSubmit(onSubmitCreate)}
                         className="space-y-4"
                         >
                           <DialogHeader>
@@ -315,7 +432,7 @@ const Department = () => {
                           </DialogDescription>
                           </DialogHeader>
                             <FormField
-                              control={form.control}
+                              control={formCreate.control}
                               name="name"
                               render={({field})=>(
                                 <FormItem>
@@ -334,7 +451,7 @@ const Department = () => {
                               )}
                             />
                             <FormField
-                              control={form.control}
+                              control={formCreate.control}
                               name="description"
                               render={({field})=>(
                                 <FormItem>

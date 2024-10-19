@@ -59,7 +59,7 @@ export interface LinkBaseRoleType {
     id: bigint; // hoặc bigint
     name: string; 
     description?: string; 
-    status: number; 
+    status?: number; 
   };
   
 

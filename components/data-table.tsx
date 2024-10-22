@@ -52,7 +52,7 @@ export function DataTable<T>({
   })
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -79,7 +79,7 @@ export function DataTable<T>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="whitespace-nowrap overflow-hidden text-ellipsis">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -89,9 +89,9 @@ export function DataTable<T>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow key={row.id} data-state={row.getIsSelected() && "đã chọn"}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="whitespace-nowrap overflow-hidden text-ellipsis" >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -109,7 +109,7 @@ export function DataTable<T>({
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of {adjustedPageIndex < Math.ceil(totalRecords / pageSize) - 1?pageSize:totalRecords%pageSize} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} / {adjustedPageIndex < Math.ceil(totalRecords / pageSize) - 1?pageSize:totalRecords%pageSize}  đã chọn.
         </div>
         <div className="space-x-2">
         <Button
@@ -119,7 +119,7 @@ export function DataTable<T>({
             disabled={adjustedPageIndex <= 0}
             aria-label="Previous Page"
           >
-            Previous
+            Trước
           </Button>
           <Button
             variant="outline"
@@ -128,7 +128,7 @@ export function DataTable<T>({
             disabled={adjustedPageIndex >= Math.ceil(totalRecords / pageSize) - 1}
             aria-label="Next Page"
           >
-            Next
+            Tiếp Theo
           </Button>
         </div>
       </div>

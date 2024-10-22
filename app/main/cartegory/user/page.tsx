@@ -53,6 +53,20 @@ const numberOptions = [
   { value: 20, label: "20 bản ghi" },
   { value: 40, label: "40 bản ghi" },
 ]
+const columnHeaderMap: { [key: string]: string } = {
+  name: "Tên bệnh nhân",
+  email: "Địa chỉ email",
+  address: "Địa chỉ",
+  phone: "Điện thoại",
+  cccd: "CCCD",
+  certificate: "Chứng chỉ",
+  examination_status:"Tình trạng khám",
+  gender:"Giới tính",
+  status:"Tình trạng",
+  position_id:"Chức danh",
+  department_id:"Khoa",
+  // Add more mappings as needed
+};
 const userData: UserInfoType[] = [
   {
     id: BigInt(1),
@@ -155,6 +169,11 @@ const userData: UserInfoType[] = [
 
 const UserInfor = () => {
   const router = useRouter(); 
+  const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
+  const [keyword, setKeyword] = useState('');
+  const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
+  const [totalRecords, setTotalRecords] = useState(1);
+  const [pageIndex, setPageIndex] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
   const [items, setItems] = useState(userData);
@@ -214,9 +233,52 @@ const UserInfor = () => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
     setDeleteItem(null); // Close the dialog after deletion
   };
-  // // Gọi createColumns
-  const columns = createColumns(userData, handleEdit, handleDelete);
+  const handleView = (id: string | BigInt) => {
+    // const department: DepartmentType | undefined = departments.find((department) => department.id === id);
+    // const name = department?.name;
+    // if (name) {
+    //   setDeleteItem(department); // Lưu phần tử cần xóa
+    // }
+  };
+  const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
+
+    // try {
+    //   const result = await update_status_department(id, newStatus);
+    //   if (result.error) {
+    //     toast({
+    //       variant: "destructive",
+    //       title: "Cập nhật thất bại",
+    //       description: result.error,
+    //     });
+    //   } else {
+    //     toast({
+    //       variant: "success",
+    //       title: "Cập nhật thành công",
+    //       description: "Trạng thái khoa đã được cập nhật.",
+    //     });
   
+    //     // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
+    //     setDepartments(prevDepartments =>
+    //       prevDepartments.map(department =>
+    //         department.id === id ? { ...department, status: newStatus } : department
+    //       )
+    //     );
+    //   }
+    // } catch (error) {
+    //   console.error("Error updating status:", error);
+    //   toast({
+    //     variant: "destructive",
+    //     title: "Lỗi",
+    //     description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
+    //   });
+    // } 
+  };
+  const switchConfig = [
+    { key: "status", onStatusChange: handleSwitchChange },
+  ];
+  const columns = userData.length > 0 ? createColumns(userData,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: true, delete: true},switchConfig ) : [];
+  // // Gọi createColumns
+ 
   
   const onSubmit = (values: z.infer<typeof CreateDepartmentSchema>) => {
     startTransition(() => {
@@ -295,7 +357,19 @@ const UserInfor = () => {
         </div>
       </div>
       <div>
-      <DataTable data={userData} columns={columns} />
+      <DataTable 
+      data={userData} 
+      columns={columns} 
+      totalRecords={totalRecords}
+      pageIndex={pageIndex}
+      pageSize={limit}
+      onPageChange={(newPageIndex) => {
+        console.log("pageindex:", newPageIndex)
+        setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+      }}
+      
+      />
+
       </div>
       </div>
   </main>

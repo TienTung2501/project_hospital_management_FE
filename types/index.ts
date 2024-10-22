@@ -51,9 +51,7 @@ export interface LinkBaseRoleType {
     id: bigint; // ID tự tăng, khóa chính
     name: string; // Tên chức danh
     description?: string; // Mô tả (optional)
-    status: number; // 1-đang hoạt động, 0-bị dừng hoạt động
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
+    status?: number; // 1-đang hoạt động, 0-bị dừng hoạt động
   };
   export type DepartmentType = {
     id: bigint; // hoặc bigint
@@ -205,4 +203,63 @@ export type Medication = {
   description?: string;               // Mô tả dược phẩm
   created_at: Date;                    // Thời gian tạo bản ghi
   updated_at: Date;                    // Thời gian cập nhật bản ghi             // Trạng thái xóa (true: đã xóa, false: chưa xóa)
+};
+
+export type MedicalRecord = {
+  id: bigint; // ID của bản ghi bệnh án
+  patient_id: string; // ID của bệnh nhân
+  user_id: string; // ID của bác sĩ
+  visit_date: string; // Ngày khám (định dạng datetime)
+  diagnosis: string; // Chuẩn đoán
+  notes: string; // Ghi chú của bác sĩ
+  appointment_date?: string | null; // Ngày hẹn khám (optional)
+  is_inpatient?: boolean; // Có điều trị nội trú không (true: nội trú, false: ngoại trú)
+  inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
+
+  examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
+};
+// đối với việc tiếp nhận: có 2 trường hợp
+// TH1: đến khám mới-> thêm thông tin( thông tin cá nhân, tình trạng sức khỏe( kiểm tra sơ bộ chỉ số cơ thể) chỉ định xong rồi sẽ thêm 1 hồ sơ bệnh nhân-> hiển thị bệnh nhân với tình trạng đang khám)-> xem hồ sơ thì thấy các dịch vũ được chỉ định và trạng thái thanh toán, trạng thái xét nghiệm, sau đó đưa ra kết quả
+// TH2: đến tái khám-> (xem hồ sơ-> click vào xem hồ sơ-> điền các chỉ số, kiểm tra sơ bộ-> cập nhật phát là chuyển sang đang khám, sau đó bác sĩ có thể chỉ định dịch vụ như bên kia)
+export type PatientCurrently = {
+  id: bigint; // ID của bản ghi bệnh án
+  patient_id: string; // ID của bệnh nhân
+  gender: number; // ID của bác sĩ
+  visit_date: string; // Ngày khám (định dạng datetime)
+  diagnosis: string; // Chuẩn đoán
+  notes: string; // Ghi chú của bác sĩ
+  inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
+  examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
+};
+export type Patient = {
+  id: bigint;
+  name: string;
+  birthday?: number;
+  ward_id?: string;
+  district_id?: string;
+  province_id?: string;
+  address?: string;
+  phone?: string;
+  cccd_number: string;
+  health_insurance_code?: string;
+  guardian_phone?: string;
+  gender: number; // 1 - nam, 2 - nữ, 3 - giới tính khác
+};
+export type DailyHealth = {
+  id: bigint;
+  treament_session_id: bigint; // Tham chiếu đến treament_sessions.id
+  check_date: Date; // Thời gian kiểm tra
+  temperature?: number; // Nhiệt độ cơ thể, default là 37
+  blood_pressure: string; // Huyết áp (vd: 120/80)
+  heart_rate: number; // Nhịp tim (số nhịp mỗi phút)
+  note?: string; // Các triệu chứng hoặc ghi chú bổ sung
+  created_at?: Date; // Thời gian nhập thông tin
+  updated_at?: Date;
+};
+export type ServiceInfo = {
+  id:bigint;
+  department: string;   // Khoa
+  room: string;         // Phòng
+  service: string;      // Dịch vụ
+  servicePrice: number; // Giá dịch vụ
 };

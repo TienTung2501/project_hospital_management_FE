@@ -169,3 +169,29 @@ export const MedicationSchema = z.object({
   measureCount: z.number().min(1, "Số lượng phải lớn hơn 0"),
   description: z.string().optional(),
 });
+
+export const PatientSchema = z.object({
+    id: z.bigint().optional(), // optional because it may be auto-generated
+    name: z.string().max(250, "Tên bệnh nhân không được vượt quá 250 ký tự"),
+    birthday: z.number().optional(), // optional if not provided
+    ward_id: z.string().max(255, "Phường/xã không được vượt quá 255 ký tự").optional(),
+    district_id: z.string().max(255, "Quận/huyện không được vượt quá 255 ký tự").optional(),
+    province_id: z.string().max(255, "Thành phố/tỉnh không được vượt quá 255 ký tự").optional(),
+    address: z.string().max(255, "Địa chỉ không được vượt quá 255 ký tự").optional(),
+    phone: z.string().max(20, "Số điện thoại không được vượt quá 20 ký tự").optional(),
+    cccd_number: z.string().max(20, "Số căn cước công dân không được vượt quá 20 ký tự"),
+    health_insurance_code: z.string().max(25, "Mã bảo hiểm y tế không được vượt quá 25 ký tự").optional(),
+    guardian_phone: z.string().max(20, "Số điện thoại người giám hộ không được vượt quá 20 ký tự").optional(),
+    gender: z.enum(['male', 'female'], {
+        errorMap: () => ({ message: "Yêu cầu chọn giới tính" }),
+    }),
+  });
+  export const DailyHealthSchema = z.object({
+    temperature: z.number().default(37), // Nhiệt độ mặc định
+    blood_pressure: z.string().max(10, "Huyết áp không được vượt quá 10 ký tự").nonempty("Huyết áp không được để trống"),
+    heart_rate: z.number().int().positive("Nhịp tim phải là số nguyên dương").nonnegative("Nhịp tim không hợp lệ"),
+    blood_sugar: z.number().optional(), // Đường huyết, có thể có hoặc không
+    diagnosis: z.string().optional(),   // Chuẩn đoán, có thể có hoặc không
+    note: z.string().optional(),        // Ghi chú thêm, có thể có hoặc không
+  });
+  

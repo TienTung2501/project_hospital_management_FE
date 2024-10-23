@@ -263,3 +263,31 @@ export type ServiceInfo = {
   service: string;      // Dịch vụ
   servicePrice: number; // Giá dịch vụ
 };
+
+export type PatientPaymentInfo = {
+  id:bigint;
+  patientName: string;            // Tên bệnh nhân
+  cccd: string;                  // Số CCCD (Căn cước công dân)
+  gender: number;                // Giới tính (1: Nam, 2: Nữ, 3: Khác)
+  birthday_date: Date;                // Ngày sinh
+  phone: string;                 // Số điện thoại
+  admission_date: Date;           // Ngày vào viện
+  discharge_date?: Date;          // Ngày ra viện (có thể không có)
+  advanceAmount: number;         // Số tiền tạm ứng
+  amountDue: number;             // Số tiền cần thanh toán
+  paymentStatus: number;         // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)       // Xác nhận thanh toán
+};
+
+export type PatientServiceInfo = {
+  id:bigint;
+  serviceName: string;             // Tên dịch vụ
+  department: string;              // Khoa
+  room: string;                    // Phòng
+  referringDoctor: string;         // Bác sĩ chỉ định
+  servicePrice: number;            // Giá dịch vụ
+  insuranceApplicable: number;     // Áp dụng bảo hiểm (0: Không áp dụng, 1: Có áp dụng)
+  insuranceCoveragePercentage: number; // Phần trăm áp dụng bảo hiểm
+  amountDue: number;               // Tiền cần trả
+  paymentStatus: number;           // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
+};
+

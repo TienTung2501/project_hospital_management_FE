@@ -12,15 +12,13 @@ enum ColumnType {
   Switch = "switch",
   Currency = "currency",
   Date = "date",
-  Gender = "gender",    // Thêm kiểu cột cho giới tính
-  Status = "examination_status",    // Thêm kiểu cột cho trạng thái khám
-}
-// Interface cho cấu hình cột kiểu Switch
-interface SwitchConfig {
-  key: string; // Key của cột sẽ dùng switch
-  onStatusChange: (id: string | BigInt, newValue: number) => void; // Hàm xử lý thay đổi
+  Gender = "gender",
+  Status = "examination_status",
+  PaymentStatus = "paymentStatus",
+  InsuranceApplicable = "insuranceApplicable",
 }
 
+// Interface for data type
 interface DataType {
   id: string | BigInt;
   [key: string]: any;
@@ -42,7 +40,8 @@ const getHeaderLabel = (key: string, columnHeaderMap: { [key: string]: string })
 const renderCellContent = (
   value: any,
   columnType: ColumnType,
-  onStatusChange?: (newValue: number) => void
+  onStatusChange?: (newValue: number) => void,
+  onPaymentConfirmation?: () => void
 ) => {
   switch (columnType) {
     case ColumnType.Text:
@@ -56,8 +55,8 @@ const renderCellContent = (
     case ColumnType.Switch:
       return (
         <Switch
-          checked={value === 1} // Assuming 1 is the "active" status
-          onCheckedChange={(newValue) => onStatusChange?.(newValue ? 1 : 0)} // Chuyển đổi boolean về number
+          checked={value === 1}
+          onCheckedChange={(newValue) => onStatusChange?.(newValue ? 1 : 0)}
         />
       );
     case ColumnType.Button:
@@ -72,32 +71,31 @@ const renderCellContent = (
           {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value))}
         </div>
       );
-      case ColumnType.Gender:  // Xử lý cột giới tính
+    case ColumnType.Gender:
       return <div>{value === 1 ? "Nam" : "Nữ"}</div>;
-    case ColumnType.Status:  // Xử lý cột trạng thái khám
-      return (
-        <div>
-          {value === 1
-            ? "Đã khám"
-            : value === 0
-            ? "Chưa khám"
-            : "Đang khám"}
-        </div>
-      );
+    case ColumnType.Status:
+      return <div>{value === 1 ? "Đã khám" : value === 0 ? "Chưa khám" : "Đang khám"}</div>;
+    case ColumnType.PaymentStatus:
+      return <div>{value === 1 ? "Đủ" : "Còn thiếu"}</div>;
+    case ColumnType.InsuranceApplicable:
+      return <div>{value === 1 ? "Có" : "Không"}</div>;
+    
     default:
       return <div>{value}</div>;
   }
 };
 
-// Generic function to create columns with a constraint on T
+// Function to create columns
 const createColumns = <T extends DataType>(
   data: T[],
   onView: (id: string | BigInt) => void,
   onEdit: (id: string | BigInt) => void,
   onDelete: (id: string | BigInt) => void,
-  columnHeaderMap: { [key: string]: string }, // Map header
-  actionButtonsConfig: ActionButtonsConfig, // Cấu hình cho các nút hành động
-  switchConfig: SwitchConfig[] // Cấu hình cho cột kiểu switch
+  columnHeaderMap: { [key: string]: string },
+  actionButtonsConfig: ActionButtonsConfig,
+  switchConfig: { key: string; onStatusChange: (id: string | BigInt, newValue: number) => void }[],
+  onPaymentConfirmation: (id: string | BigInt) => void,
+  addPaymentConfirmationColumn: boolean
 ): ColumnDef<T>[] => {
   const columns: ColumnDef<T>[] = [
     {
@@ -122,7 +120,6 @@ const createColumns = <T extends DataType>(
   ];
 
   if (!Array.isArray(data) || data.length === 0) {
-    // Xử lý trường hợp không có dữ liệu
     console.warn("No data available to create columns.");
     return [];
   }
@@ -130,11 +127,9 @@ const createColumns = <T extends DataType>(
   const keys = Object.keys(data[0]).filter((key) => key !== "id");
 
   keys.forEach((key) => {
-    let columnType: ColumnType = ColumnType.Text; // Default type
+    let columnType: ColumnType = ColumnType.Text;
 
-    // Xác định kiểu cột dựa trên cấu hình switch
     const switchColumn = switchConfig.find((config) => config.key === key);
-
     if (switchColumn) {
       columnType = ColumnType.Switch;
     } else if (key === "amount") {
@@ -143,11 +138,14 @@ const createColumns = <T extends DataType>(
       columnType = ColumnType.Button;
     } else if (key.toLowerCase().includes("date") || key === "created_at" || key === "updated_at") {
       columnType = ColumnType.Date;
-    }
-    else if (key === "gender") {  // Thêm cột xử lý giới tính
+    } else if (key === "gender") {
       columnType = ColumnType.Gender;
-    } else if (key === "examination_status") {  // Thêm cột xử lý trạng thái khám
+    } else if (key === "examination_status") {
       columnType = ColumnType.Status;
+    } else if (key === "paymentStatus") {
+      columnType = ColumnType.PaymentStatus;
+    } else if (key === "insuranceApplicable") {
+      columnType = ColumnType.InsuranceApplicable;
     }
 
     columns.push({
@@ -157,20 +155,31 @@ const createColumns = <T extends DataType>(
         renderCellContent(
           row.getValue(key),
           columnType,
-          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined
+          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined,
+          
         ),
     });
   });
 
-  // Thêm cột hành động
+  if (addPaymentConfirmationColumn) {
+    columns.push({
+      id: "paymentConfirmation",
+      header: "Xác nhận thanh toán",
+      cell: ({ row }) => (
+        <Button 
+          onClick={() => onPaymentConfirmation(row.original.id)} 
+          variant="outline" 
+          size="sm"
+        >
+          Xác nhận
+        </Button>
+      ),
+    });
+  }
   if (actionButtonsConfig.view || actionButtonsConfig.edit || actionButtonsConfig.delete) {
     columns.push({
       id: "actions",
-      header: () => (
-        <div className="text-center">
-          Hành động
-        </div>
-      ),
+      header: () => <div className="text-center">Hành động</div>,
       cell: ({ row }) => (
         <div className="space-x-2 w-fit flex justify-center items-center mx-auto">
           {actionButtonsConfig.view && (
@@ -204,7 +213,6 @@ const createColumns = <T extends DataType>(
       ),
       enableSorting: false,
     });
-    
   }
 
   return columns;

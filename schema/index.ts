@@ -1,6 +1,41 @@
 import { description } from "@/app/custom/page";
 import * as z from "zod";
+// types/serviceTypes.ts
+import { ServiceDetail, SchemaAccumulator, ServiceDetailField } from '@/types/index';
+const fetchServiceDetails = async (): Promise<ServiceDetail[]> => {
+    const response = await fetch('/api/services');
+    if (!response.ok) {
+      throw new Error('Failed to fetch services');
+    }
+    return await response.json();
+  };
 
+  
+  // Hàm tạo schema cho dịch vụ
+// Hàm tạo schema cho dịch vụ
+export const createServiceSchema = async () => {
+    const services: ServiceDetail[] = await fetchServiceDetails();
+  
+    const fields: SchemaAccumulator = services.reduce((acc: SchemaAccumulator, service) => {
+      const serviceDetail: ServiceDetailField = JSON.parse(service.detail);
+      
+      // Thêm các trường vào schema
+      for (const [field, type] of Object.entries(serviceDetail)) {
+        if (type === 'number') {
+          acc[field] = z.number().min(0, "Giá trị không hợp lệ");
+        } else if (type === 'string') {
+          acc[field] = z.string().nonempty("Không được để trống");
+        }
+        // Có thể thêm các loại kiểu dữ liệu khác nếu cần
+      }
+  
+      return acc;
+    }, {});
+  
+    return z.object({
+      details: z.object(fields)
+    });
+  };
 // zod dùng để validate
 export const LoginSchema=z.object({
     email:z.string().email({

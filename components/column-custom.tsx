@@ -40,8 +40,7 @@ const getHeaderLabel = (key: string, columnHeaderMap: { [key: string]: string })
 const renderCellContent = (
   value: any,
   columnType: ColumnType,
-  onStatusChange?: (newValue: number) => void,
-  onPaymentConfirmation?: () => void
+  onStatusChange?: (newValue: number) => void
 ) => {
   switch (columnType) {
     case ColumnType.Text:
@@ -79,7 +78,7 @@ const renderCellContent = (
       return <div>{value === 1 ? "Đủ" : "Còn thiếu"}</div>;
     case ColumnType.InsuranceApplicable:
       return <div>{value === 1 ? "Có" : "Không"}</div>;
-    
+
     default:
       return <div>{value}</div>;
   }
@@ -88,14 +87,18 @@ const renderCellContent = (
 // Function to create columns
 const createColumns = <T extends DataType>(
   data: T[],
-  onView: (id: string | BigInt) => void,
-  onEdit: (id: string | BigInt) => void,
-  onDelete: (id: string | BigInt) => void,
-  columnHeaderMap: { [key: string]: string },
-  actionButtonsConfig: ActionButtonsConfig,
-  switchConfig: { key: string; onStatusChange: (id: string | BigInt, newValue: number) => void }[],
-  onPaymentConfirmation: (id: string | BigInt) => void,
-  addPaymentConfirmationColumn: boolean
+  onView?: (id: string | BigInt) => void,
+  onEdit?: (id: string | BigInt) => void,
+  onDelete?: (id: string | BigInt) => void,
+  columnHeaderMap: { [key: string]: string } = {},
+  actionButtonsConfig: ActionButtonsConfig = {},
+  switchConfig: { key: string; onStatusChange: (id: string | BigInt, newValue: number) => void }[] = [],
+  buttonColumnConfig?: {
+    id: string;
+    header: string;
+    onClickConfig: (id: string | BigInt) => void;
+    content:string;
+  },
 ): ColumnDef<T>[] => {
   const columns: ColumnDef<T>[] = [
     {
@@ -124,7 +127,8 @@ const createColumns = <T extends DataType>(
     return [];
   }
 
-  const keys = Object.keys(data[0]).filter((key) => key !== "id");
+  const keys = Object.keys(data[0]).filter((key) => !key.includes("id"));
+
 
   keys.forEach((key) => {
     let columnType: ColumnType = ColumnType.Text;
@@ -155,54 +159,56 @@ const createColumns = <T extends DataType>(
         renderCellContent(
           row.getValue(key),
           columnType,
-          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined,
-          
+          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined
         ),
     });
   });
 
-  if (addPaymentConfirmationColumn) {
+  // Add payment confirmation column if needed
+  if (buttonColumnConfig) {
     columns.push({
-      id: "paymentConfirmation",
-      header: "Xác nhận thanh toán",
+      id: buttonColumnConfig.id,
+      header: buttonColumnConfig.header,
       cell: ({ row }) => (
         <Button 
-          onClick={() => onPaymentConfirmation(row.original.id)} 
+          onClick={() => buttonColumnConfig.onClickConfig(row.original.id)} // Truyền toàn bộ đối tượng
           variant="outline" 
           size="sm"
         >
-          Xác nhận
+          {buttonColumnConfig.content}
         </Button>
       ),
     });
   }
+
+  // Add action buttons column if any action is configured
   if (actionButtonsConfig.view || actionButtonsConfig.edit || actionButtonsConfig.delete) {
     columns.push({
       id: "actions",
       header: () => <div className="text-center">Hành động</div>,
       cell: ({ row }) => (
         <div className="space-x-2 w-fit flex justify-center items-center mx-auto">
-          {actionButtonsConfig.view && (
+          {actionButtonsConfig.view && onView && (
             <Button
-              onClick={() => onView?.(row.original.id)}
+              onClick={() => onView(row.original.id)}
               variant="ghost"
               className="p-1 m-0 w-6 h-6 flex justify-center items-center"
             >
               <FaEye size={12} />
             </Button>
           )}
-          {actionButtonsConfig.edit && (
+          {actionButtonsConfig.edit && onEdit && (
             <Button
-              onClick={() => onEdit?.(row.original.id)}
+              onClick={() => onEdit(row.original.id)}
               variant="ghost"
               className="p-1 m-0 w-6 h-6 flex justify-center items-center"
             >
               <FaEdit size={12} />
             </Button>
           )}
-          {actionButtonsConfig.delete && (
+          {actionButtonsConfig.delete && onDelete && (
             <Button
-              onClick={() => onDelete?.(row.original.id)}
+              onClick={() => onDelete(row.original.id)}
               variant="ghost"
               className="p-1 m-0 w-6 h-6 flex justify-center items-center"
             >

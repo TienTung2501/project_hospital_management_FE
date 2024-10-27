@@ -1,6 +1,6 @@
 [
     { "role":"superadmin",
-      "link": ["admin","payment","payment/detailpayment","setting","cartegory","cartegory/user","cartegory/bed","cartegory/department","cartegory/permission","cartegory/medical","cartegory/position","cartegory/room","cartegory/room_catalogue","cartegory/medical_catalogue","cartegory/service","cartegory/service_catalogue","cartegory/location"]
+      "link": ["admin","medical_records","services","payment","payment/detailpayment","setting","cartegory","cartegory/user","cartegory/bed","cartegory/department","cartegory/permission","cartegory/medical","cartegory/position","cartegory/room","cartegory/room_catalogue","cartegory/medical_catalogue","cartegory/service","cartegory/service_catalogue","cartegory/location"]
     },
     {
       "role":"manager",

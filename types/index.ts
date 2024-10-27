@@ -223,7 +223,8 @@ export type MedicalRecord = {
 // TH2: đến tái khám-> (xem hồ sơ-> click vào xem hồ sơ-> điền các chỉ số, kiểm tra sơ bộ-> cập nhật phát là chuyển sang đang khám, sau đó bác sĩ có thể chỉ định dịch vụ như bên kia)
 export type PatientCurrently = {
   id: bigint; // ID của bản ghi bệnh án
-  patient_id: string; // ID của bệnh nhân
+  patient_id: bigint; // ID của bệnh nhân
+  user_id: bigint; //Bác sĩ thăm khám
   gender: number; // ID của bác sĩ
   visit_date: string; // Ngày khám (định dạng datetime)
   diagnosis: string; // Chuẩn đoán
@@ -288,6 +289,20 @@ export type PatientServiceInfo = {
   insuranceApplicable: number;     // Áp dụng bảo hiểm (0: Không áp dụng, 1: Có áp dụng)
   insuranceCoveragePercentage: number; // Phần trăm áp dụng bảo hiểm
   amountDue: number;               // Tiền cần trả
-  paymentStatus: number;           // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
+  paymentStatus: number; 
+  examination_status:number;          // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
+};
+export type ServiceDetailField = {
+  [key: string]: 'string' | 'number'; // Bạn có thể thêm kiểu khác nếu cần
 };
 
+export type ServiceDetail = {
+  id: number;
+  name: string;
+  detail: string; // Dữ liệu dạng JSON
+};
+
+// Kiểu cho accumulator
+export type SchemaAccumulator = {
+  [key: string]: any; // Bạn có thể cụ thể hóa hơn tùy theo yêu cầu
+};

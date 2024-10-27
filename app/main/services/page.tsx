@@ -1,7 +1,6 @@
 "use client";
 export const description =
   "An orders dashboard with a sidebar navigation. The sidebar has icon navigation. The content area has a breadcrumb and search in the header. The main area has a list of recent orders with a filter and export button. The main area also has a detailed view of a single order with order details, shipping information, billing information, customer information, and payment information."
-
 import React, { useState, useTransition } from 'react'
 import { Button } from "@/components/ui/button"
 import {
@@ -31,7 +30,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Combobox } from '@/components/combobox'
-import { MedicalRecord, PatientCurrently, PatientPaymentInfo, PatientServiceInfo, ServiceInfo, UserInfoType } from '@/types';
+import { MedicalRecord, PatientCurrently, PatientPaymentInfo, ServiceInfo, UserInfoType } from '@/types';
 import { useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
@@ -46,17 +45,17 @@ import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Textarea } from '@/components/ui/textarea';
 
+// user tức nhân viên có thể là bác sĩ xét nghiệm đăng nhập vào hệ thống thì sẽ lấy ra được room Id -> sau đó lấy được các bệnh nhân được phân vào room id
+// lấy các thông tin về phòng
+// lấy các thông tin về dịch vụ
 
 const columnHeaderMap: { [key: string]: string } = {
-    serviceName: "Dịch vụ",
-    department: "khoa",
-    room: "Phòng",
-    referringDoctor: "Bác sĩ chỉ định",
-    servicePrice: "Giá dịch vụ",
-    insuranceApplicable:"Áp dụng bảo hiểm",
-    insuranceCoveragePercentage:"Phần trăm",
-    amountDue:"Giá tiền thanh toán",
-    paymentStatus:"Trạng thái thanh toán",
+  patientName: "Tên bệnh nhân",
+  gender: "Giới tính",
+  birthday_date: "Tuổi",
+  servicename:"Tên dịch vụ",
+  phone: "Điện thoại",
+  service_name:"Tên dịch vụ"
   // Add more mappings as needed
 };
 
@@ -70,74 +69,64 @@ const departments = [
   { value: 2, label: "Khoa nội" },
   { value: 3, label: "Khoa thần kinh" },
 ]
-const patientServiceData: PatientServiceInfo[] = [
-    {
-        id: BigInt(1),
-      serviceName: "Xét nghiệm máu",
-      department: "Huyết học",
-      room: "101",
-      referringDoctor: "Bác sĩ Nguyễn Văn K",
-      servicePrice: 500000,
-      insuranceApplicable: 1,
-      insuranceCoveragePercentage: 80,
-      amountDue: 100000,
-      paymentStatus: 1,
-    },
-    {
-        id: BigInt(2),
-      serviceName: "Chụp X-quang",
-      department: "Chẩn đoán hình ảnh",
-      room: "202",
-      referringDoctor: "Bác sĩ Trần Thị M",
-      servicePrice: 300000,
-      insuranceApplicable: 0,
-      insuranceCoveragePercentage: 0,
-      amountDue: 300000,
-      paymentStatus: 0,
-      
-    },
-    {
-        id: BigInt(3),
-      serviceName: "Khám tổng quát",
-      department: "Nội tổng hợp",
-      room: "305",
-      referringDoctor: "Bác sĩ Lê Văn N",
-      servicePrice: 700000,
-      insuranceApplicable: 1,
-      insuranceCoveragePercentage: 50,
-      amountDue: 350000,
-      paymentStatus: 1,
-      
-    },
-    {
-        id: BigInt(4),
-      serviceName: "Soi dạ dày",
-      department: "Tiêu hóa",
-      room: "405",
-      referringDoctor: "Bác sĩ Phạm Thị P",
-      servicePrice: 1200000,
-      insuranceApplicable: 1,
-      insuranceCoveragePercentage: 70,
-      amountDue: 360000,
-      paymentStatus: 1,
-      
-    },
-    {
-        id: BigInt(5),
-      serviceName: "Phẫu thuật ruột thừa",
-      department: "Ngoại khoa",
-      room: "501",
-      referringDoctor: "Bác sĩ Lê Văn Q",
-      servicePrice: 5000000,
-      insuranceApplicable: 0,
-      insuranceCoveragePercentage: 0,
-      amountDue: 5000000,
-      paymentStatus: 0,
-      
-    },
-    // Thêm 5 bộ dữ liệu nữa
-  ];
-  
+export type PatientService={
+  id:bigint;
+  patientName: string;
+  gender: number;
+  birthday_date: number;
+  phone: string;
+  service_name:string;
+  service_id:bigint;
+}
+const patientServiceData: PatientService[] = [
+  {
+    id:BigInt(1),
+    patientName: "Nguyễn Văn A",
+    gender: 1,
+    birthday_date: 20,
+    phone: "0987654321",
+    service_name:"Xét nghiệm máu",
+    service_id:BigInt(1),
+  },
+  {
+    id:BigInt(2),
+    patientName: "Trần Thị B",
+    gender: 0,
+    birthday_date: 20,
+    phone: "0987654321",
+    service_name:"Xét nghiệm máu",
+    service_id:BigInt(2),
+    
+  },
+  {
+    id:BigInt(3),
+    patientName: "Lê Văn C",
+    gender: 1,
+    birthday_date: 20,
+    phone: "0901234567",
+    service_name:"Xét nghiệm máu",
+    service_id:BigInt(3),
+  },
+  {
+    id:BigInt(4),
+    patientName: "Hoàng Thị D",
+    gender: 0,
+    birthday_date: 20,
+    phone: "0934567890",
+    service_name:"Xét nghiệm máu",
+    service_id:BigInt(4),
+  },
+  {
+    id:BigInt(5),
+    patientName: "Phạm Văn E",
+    gender: 1,
+    birthday_date: 20,
+    phone: "0967890123",
+    service_name:"Xét nghiệm máu",
+    service_id:BigInt(5),
+  },
+  // Thêm 5 bộ dữ liệu nữa
+];
 
 const PaymentPage = () => {
   const router = useRouter(); 
@@ -149,11 +138,9 @@ const PaymentPage = () => {
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
   const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
+  const [item, setItem] = useState<PatientService | null>(null);
   
-  const handleClick = () => {
-    // Use router in a safe way, like in an event handler or inside useEffect
-    router.push('/main/cartegory/user/create');
-  };
+
   const handleSelectRecords = (value: number | null) => {
     console.log("Selected value:", value)
   }
@@ -168,35 +155,36 @@ const PaymentPage = () => {
       setStatus(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
   }
-  const handleEdit = (id: string|BigInt) => {
-  };
-  const handleView = (id: string | BigInt) => {
-    // const department: DepartmentType | undefined = departments.find((department) => department.id === id);
-    // const name = department?.name;
-    // if (name) {
-    //   setDeleteItem(department); // Lưu phần tử cần xóa
-    // }
-  };
-  const handleDelete = (id: string | BigInt) => {
 
+  // Cấu hình cho cột nút
+  const buttonColumnConfig = {
+    id: 'customButton',
+    header: 'Xét nghiệm',
+    onClickConfig: (id: string | BigInt) => {
+      // Điều hướng đến trang chi tiết cho bệnh nhân
+      const item: PatientService | undefined = patientServiceData.find(patient => patient.id === id);
+      router.push(`/main/services/${item?.service_id}/${id}`);
+    },
+    content: 'Thực thi',
   };
-  
-     // Function to confirm and delete item
-     const confirmDelete = async () => {
-    };
-    const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
-    };
-    const switchConfig = [
-      { key: "status", onStatusChange: handleSwitchChange },
-    ];
-    const handlePaymentConfirmation= async () => {
-    };
-    const column = patientServiceData.length > 0 ? createColumns(patientServiceData,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: false, delete: false} ) : [];
-   
+  const column = patientServiceData.length > 0 
+  ? createColumns(patientServiceData,
+    undefined, // onView
+    undefined, // onEdit
+    undefined, // onDelete
+    columnHeaderMap, // Cấu hình tiêu đề cột
+    undefined, // actionButtonsConfig
+    undefined, // switchConfig
+    buttonColumnConfig, // Cấu hình cho cột nút) 
+  ): [];
+
+    
   return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
-        <div className="flex w-full items-center">
-          <h1 className="text-lg font-semibold md:text-xl">Quản lý tiếp nhận thanh toán</h1>
+        <div className="w-full items-center">
+          <h1 className="text-lg font-semibold md:text-xl">Khoa Xét nghiệm</h1>
+          <h2 className="text-lg font-semibold md:text-x">Phòng xét nghiệm 302</h2>
+          <h2 className="text-lg font-semibold md:text-x">Bác sĩ: Nguyên Văn A</h2>
         
         </div>
         <div
@@ -204,10 +192,9 @@ const PaymentPage = () => {
         >
           <Card className='mb-5 mt-5'>
               <CardHeader className='pb-0'>
-                <CardTitle>Chi tiết thông tin thanh toán cho bệnh nhân</CardTitle>
+                <CardTitle>Danh sách các bệnh nhân chờ xét nghiệm</CardTitle>
                 <CardDescription>
-                  Chi tiết thông tin thanh toán cho bệnh nhân.
-                  Bổ sung các trường thông tin cho bệnh nhân như tên, căn cước...
+                  Các bệnh nhân đang chờ xét nghiệm của phòng xét nghiệm 302 khoa Xét nghiệm
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -233,22 +220,7 @@ const PaymentPage = () => {
                       <Input type="text" placeholder="Tìm kiếm" />
                       <Button type="submit">Lọc</Button>
                     </div>
-                    <Button className='ml-5' onClick={handleClick}>+ Thêm mới</Button>
-                    <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Bạn đang xóa chức danh là :{" "}
-                            <strong>{deleteItem?.name}</strong>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDeleteItem(null)}>Hủy</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                   
               </div>
               </div>
               </div>

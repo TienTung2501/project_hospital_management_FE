@@ -297,8 +297,8 @@ const currentExaminationIndex = patientExaminations.findIndex((examination) => {
               </div>
 
               {/* Chi tiết đợt khám */}
-            
-                <div className="grid grid-cols-1 gap-4 p-4 border-t border-gray-200">
+            <div className='grid grid-cols-2 gap-4'>
+            <div className="grid grid-cols-1 gap-4 p-4 border-t border-r border-gray-200">
                   <div>
                     <strong>Lý do khám:</strong> {examination.reason}
                   </div>
@@ -306,27 +306,33 @@ const currentExaminationIndex = patientExaminations.findIndex((examination) => {
                     <strong>Bác sĩ khám:</strong> {examination.doctor}
                   </div>
                   <div>
-                    <strong>Chuẩn đoán:</strong> {examination.diagnosis}
-                  </div>
-                  <div>
-                    <strong>Kết luận:</strong> {examination.conclusion}
-                  </div>
-                  <div>
                     <strong>Ngày vào khám:</strong> {examination.admissionDate}
                   </div>
                   <div>
                     <strong>Ngày ra:</strong> {examination.dischargeDate || 'Chưa ra viện'}
                   </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 p-4 border-t border-gray-200">
                   <div>
-                    <strong>Ngày tái khám:</strong> {examination.followUpDate}
+                    <strong>Chuẩn đoán:</strong> {examination.diagnosis}
                   </div>
+                  <div>
+                    <strong>Kết luận:</strong> {examination.conclusion}
+                  </div>
+
                   <div>
                     <strong>Điều trị nội trú:</strong> {examination.inpatientTreatment ? "Có" : "Không"}
                   </div>
                   <div>
+                    <strong>Ngày tái khám:</strong> {examination.followUpDate}
+                  </div>
+                  
+                  <div>
                     <strong>Tình trạng tái khám:</strong> {examination.followUpStatus}
                   </div>
                 </div>
+            </div>
+              
 
             </div>
           );

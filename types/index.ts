@@ -253,6 +253,7 @@ export type DailyHealth = {
   temperature?: number; // Nhiệt độ cơ thể, default là 37
   blood_pressure: string; // Huyết áp (vd: 120/80)
   heart_rate: number; // Nhịp tim (số nhịp mỗi phút)
+  blood_sugar: number; // Đường huyết (mmol/L)
   note?: string; // Các triệu chứng hoặc ghi chú bổ sung
   created_at?: Date; // Thời gian nhập thông tin
   updated_at?: Date;
@@ -290,7 +291,7 @@ export type PatientServiceInfo = {
   insuranceCoveragePercentage: number; // Phần trăm áp dụng bảo hiểm
   amountDue: number;               // Tiền cần trả
   paymentStatus: number; 
-  examination_status:number;          // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
+  examination_status?:number;          // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
 };
 export type ServiceDetailField = {
   [key: string]: 'string' | 'number'; // Bạn có thể thêm kiểu khác nếu cần
@@ -306,3 +307,40 @@ export type ServiceDetail = {
 export type SchemaAccumulator = {
   [key: string]: any; // Bạn có thể cụ thể hóa hơn tùy theo yêu cầu
 };
+export type ServiceResultDetail={
+  id:bigint;
+  service_id:bigint;
+  service_name :string;
+  doctor_name:string;
+  description :string;
+  department:string;
+  room:string;
+  result_details:string;
+}
+export type TreatmentSession={
+  id: bigint,
+  department: string,
+  room: string,
+  bed: string,
+  treatingDoctor: string,
+  start_date: Date,
+  end_date: Date,
+  reasonForTreatment: string,
+  treatmentStatus: string,
+  notes: string,
+}
+
+export type PatientMedicationUse ={
+  id: bigint;
+  catalogue_name: string;
+  medication_name: string;
+  price: number;
+  insurance_applicable: number,
+  insurance_coverage_percentage: number,
+  dosage: string;
+  measure: string;
+  description: string;
+  create_date: Date;
+  total_price: number;
+  amount_due:number;
+}

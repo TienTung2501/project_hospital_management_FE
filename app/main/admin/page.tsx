@@ -581,6 +581,24 @@ const AdminPage = () => {
                                             )}
                                           />
                                       </div>
+                                      <FormField
+                                          control={form.control}
+                                          name="diagnosis"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Lý do khám</FormLabel>
+                                              <FormControl>
+                                                <Textarea
+                                                  {...field}
+                                                  disabled={isPending}
+                                                  placeholder="Đau nửa đầu, khó thở, tức ngực..."
+                                                  type="teratext"
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
                                     </div>
                                     <div className="grid gap-3">
                                     <FormField
@@ -643,6 +661,24 @@ const AdminPage = () => {
                               </Card>
                               <Card x-chunk="dashboard-07-chunk-3">
                                 <CardHeader>
+                                <FormField
+                                          control={form.control}
+                                          name="diagnosis"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Chuẩn đoán</FormLabel>
+                                              <FormControl>
+                                                <Textarea
+                                                  {...field}
+                                                  disabled={isPending}
+                                                  placeholder="Bình thường"
+                                                  type="teratext"
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
                                   <CardTitle>Chỉ định dịch vụ</CardTitle>
                                   <CardDescription>
                                     Chỉ định các dịch vụ cho bệnh nhân
@@ -959,28 +995,10 @@ const AdminPage = () => {
                                             <FormItem>
                                               <FormLabel>Ghi chú</FormLabel>
                                               <FormControl>
-                                                <Input
-                                                  {...field}
-                                                  disabled={isPending}
-                                                  placeholder="Tình trạng tổng quan đáng báo động"
-                                                  type="text"
-                                                />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="diagnosis"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Chuẩn đoán</FormLabel>
-                                              <FormControl>
                                                 <Textarea
                                                   {...field}
                                                   disabled={isPending}
-                                                  placeholder="Bình thường"
+                                                  placeholder="Tình trạng tổng quan đáng báo động"
                                                   type="teratext"
                                                 />
                                               </FormControl>
@@ -988,6 +1006,7 @@ const AdminPage = () => {
                                             </FormItem>
                                           )}
                                         />
+     
                                   </div>
                                 </CardContent>
                               </Card>
@@ -996,6 +1015,7 @@ const AdminPage = () => {
                           </div>
                           <Card x-chunk="dashboard-07-chunk-3" className='mt-8'>
                                 <CardHeader className='pb-1'>
+                                  
                                   <CardTitle>Danh sách các dịch vụ chỉ định</CardTitle>
                                   <CardDescription>
                                     Chỉ định các dịch vụ cho bệnh nhân

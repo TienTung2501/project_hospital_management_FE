@@ -12,6 +12,7 @@ import { FormError } from '@/components/form-error';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PatientCurrently, ServiceInfo } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
 // call thông tin liên quan đến bệnh nhân
 // call thông tin liên quan đến service
 // call thông tin liên quan đến bác sĩ
@@ -51,6 +52,7 @@ const servicesData: Service[] = [
       hemoglobin: "g/dL",
       leukocytes: "cells/µL",
       platelets: "cells/µL",
+      conclusion: "" // Thêm trường kết luận
     },
   },
   {
@@ -64,6 +66,7 @@ const servicesData: Service[] = [
       glucose: "mg/dL",
       protein: "mg/dL",
       pH: "pH",
+      conclusion: "" // Thêm trường kết luận
     },
   },
   {
@@ -77,6 +80,7 @@ const servicesData: Service[] = [
       color: "N/A",
       consistency: "N/A",
       blood: "N/A",
+      conclusion: "" // Thêm trường kết luận
     },
   },
 ];
@@ -184,24 +188,31 @@ const ServiceForm = () => {
           <CardContent className="space-y-2">
             <Form {...form}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                {details && Object.keys(details).map((key) => (
-                  <FormField
-                    key={key}
-                    control={form.control}
-                    name={key}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {key.charAt(0).toUpperCase() + key.slice(1)} (Đơn vị: {details[key]})
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} type="text" placeholder={`Nhập ${key}`} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))}
+              {details && Object.keys(details).map((key) => (
+              <FormField
+                key={key}
+                control={form.control}
+                name={key}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {key !== 'conclusion'
+                        ? `${key.charAt(0).toUpperCase() + key.slice(1)} (Đơn vị: ${details[key]})`
+                        : 'Kết luận'}
+                    </FormLabel>
+                    <FormControl>
+                      {key !== 'conclusion' ? (
+                        <Input {...field} type="text" placeholder={`Nhập ${key}`} />
+                      ) : (
+                        <Textarea {...field} placeholder="Nhập kết luận" rows={4} />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+
                 {submitError && <FormError message={submitError} />}
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? "Đang lưu..." : "Lưu"}

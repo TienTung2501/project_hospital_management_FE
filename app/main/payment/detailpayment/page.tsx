@@ -123,7 +123,7 @@ const patientServiceData: PatientServiceInfo[] = [
       
     },
     {
-        id: BigInt(5),
+      id: BigInt(5),
       serviceName: "Phẫu thuật ruột thừa",
       department: "Ngoại khoa",
       room: "501",
@@ -192,7 +192,19 @@ const PaymentPage = () => {
     const handlePaymentConfirmation= async () => {
     };
     const column = patientServiceData.length > 0 ? createColumns(patientServiceData,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: false, delete: false} ) : [];
-   
+    const patientCurrentlyData: PatientCurrently = 
+{
+    id:BigInt(1),
+    patient_id: BigInt(1),
+    user_id: BigInt(1),
+    gender: 1,
+    visit_date: "2024-10-26T10:30:00",
+    diagnosis: "Viêm phổi cấp",
+    notes: "Bệnh nhân có triệu chứng ho nhiều, khó thở.",
+    inpatient_detail: "Điều trị nội trú tại phòng A1, giường 3.",
+    examination_status: 2, // 2: Đang khám
+};
+
   return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
         <div className="flex w-full items-center">
@@ -202,6 +214,39 @@ const PaymentPage = () => {
         <div
           className="flex flex-col flex-1 rounded-lg px-5 border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"
         >
+            <Card className="mb-5 mt-5">
+                  <CardHeader className="pb-0">
+                    <CardTitle>Thông tin bệnh nhân</CardTitle>
+                    <CardDescription>Chi tiết thông tin của bệnh nhân</CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-2">
+                    <div>
+                      <strong>Mã bệnh nhân:</strong> {patientCurrentlyData.patient_id}
+                    </div>
+                    <div>
+                      <strong>Tên bệnh nhân:</strong> Nguyễn Văn B {/* Ví dụ để hiển thị tên bệnh nhân */}
+                    </div>
+                    <div>
+                      <strong>Giới tính:</strong> {patientCurrentlyData.gender === 1 ? "Nam" : "Nữ"}
+                    </div>
+                    <div>
+                      <strong>Ngày khám:</strong> {new Date(patientCurrentlyData.visit_date).toLocaleString()}
+                    </div>
+                    <div>
+                      <strong>Chẩn đoán:</strong> {patientCurrentlyData.diagnosis}
+                    </div>
+                    <div>
+                      <strong>Ghi chú:</strong> {patientCurrentlyData.notes}
+                    </div>
+                    <div>
+                      <strong>Chi tiết nội trú:</strong> {patientCurrentlyData.inpatient_detail ? patientCurrentlyData.inpatient_detail : "Không"} <strong>(hoặc không)</strong>
+                    </div>
+                    <div>
+                      <strong>Trạng thái khám:</strong> {patientCurrentlyData.examination_status === 2 ? "Đang khám" : "Khác"}
+                    </div>
+                  </CardContent>
+                </Card>
           <Card className='mb-5 mt-5'>
               <CardHeader className='pb-0'>
                 <CardTitle>Chi tiết thông tin thanh toán cho bệnh nhân</CardTitle>

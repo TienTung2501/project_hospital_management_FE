@@ -40,7 +40,7 @@ import { useForm } from 'react-hook-form';
 import { CreateUserSchema, PatientSchema } from '@/schema';
 import * as z from "zod"
 import { zodResolver } from '@hookform/resolvers/zod';
-import { createUser } from '@/actions/cartegory/user/createuser';
+import { createUser } from '@/actions/cartegory/user/create';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Textarea } from '@/components/ui/textarea';

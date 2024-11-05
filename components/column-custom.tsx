@@ -20,7 +20,7 @@ enum ColumnType {
 
 // Interface for data type
 interface DataType {
-  id: string | BigInt;
+  id: string | bigint;
   [key: string]: any;
 }
 
@@ -44,13 +44,18 @@ const renderCellContent = (
 ) => {
   switch (columnType) {
     case ColumnType.Text:
-      return <div className="capitalize">{value}</div>;
+      if (Array.isArray(value)) {
+        return <div>{value.join(", ")}</div>; // Định dạng mảng với dấu phẩy
+      }
+      return <div>{value}</div>;
+
     case ColumnType.Currency:
       return (
         <div className="text-right font-medium w-fit">
           {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value)}
         </div>
       );
+
     case ColumnType.Switch:
       return (
         <Switch
@@ -58,24 +63,30 @@ const renderCellContent = (
           onCheckedChange={(newValue) => onStatusChange?.(newValue ? 1 : 0)}
         />
       );
+
     case ColumnType.Button:
       return (
         <Button onClick={() => alert(`Button clicked: ${value}`)} variant="ghost">
           {value}
         </Button>
       );
+
     case ColumnType.Date:
       return (
         <div>
           {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value))}
         </div>
       );
+
     case ColumnType.Gender:
       return <div>{value === 1 ? "Nam" : "Nữ"}</div>;
+
     case ColumnType.Status:
       return <div>{value === 1 ? "Đã khám" : value === 0 ? "Chưa khám" : "Đang khám"}</div>;
+
     case ColumnType.PaymentStatus:
       return <div>{value === 1 ? "Đủ" : "Còn thiếu"}</div>;
+
     case ColumnType.InsuranceApplicable:
       return <div>{value === 1 ? "Có" : "Không"}</div>;
 
@@ -84,19 +95,21 @@ const renderCellContent = (
   }
 };
 
+
+
 // Function to create columns
 const createColumns = <T extends DataType>(
   data: T[],
-  onView?: (id: string | BigInt) => void,
-  onEdit?: (id: string | BigInt) => void,
-  onDelete?: (id: string | BigInt) => void,
+  onView?: (id: string | bigint) => void,
+  onEdit?: (id: string | bigint) => void,
+  onDelete?: (id: string | bigint) => void,
   columnHeaderMap: { [key: string]: string } = {},
   actionButtonsConfig: ActionButtonsConfig = {},
-  switchConfig: { key: string; onStatusChange: (id: string | BigInt, newValue: number) => void }[] = [],
+  switchConfig: { key: string; onStatusChange: (id: string | bigint, newValue: number) => void }[] = [],
   buttonColumnConfig?: {
     id: string;
     header: string;
-    onClickConfig: (id: string | BigInt) => void;
+    onClickConfig: (id: string | bigint) => void;
     content:string;
   },
 ): ColumnDef<T>[] => {
@@ -133,6 +146,9 @@ const createColumns = <T extends DataType>(
   keys.forEach((key) => {
     let columnType: ColumnType = ColumnType.Text;
 
+  if (key === "room_codes") {
+    columnType = ColumnType.Text; // Đảm bảo sử dụng kiểu Text để xử lý trong renderCellContent
+  }
     const switchColumn = switchConfig.find((config) => config.key === key);
     if (switchColumn) {
       columnType = ColumnType.Switch;

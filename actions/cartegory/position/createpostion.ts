@@ -26,7 +26,7 @@ export  const create_position = async (values: z.infer<typeof CreateDepartmentSc
 
     const existingpositions = response.data.data;
     if (existingpositions.data.length > 0) {
-      return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." }; // Trả về lỗi nếu tên khoa đã tồn tại
+      return { error: "Tên vị trí đã tồn tại, vui lòng chọn tên khác." }; // Trả về lỗi nếu tên khoa đã tồn tại
     }
 
     // 3. Tạo khoa mới
@@ -36,9 +36,9 @@ export  const create_position = async (values: z.infer<typeof CreateDepartmentSc
     });
 
     if (responseCreate.status === 200) {
-      return { success: "Tạo khoa mới thành công!" }; // Thành công
+      return { success: "Tạo vị trí mới thành công!" }; // Thành công
     } else {
-      return { error: "Có lỗi khi tạo khoa, vui lòng thử lại." }; // Lỗi khi tạo
+      return { error: "Có lỗi khi tạo vị trí mới, vui lòng thử lại." }; // Lỗi khi tạo
     }
 
   } catch (error: any) {
@@ -49,7 +49,7 @@ export  const create_position = async (values: z.infer<typeof CreateDepartmentSc
 
     if (error.response) {
       if (error.response.status === 409) {
-        return { error: "Tên khoa đã tồn tại, vui lòng thử tên khác." }; // Lỗi tên khoa đã tồn tại
+        return { error: "Tên vị trí đã tồn tại, vui lòng thử tên khác." }; // Lỗi tên khoa đã tồn tại
       } else if (error.response.status === 500) {
         return { error: "Lỗi từ phía server, vui lòng thử lại sau." }; // Lỗi server
       }

@@ -5,7 +5,7 @@ import axios from "axios";
 import { CreateDepartmentSchema } from "@/schema";
 import { error } from "console";
 
-// Hàm cập nhật thông tin khoa
+// Hàm cập nhật thông tin vị trí
 export const update_position = async (
   id: bigint, 
   values: z.infer<typeof CreateDepartmentSchema>
@@ -19,7 +19,7 @@ export const update_position = async (
   const { name, description } = validateFields.data;
 
   try {
-    // 2. Kiểm tra xem khoa có tồn tại dựa vào tên
+    // 2. Kiểm tra xem vị trí có tồn tại dựa vào tên
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/positions`;
     const response = await axios.get(endpoint, {
       params: {
@@ -31,7 +31,7 @@ export const update_position = async (
 
     const existingpositions = response.data.data;
     if (existingpositions.length > 0) {
-      return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." };
+      return { error: "Tên vị trí đã tồn tại, vui lòng chọn tên khác." };
     }
 
     // 3. Kiểm tra nếu không có thay đổi trong dữ liệu
@@ -45,14 +45,14 @@ export const update_position = async (
       return { error: "Dữ liệu không thay đổi, không cần cập nhật." }; // Không cần cập nhật nếu không có thay đổi
     }
 
-    // 4. Gửi yêu cầu cập nhật khoa
+    // 4. Gửi yêu cầu cập nhật vị trí
     const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/positions/${id}`;
     const responseUpdate = await axios.patch(updateEndpoint, values, {
       timeout: 5000,
     });
 
     if (responseUpdate.status === 200) {
-      return { success: "Cập nhật thông tin khoa thành công!" };
+      return { success: "Cập nhật thông tin vị trí thành công!" };
     } else {
       return { error: "Không thể cập nhật thông tin, vui lòng thử lại." };
     }
@@ -65,7 +65,7 @@ export const update_position = async (
 
     if (error.response) {
       if (error.response.status === 404) {
-        return { error: "Khoa không tồn tại." }; // Lỗi khoa không tìm thấy
+        return { error: "vị trí không tồn tại." }; // Lỗi vị trí không tìm thấy
       } else if (error.response.status === 500) {
         return { error: "Lỗi server, vui lòng thử lại sau." }; // Lỗi từ phía server
       }

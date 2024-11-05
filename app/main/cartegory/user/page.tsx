@@ -1,6 +1,6 @@
 "use client"; 
 import { Button } from '@/components/ui/button'
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
 
  
 
@@ -23,7 +23,7 @@ import {
 import {useForm} from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { CreateDepartmentSchema} from '@/schema';
+import { CreateDepartmentSchema, CreateUserSchema} from '@/schema';
 
 import {
   Form,
@@ -47,6 +47,8 @@ import createColumns from '@/components/column-custom'
 import { create_department } from '@/actions/cartegory/department/createdepartment';
 import { UserInfoType } from '@/types';
 import { useRouter } from 'next/navigation'
+import axios from 'axios';
+import { delete_user } from '@/actions/cartegory/user/index';
 
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
@@ -63,107 +65,11 @@ const columnHeaderMap: { [key: string]: string } = {
   examination_status:"Tình trạng khám",
   gender:"Giới tính",
   status:"Tình trạng",
-  position_id:"Chức danh",
-  department_id:"Khoa",
+  position_name:"Chức danh",
+  department_name:"Khoa",
+  room_codes:"Các phòng" 
   // Add more mappings as needed
 };
-const userData: UserInfoType[] = [
-  {
-    id: BigInt(1),
-    name: "Nguyen Van A",
-    email: "nguyenvana@example.com",
-    password: "password123",
-    ward_id: "W001",
-    district_id: "D001",
-    province_id: "P001",
-    address: "123 Đường Lê Lợi",
-    phone: "0901234567",
-    cccd: "0123456789",
-    certificate: "Chứng chỉ bác sĩ",
-    gender: 1,
-    status: true,
-    created_at: new Date("2023-01-01T08:00:00Z"),
-    updated_at: new Date("2023-10-01T08:00:00Z"),
-    position_id: BigInt(1),
-    department_id: BigInt(1),
-  },
-  {
-    id: BigInt(2),
-    name: "Tran Thi B",
-    email: "tranthib@example.com",
-    password: "password456",
-    ward_id: "W002",
-    district_id: "D002",
-    province_id: "P002",
-    address: "456 Đường Phạm Văn Đồng",
-    phone: "0902345678",
-    cccd: "0987654321",
-    certificate: "Chứng chỉ kế toán",
-    gender: 2,
-    status: true,
-    created_at: new Date("2023-02-15T08:00:00Z"),
-    updated_at: new Date("2023-09-15T08:00:00Z"),
-    position_id: BigInt(2),
-    department_id: BigInt(2),
-  },
-  {
-    id: BigInt(3),
-    name: "Le Thi C",
-    email: "lethic@example.com",
-    password: "password789",
-    ward_id: "W003",
-    district_id: "D003",
-    province_id: "P003",
-    address: "789 Đường Nguyễn Trãi",
-    phone: "0903456789",
-    cccd: "1234567890",
-    certificate: "Chứng chỉ giáo viên",
-    gender: 2,
-    status: true,
-    created_at: new Date("2023-03-20T08:00:00Z"),
-    updated_at: new Date("2023-07-20T08:00:00Z"),
-    position_id: BigInt(3),
-    department_id: BigInt(3),
-  },
-  {
-    id: BigInt(4),
-    name: "Phan Quoc D",
-    email: "phanquocd@example.com",
-    password: "password101",
-    ward_id: "W004",
-    district_id: "D004",
-    province_id: "P004",
-    address: "101 Đường Láng Hạ",
-    phone: "0904567890",
-    cccd: "2345678901",
-    certificate: "Chứng chỉ kỹ sư",
-    gender: 1,
-    status: true,
-    created_at: new Date("2023-04-25T08:00:00Z"),
-    updated_at: new Date("2023-08-25T08:00:00Z"),
-    position_id: BigInt(4),
-    department_id: BigInt(4),
-  },
-  {
-    id: BigInt(5),
-    name: "Hoang Minh E",
-    email: "hoangminhe@example.com",
-    password: "password111",
-    ward_id: "W005",
-    district_id: "D005",
-    province_id: "P005",
-    address: "505 Đường Hoàng Quốc Việt",
-    phone: "0905678901",
-    cccd: "3456789012",
-    certificate: "Chứng chỉ luật sư",
-    gender: 1,
-    status: true,
-    created_at: new Date("2023-05-30T08:00:00Z"),
-    updated_at: new Date("2023-09-30T08:00:00Z"),
-    position_id: BigInt(5),
-    department_id: BigInt(5),
-  },
-];
 
  
 
@@ -174,64 +80,92 @@ const UserInfor = () => {
   const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
-  const [isOpen, setIsOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
-  const [items, setItems] = useState(userData);
 
-  const [editData, setEditData] = useState<UserInfoType | null>(null);
+  //data
+  const [users,setUsers]=useState<UserInfoType[]>([]);
+
+  const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
+  const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
+  //const [items, setItems] = useState(data);
+
+  const [editData, setEditData] = useState<UserInfoType|null>(null);
   const [error,setError]=useState<string|undefined>("");
   const { toast } = useToast()
+  const [loading, setLoading] = useState(true);
   const [isPending,startTransition]=useTransition();
   const handleSelectRecords = (value: number | null) => {
     console.log("Selected value:", value)
   }
   
-  const form=useForm<z.infer<typeof CreateDepartmentSchema>>({
-    resolver:zodResolver(CreateDepartmentSchema),
-    defaultValues:{
-      name:"",
-      description:"",
-    },
-  });
+  const form=useForm<z.infer<typeof CreateUserSchema>>({
+    resolver:zodResolver(CreateUserSchema),
+        });
   
   const handleClick = () => {
     // Use router in a safe way, like in an event handler or inside useEffect
     router.push('/main/cartegory/user/create');
   };
   const { reset, handleSubmit } = form;
-  const handleEdit = (id: string|BigInt) => {
-    // const itemToEdit = userData.find((item) => item.id === id);
-    // if (itemToEdit) {
-    //   // Set edit data
-    //   setEditData(itemToEdit);
-    //   // Reset form with the selected item's data
-    //   reset({
-    //     name: itemToEdit.name,
-    //     description: itemToEdit.description || "",
-    //   });
-    //   // Open dialog
-    //   setIsOpen(true);
-    // }
+  const handleEdit = (id: string | bigint) => {
+    router.push(`/main/cartegory/user/edit/${id}`); // Điều hướng đến trang edit với ID
   };
+  
   const onSubmitEdit = (formData: { email: string; description: string }) => {
     // Xử lý logic cập nhật tại đây
-    console.log("Updated data:", { ...editData, ...formData });
-    setIsOpen(false); // Đóng dialog sau khi cập nhật
+    // console.log("Updated data:", { ...editData, ...formData });
+    // setIsOpen(false); // Đóng dialog sau khi cập nhật
 };
   
-  const handleDelete = (id: string|BigInt) => {
-    // const position:UserInfoType|undefined=data.find((position) => position.id === id);
-    // const name=position?.name;
-    // if(name){
+  const handleDelete = (id: string|bigint) => {
+    const user:UserInfoType|undefined=users.find((user) => user.id === id);
+    const nameChoosen=user?.name;
+    if(nameChoosen){
 
-    //   setDeleteItem({ id, name}); // Save the item to be deleted
-    // }
+      setDeleteItem(user); // Save the item to be deleted
+    }
     // Logic to delete the item
   };
    // Function to confirm and delete item
-   const confirmDelete = () => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
-    setDeleteItem(null); // Close the dialog after deletion
+   const confirmDelete = async () => {
+    if (!deleteItem) return;
+  
+    try {
+      const response = await delete_user(deleteItem.id); // Gọi API để xóa phần tử từ backend
+  
+      if (response.success) {
+        // Xóa thành công, cập nhật danh sách departments
+        setUsers((prevUsers) => prevUsers.filter((user) => user.id !== deleteItem.id));
+  
+        // Thông báo thành công
+        toast({
+          variant: "success",
+          title: "Xóa thành công",
+          description: `Người dùng ${deleteItem.name} đã được xóa thành công.`,
+          action: <ToastAction altText="Ok">Ok</ToastAction>,
+        });
+        fetchUsers();
+      } else {
+        // Thông báo lỗi nếu có
+        toast({
+          variant: "destructive",
+          title: "Lỗi khi xóa",
+          description: response.error || "Đã xảy ra lỗi khi xóa người dùng.",
+          action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi xóa:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi khi xóa",
+        description: "Đã xảy ra lỗi khi xóa người dùng.",
+        action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+      });
+    } finally {
+      // Đóng dialog sau khi xóa hoặc có lỗi
+      setDeleteItem(null);
+    }
   };
   const handleView = (id: string | BigInt) => {
     // const department: DepartmentType | undefined = departments.find((department) => department.id === id);
@@ -273,10 +207,60 @@ const UserInfor = () => {
     //   });
     // } 
   };
+  const fetchUsers = async () => {
+    setLoading(true); // Bắt đầu trạng thái loading
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
+    try {
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: limit, // Số bản ghi trên mỗi trang
+          page: pageIndex, // Trang hiện tại
+          status: status !== 2 ? status : undefined, // Thêm trạng thái vào tham số API
+          keyword: keyword.trim() !== "" ? keyword : undefined // Thêm từ khóa tìm kiếm vào tham số API
+        },
+      });
+      const { data } = response.data.data;
+  
+      if (Array.isArray(data)) {
+        const userLists: UserInfoType[] = data.map((item: any) => ({
+          id: BigInt(item.id),
+          name: item.name,
+          email: item.email,
+          address: item.address,
+          phone: item.phone,
+          cccd: item.cccd,
+          certificate: item.certificate,
+          gender: item.gender,
+          status: item.status , // Chuyển đổi thành boolean
+          position_id: BigInt(item.position.id),
+          position_name: item.position.name,
+          department_id: BigInt(item.department.id),
+          department_name: item.department.name,
+          room_ids: item.rooms ? item.rooms.map((room: any) => room.id) : [], // Chuyển đổi danh sách phòng
+          room_codes: item.rooms ? item.rooms.map((room: any) => room.code) : [], // Lấy danh sách mã phòng
+        }));
+  
+        console.log(userLists)
+        setUsers(userLists); // Cập nhật danh sách người dùng
+        setTotalRecords(response.data.data.total); // Giả sử API trả về tổng số bản ghi
+      } else {
+        throw new Error('Invalid response format'); // Xử lý trường hợp định dạng không hợp lệ
+      }
+    } catch (err) {
+      setError('Error fetching users'); // Xử lý lỗi
+      console.error('Error fetching users:', err);
+    } finally {
+      setLoading(false); // Kết thúc trạng thái loading
+    }
+  };
+  
+  useEffect(() => {
+    fetchUsers();
+  }, [limit, pageIndex, status]); // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
   const switchConfig = [
     { key: "status", onStatusChange: handleSwitchChange },
   ];
-  const columns = userData.length > 0 ? createColumns(userData,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: true, delete: true},switchConfig ) : [];
+  const columns = users.length > 0 ? createColumns(users,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: true, delete: true},switchConfig ) : [];
   // // Gọi createColumns
  
   
@@ -358,7 +342,7 @@ const UserInfor = () => {
       </div>
       <div>
       <DataTable 
-      data={userData} 
+      data={users} 
       columns={columns} 
       totalRecords={totalRecords}
       pageIndex={pageIndex}

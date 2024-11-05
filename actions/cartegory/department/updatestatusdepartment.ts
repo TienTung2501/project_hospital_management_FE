@@ -5,7 +5,7 @@ import axios from "axios";
 // Hàm cập nhật trạng thái phòng ban
 export const update_status_department = async (id: BigInt | string, newStatus: number) => {
   try {
-    // 1. Lấy thông tin phòng ban hiện tại để kiểm tra
+    // 1. Lấy thông tin phòng ban hiện tại để lấy dữ liệu cần thiết
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments/${id}`;
     const response = await axios.get(endpoint, { timeout: 5000 });
 
@@ -21,7 +21,12 @@ export const update_status_department = async (id: BigInt | string, newStatus: n
 
     // 2. Cập nhật trạng thái phòng ban
     const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments/${id}`;
-    const updateResponse = await axios.patch(updateEndpoint, { status: newStatus }, { timeout: 5000 });
+    const payload = {
+      name: departmentData.name,  // Gửi trường name hiện tại để đáp ứng validation
+      status: newStatus           // Cập nhật trường status mới
+    };
+    
+    const updateResponse = await axios.patch(updateEndpoint, payload, { timeout: 5000 });
  
     if (updateResponse.status === 200) {
       return { success: "Cập nhật trạng thái thành công!" };
@@ -38,6 +43,14 @@ export const update_status_department = async (id: BigInt | string, newStatus: n
     if (error.response) {
       if (error.response.status === 404) {
         return { error: "Phòng ban không tồn tại." }; // Lỗi không tìm thấy
+      } else if (error.response.status === 422) {
+        // Xử lý lỗi 422 Unprocessable Content - Validation lỗi
+        const validationErrors = error.response.data?.errors;
+        const errorMessages = validationErrors
+          ? Object.values(validationErrors).flat().join("; ")
+          : "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại dữ liệu.";
+        
+        return { error: errorMessages }; // Trả về lỗi chi tiết từ backend
       } else if (error.response.status === 500) {
         return { error: "Lỗi server, vui lòng thử lại sau." }; // Lỗi server
       }

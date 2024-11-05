@@ -66,7 +66,11 @@ const cartegoryOptions = [
   { value: 333, label: "Sản phẩm bếp" },
 ]
  
-
+const columnHeaderMap: { [key: string]: string } = {
+  name: "Tên vị trí",
+  description: "Mô tả",
+  status:"Trạng thái hoạt động"
+};
 const Prosition = () => {
   const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
   const [keyword, setKeyword] = useState('');
@@ -210,7 +214,7 @@ const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
       toast({
         variant: "success",
         title: "Cập nhật thành công",
-        description: "Trạng thái khoa đã được cập nhật.",
+        description: "Trạng thái vị trí đã được cập nhật.",
       });
 
       // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
@@ -225,7 +229,7 @@ const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
     toast({
       variant: "destructive",
       title: "Lỗi",
-      description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
+      description: "Đã có lỗi xảy ra khi cập nhật trạng thái vị trí.",
     });
   } 
 };
@@ -318,9 +322,11 @@ const handleDelete = (id: string | BigInt) => {
   useEffect( () => {
     fetchPositions()
   }, [limit, pageIndex,status]) // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
+  const switchConfig = [
+    { key: "status", onStatusChange: handleSwitchChange },
+  ];
 
-
-  const columns = positions.length > 0 ? createColumns(positions, handleEdit, handleDelete, handleSwitchChange) : [];
+  const columns = positions.length > 0 ? createColumns(positions,undefined, handleEdit, handleDelete,columnHeaderMap,{view:false,edit: true, delete: true}, switchConfig) : [];
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -336,12 +342,6 @@ const handleDelete = (id: string | BigInt) => {
 
         <div className='flex mt-5 justify-between'>
 {/* Phần bên trái */}
-<Combobox<number>
-          options={numberOptions}
-          onSelect={handleSelecLimit}
-          placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-          defaultValue={limit} // Default to 20 records
-          />
 <Combobox<number>
           options={numberOptions}
           onSelect={handleSelecLimit}

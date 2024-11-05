@@ -40,6 +40,7 @@ export function Combobox<T>({
 }: ComboboxProps<T>) {
   const [open, setOpen] = React.useState(false);
   const [selectedValue, setSelectedValue] = React.useState<T | null>(defaultValue);
+  const [searchText, setSearchText] = React.useState("");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -58,32 +59,42 @@ export function Combobox<T>({
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <Command>
-          <CommandInput placeholder={placeholder} className="h-9" />
+          <CommandInput
+            placeholder={placeholder}
+            className="h-9"
+            value={searchText}
+            onValueChange={(value) => setSearchText(value)}
+          />
           <CommandList>
             <CommandEmpty>No options found.</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={String(option.value)}
-                  value={String(option.value)}
-                  onSelect={(currentValue) => {
-                    const selectedOption = options.find(
-                      (option) => String(option.value) === currentValue
-                    );
-                    setSelectedValue(selectedOption ? selectedOption.value : null);
-                    onSelect(selectedOption ? selectedOption.value : null);
-                    setOpen(false);
-                  }}
-                >
-                  {option.label}
-                  <CheckIcon
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      selectedValue === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
+              {options
+                .filter((option) =>
+                  option.label.toLowerCase().includes(searchText.toLowerCase())
+                )
+                .map((option) => (
+                  <CommandItem
+                    key={String(option.value)}
+                    value={option.label}
+                    onSelect={(label) => {
+                      const selectedOption = options.find(
+                        (option) => option.label === label
+                      );
+                      setSelectedValue(selectedOption ? selectedOption.value : null);
+                      onSelect(selectedOption ? selectedOption.value : null);
+                      setOpen(false);
+                      setSearchText(""); // Clear search text after selection
+                    }}
+                  >
+                    {option.label}
+                    <CheckIcon
+                      className={cn(
+                        "ml-auto h-4 w-4",
+                        selectedValue === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                ))}
             </CommandGroup>
           </CommandList>
         </Command>

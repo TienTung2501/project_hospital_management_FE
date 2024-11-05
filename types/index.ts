@@ -10,23 +10,21 @@ export interface LinkBaseRoleType {
   }
 
   export type UserInfoType = {
-    id: BigInt;
+    id: bigint;
     name: string;
     email: string;
-    password: string;
-    ward_id?: string;
-    district_id?: string;
-    province_id?: string;
     address?: string;
     phone?: string;
     cccd: string;
     certificate?: string;
-    gender: 1 | 2 | 3; // 1 - male, 2 - female, 3 - other
-    status: boolean; // 0 - inactive, 1 - active
-    created_at: Date;
-    updated_at: Date;
-    position_id: BigInt;
-    department_id: BigInt;
+    gender: number; // 1 - male, 2 - female, 3 - other
+    status: number; // 0 - inactive, 1 - active
+    position_id: bigint;
+    position_name: string;
+    department_id: bigint;
+    department_name: string;
+    room_ids:number[];
+    room_codes: string[]; // Thay đổi từ room_ids sang room_codes
   };
   
   
@@ -121,9 +119,7 @@ export interface LinkBaseRoleType {
   keyword: string; // ví dụ phòng nội trú thì keyword là 'NOITRU'
   name: string;
   description?: string;
-  status: 1 | 0; // 1 - đang hoạt động, 0 - bị dừng hoạt động
-  created_at: Date;
-  updated_at: Date;
+  status: number; // 1 - đang hoạt động, 0 - bị dừng hoạt động
 };
 
 // Phòng (402, 501,..)

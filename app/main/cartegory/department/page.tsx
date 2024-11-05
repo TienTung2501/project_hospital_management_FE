@@ -134,13 +134,6 @@ const Department = () => {
       resetFormUpdate();
     }
   };
-  const handleView = (id: string | BigInt) => {
-    // const department: DepartmentType | undefined = departments.find((department) => department.id === id);
-    // const name = department?.name;
-    // if (name) {
-    //   setDeleteItem(department); // Lưu phần tử cần xóa
-    // }
-  };
 const onSubmitUpdate = (values:z.infer<typeof CreateDepartmentSchema>) => {
   if (!editData) return; // Ensure there is data to edit
   setError("");
@@ -330,7 +323,7 @@ const handleDelete = (id: string | BigInt) => {
     { key: "status", onStatusChange: handleSwitchChange },
   ];
  
-  const columns = departments.length > 0 ? createColumns(departments,handleView, handleEdit, handleDelete,columnHeaderMap,{view:false,edit: true, delete: true},switchConfig ) : [];
+  const columns = departments.length > 0 ? createColumns(departments,undefined, handleEdit, handleDelete,columnHeaderMap,{view:false,edit: true, delete: true},switchConfig ) : [];
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">

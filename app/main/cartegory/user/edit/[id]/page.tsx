@@ -1,239 +1,169 @@
 "use client";
-import Image from "next/image";
-import Link from "next/link";
-import {
-  ChevronLeft,
-  Home,
-  LineChart,
-  Package,
-  Package2,
-  PanelLeft,
-  PlusCircle,
-  Search,
-  Settings,
-  ShoppingCart,
-  Upload,
-  Users2,
-} from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
+import React, { useEffect, useState, useTransition } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from '@hookform/resolvers/zod';
-
-import { CreateUserSchema } from '@/schema';
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-
-import { useToast } from '@/hooks/use-toast';
-import { FormError } from '@/components/form-error';
-import { ToastAction } from '@radix-ui/react-toast';
-
-import { Combobox } from '@/components/combobox';
-
-import { DataTable } from '@/components/data-table';
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useTransition } from "react";
-import * as z from "zod";
-import { create_user } from "@/actions/cartegory/user/index";
-import axios from "axios"; // Import axios for API requests
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
+import { CreateUserSchema } from "@/schema"; // Đảm bảo rằng schema phù hợp
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 import { DepartmentType, PositionType } from "@/types";
-import { Value } from "@radix-ui/react-select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Combobox } from "@/components/combobox";
+import * as z from "zod";
+const EditUser = () => {
+    const [positions, setPositions] = useState<PositionType[]>([]);
+    const [departments, setDepartments] = useState<DepartmentType[]>([]);
+    const [defaultPosition, setDefaultPosition] = useState<bigint>();
+    const [defaultDepartment, setDefaultDepartment] = useState<bigint>();
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | undefined>("");
+    const { toast } = useToast();
+    const router = useRouter();
+    const { id } = useParams(); // Lấy ID từ tham số URL
+  
+    const form = useForm<z.infer<typeof CreateUserSchema>>({
+        resolver: zodResolver(CreateUserSchema),
+        defaultValues: {
+          name: "",
+          email: "",
+          password: "",
+          gender:undefined,
+          cccd: "",
+          phone: "",
+          address: "",
+          certificate: "",
+          department_id: undefined,
+          position_id: undefined,
+        },
+      });
+  const { setValue } = form;
 
+ // Fetch user data, departments and positions
+ useEffect(() => {
 
-const CreateUser = () => {
-  const [positions, setPositions] = useState<PositionType[]>([]);
-  const [departments, setDepartments] = useState<DepartmentType[]>([]);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>("");
-  const { toast } = useToast();
-  const router = useRouter();
-  const form = useForm<z.infer<typeof CreateUserSchema>>({
-    resolver: zodResolver(CreateUserSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      cccd: "",
-      phone: "",
-      address: "",
-      certificate: "",
-      department_id: undefined,
-      position_id: undefined,
-    },
-  });
-
-  useEffect(() => {
-    const fetchPositions = async () => {
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/positions`;
+  const fetchPositions = async () => {
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/positions`;
         
-        try {
-            const response = await axios.get(endpoint);
-            const totalRecords=response.data.data.total;
-            const responseAll = await axios.get(endpoint, {
-              params: {
-                limit: totalRecords, // Số bản ghi trên mỗi trang
-              },
-            })
-            const {data}=responseAll.data.data;
-            if (Array.isArray(data)) {
-              const positionlist: PositionType[] = data
-              .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
-              .map((item: any) =>({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                status: item.status,
-              })) // Chỉ lấy các thuộc tính cần thiết
-              setPositions(positionlist) // Cập nhật
-              }
-        } catch (err) {
-            console.error("Error fetching positions:", err);
-            toast({ variant: "destructive", title: "Error", description: "Could not load positions." });
-        }
-    };
-
-    const fetchDepartments = async () => {
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
-        
-      try {
-          const response = await axios.get(endpoint);
-          const totalRecords=response.data.data.total;
-          const responseAll = await axios.get(endpoint, {
+    try {
+        const response = await axios.get(endpoint);
+        const totalRecords = response.data.data.total;
+        const responseAll = await axios.get(endpoint, {
             params: {
-              limit: totalRecords, // Số bản ghi trên mỗi trang
+                limit: totalRecords, // Số bản ghi trên mỗi trang
             },
-          })
-          const {data}=responseAll.data.data;
-          if (Array.isArray(data)) {
-            const departmentlist: DepartmentType[] = data
-              .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
-              .map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                description: item.description,
-                status: item.status ,
-              }));
-            
-            setDepartments(departmentlist); // Cập nhật danh sách đã lọc
-          }
-          
-        } catch (err) {
-            console.error("Error fetching departments:", err);
-            toast({ variant: "destructive", title: "Error", description: "Could not load departments." });
+        });
+        const { data } = responseAll.data.data;
+        if (Array.isArray(data)) {
+            const positionlist: PositionType[] = data
+                .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
+                .map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    status: item.status,
+                })); // Chỉ lấy các thuộc tính cần thiết
+            setPositions(positionlist); // Cập nhật danh sách chức danh
         }
-    };
-
-    fetchPositions();
-    fetchDepartments();
-}, []);
-
-const handleSelectPosition = (value: bigint | null) => {
-  if(value!==null)
-    form.setValue('position_id', BigInt(value)); // Update the form value directly
-  console.log(value)
-};
-const handleSelectDepartmemt = (value: bigint | null) => {
-  if(value!==null)
-    form.setValue('department_id', BigInt(value)); // Update the form value directly
-  console.log(value)
+    } catch (err) {
+        console.error("Error fetching positions:", err);
+        toast({ variant: "destructive", title: "Error", description: "Could not load positions." });
+    }
 };
 
-  const onSubmit = (values: z.infer<typeof CreateUserSchema>) => {
-    setError("");
-  startTransition(()=>{
-    create_user(values)
-    .then((data) => {
-      if (data.error) {
-        setError(data.error);
-        toast({
-          variant:"destructive",
-          title: "Lỗi khi thêm",
-          description: data.error,
-          action: <ToastAction altText="Try again">Ok</ToastAction>,
+const fetchDepartments = async () => {
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
+        
+    try {
+        const response = await axios.get(endpoint);
+        const totalRecords = response.data.data.total;
+        const responseAll = await axios.get(endpoint, {
+            params: {
+                limit: totalRecords, // Số bản ghi trên mỗi trang
+            },
         });
-       
-      } else if (data.success) {
-        setError('');
-        // Hiển thị toast cho thành công
-        toast({
-          variant:"success",
-          title: "Thêm thành công",
-          description: data.success,
-          action: <ToastAction altText="Try again">Ok</ToastAction>,
-        });
-        // Điều hướng sau khi thành công
-        router.push('/main/cartegory/user')
+        const { data } = responseAll.data.data;
+        if (Array.isArray(data)) {
+            const departmentlist: DepartmentType[] = data
+                .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
+                .map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    description: item.description,
+                    status: item.status,
+                }));    
+            setDepartments(departmentlist); // Cập nhật danh sách phòng ban
+        }
+    } catch (err) {
+        console.error("Error fetching departments:", err);
+        toast({ variant: "destructive", title: "Error", description: "Could not load departments." });
+    }
+};
+
+  const fetchUserData = async () => {
+      const userId = id; // Thay thế với ID thực tế
+      const userEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`; // Đường dẫn API để lấy thông tin người dùng
+      
+      try {
+        
+          // Fetch user data
+          const userResponse = await axios.get(userEndpoint);
+          const userData = userResponse.data.data; // Giả sử API trả về dữ liệu người dùng
+          if (userData) {
+              setValue("name", userData.name);
+              setValue("email", userData.email);
+              setValue("cccd", userData.cccd);
+              setValue("phone", userData.phone);
+              setValue("address", userData.address);
+              setValue("certificate", userData.certificate);
+              setValue("gender",userData.gender);
+              setValue("department_id", userData.department_id); // Khởi tạo giá trị department_id
+              setValue("position_id", userData.position_id); // Khởi tạo giá trị position_id
+              console.log( userData.department_id, userData.position_id);
+          }
+      } catch (error) {
+          console.error("Failed to fetch user data", error);
+          toast({ variant: "destructive", title: "Error", description: "Could not fetch user data." });
       }
-    })
-  });
   };
 
+
+
+  // Gọi các hàm fetch dữ liệu
+  fetchPositions();
+  fetchDepartments();
+  fetchUserData();
+}, [id, setValue, toast]);
+  const onSubmit = async (values: z.infer<typeof CreateUserSchema>) => {
+    try {
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`; // Đường dẫn API để cập nhật thông tin người dùng
+      const response = await axios.put(endpoint, values);
+      if (response.data.success) {
+        toast({ variant: "success", title: "Success", description: "User updated successfully!" });
+        router.push("/main/cartegory/user"); // Quay về trang danh sách người dùng
+      }
+    } catch (error) {
+      console.error("Error updating user", error);
+      toast({ variant: "destructive", title: "Error", description: "Could not update user." });
+    }
+  };
   const handleReset = () => {
     form.reset();
     form.clearErrors();
   };
-
+  const handleSelectPosition = (value: bigint | null) => {
+    if(value!==null)
+      form.setValue('position_id', BigInt(value)); // Update the form value directly
+    console.log(value)
+  };
+  const handleSelectDepartmemt = (value: bigint | null) => {
+    if(value!==null)
+      form.setValue('department_id', BigInt(value)); // Update the form value directly
+    console.log(value)
+  };
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -372,8 +302,8 @@ const handleSelectDepartmemt = (value: bigint | null) => {
                           <FormControl>
                             <Input
                               {...field}
-                              disabled={isPending}
-                              placeholder="abc123"
+                              disabled={true}
+                              placeholder="example:abc123"
                               type="password"
                             />
                           </FormControl>
@@ -566,4 +496,4 @@ const handleSelectDepartmemt = (value: bigint | null) => {
   );
 };
 
-export default CreateUser;
+export default EditUser;

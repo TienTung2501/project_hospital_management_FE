@@ -99,9 +99,10 @@ export const CreateUserSchema = z.object({
     cccd: z.string().min(1, {
         message: "Yêu cầu điền",
     }),
-    gender: z.enum(['male', 'female'], {
-        errorMap: () => ({ message: "Yêu cầu chọn giới tính" }),
-    }),
+    gender: z.union([z.literal(0), z.literal(1)]).refine(
+      (value) => value === 0 || value === 1,
+      { message: "Yêu cầu chọn giới tính" }
+  ),  
     email: z.string().min(1, {
         message: "Yêu cầu điền",
     }).email("Email không hợp lệ"),
@@ -115,22 +116,10 @@ export const CreateUserSchema = z.object({
     address: z.string().min(1, {
         message: "Yêu cầu điền địa chỉ",
     }), // Thêm validate cho Địa chỉ
-    province: z.string().min(1, {
-        message: "Yêu cầu điền tỉnh/thành phố",
-    }), // Thêm validate cho Tỉnh/Thành phố
-    district: z.string().min(1, {
-        message: "Yêu cầu điền quận/huyện",
-    }), // Thêm validate cho Quận/Huyện
-    ward: z.string().min(1, {
-        message: "Yêu cầu điền phường/xã",
-    }), // Thêm validate cho Phường/Xã
-    department: z.number().min(1, {
+    department_id: z.bigint().min(BigInt(1), {
         message: "Yêu cầu chọn khoa",
     }), // Thêm validate cho Khoa
-    room: z.number().min(1, {
-        message: "Yêu cầu chọn phòng",
-    }), // Thêm validate cho Phòng
-    position: z.number().min(1, {
+    position_id: z.bigint().min(BigInt(1), {
         message: "Yêu cầu chọn chức danh",
     }), // Thêm validate cho Chức danh
 });
@@ -138,7 +127,6 @@ export const RoomCatalogueSchema = z.object({
     keyword: z.string().min(1), // keyword không được bỏ trống
     name: z.string().min(1), // tên không được bỏ trống
     description: z.string().optional(), // description là tùy chọn
-    status: z.union([z.literal(1), z.literal(0)]), // status chỉ nhận 1 hoặc 0
   });
 
   export const RoomSchema = z.object({

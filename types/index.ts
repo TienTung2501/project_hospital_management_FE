@@ -71,13 +71,14 @@ export interface LinkBaseRoleType {
   export type RoomType = {
     id: bigint; // ID tự tăng, khóa chính
     code: string; // Mã phòng (unique)
+    description:string;
     status: number; // Trạng thái hoạt động (1-đang hoạt động, 0-bị dừng)
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
     room_catalogue_id: bigint; // Tham chiếu đến bảng room_catalogues
     department_id: bigint; // Tham chiếu đến bảng departments
-    current_bed: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
-    total_bed: number; // Số giường có trong phòng
+    beds_count: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
+    status_bed:number;
+    department_name:string;
+    room_catalogue_code: string; // liên
   };
 
   export type UserRoomType = {
@@ -122,18 +123,7 @@ export interface LinkBaseRoleType {
   status: number; // 1 - đang hoạt động, 0 - bị dừng hoạt động
 };
 
-// Phòng (402, 501,..)
-export type Room = {
-  id: bigint;
-  code: string; // mã phòng như 402, 501
-  status_active: 1 | 0; // 1 - đang hoạt động, 0 - không hoạt động
-  created_at: Date;
-  updated_at: Date;
-  room_catalogue_id: bigint; // liên kết tới RoomCatalogue
-  department_id: bigint; // liên kết tới bảng Department
-  status_bed: 0 | 1; // 0 - chưa đầy, 1 - đầy
-  total_bed: number; // số giường có trong phòng
-};
+
 
     // Giường bệnh
 export type Bed = {

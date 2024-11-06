@@ -14,6 +14,7 @@ enum ColumnType {
   Date = "date",
   Gender = "gender",
   Status = "examination_status",
+  StatusBed = "status_bed",
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
 }
@@ -89,6 +90,8 @@ const renderCellContent = (
 
     case ColumnType.InsuranceApplicable:
       return <div>{value === 1 ? "Có" : "Không"}</div>;
+    case ColumnType.StatusBed:
+      return <div>{value === 1 ? "Đã đầy" : "Chưa đầy"}</div>;
 
     default:
       return <div>{value}</div>;
@@ -166,6 +169,9 @@ const createColumns = <T extends DataType>(
       columnType = ColumnType.PaymentStatus;
     } else if (key === "insuranceApplicable") {
       columnType = ColumnType.InsuranceApplicable;
+    }
+    else if (key === "status_bed") {
+      columnType = ColumnType.StatusBed;
     }
 
     columns.push({

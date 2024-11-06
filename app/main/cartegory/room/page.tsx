@@ -1,6 +1,6 @@
 "use client";
 import { Button } from '@/components/ui/button';
-import React, { useState } from 'react';
+import React, { startTransition, useEffect, useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   DialogTrigger
@@ -16,53 +16,11 @@ import { RoomType } from '@/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/combobox';
+import { ToastAction } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
+import { create_room, delete_room, update_room, update_status_room } from '@/actions/cartegory/room';
+import axios from 'axios';
 
-const roomDataList: RoomType[] = [
-  {
-    id: BigInt(1),
-    code: 'R001',
-    department_id: BigInt(1),
-    room_catalogue_id: BigInt(1),
-    created_at: new Date('2023-01-10'),
-    updated_at: new Date('2023-01-15'),
-    status: 1, // 1 - đang hoạt động
-    current_bed: 0, // 0 - chưa đầy
-    total_bed: 10,
-  },
-  {
-    id: BigInt(2),
-    code: 'R002',
-    department_id: BigInt(2),
-    room_catalogue_id: BigInt(1),
-    created_at: new Date('2023-02-05'),
-    updated_at: new Date('2023-02-10'),
-    status: 1,
-    current_bed: 1, // 1 - đầy
-    total_bed: 5,
-  },
-  {
-    id: BigInt(3),
-    code: 'R003',
-    department_id: BigInt(1),
-    room_catalogue_id: BigInt(2),
-    created_at: new Date('2023-03-20'),
-    updated_at: new Date('2023-03-25'),
-    status: 1,
-    current_bed: 0,
-    total_bed: 8,
-  },
-  {
-    id: BigInt(4),
-    code: 'R004',
-    department_id: BigInt(3),
-    room_catalogue_id: BigInt(2),
-    created_at: new Date('2023-04-15'),
-    updated_at: new Date('2023-04-20'),
-    status: 0, // 0 - không hoạt động
-    current_bed: 0,
-    total_bed: 12,
-  },
-];
 
 const departments = [
   { value: 1, label: "Khoa ngoại" },
@@ -79,58 +37,273 @@ const numberOptions = [
   { value: 20, label: "20 bản ghi" },
   { value: 40, label: "40 bản ghi" },
 ]
-
+const columnHeaderMap: { [key: string]: string } = {
+  code: "Từ khóa",
+  description:"Mô tả",
+  department_name: "Tên khoa",
+  status_bed:"Tình trạng giường",
+  room_catalogue_code: "Nhóm phòng",
+  beds_count: "Giường hoạt động",
+  status:"Trạng thái hoạt động"
+};
 const RoomPage = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string | BigInt; code: string } | null>(null);
-  const [items, setItems] = useState(roomDataList);
+  const [deleteItem, setDeleteItem] = useState<RoomType| null>(null);
+  const [items, setItems] = useState<RoomType[]>([]);
   const [editData, setEditData] = useState<RoomType | null>(null);
-  
+  const [error, setError] = useState<string | undefined>("");
+  const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
+  const [keyword, setKeyword] = useState('');
+  const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
+  const [totalRecords, setTotalRecords] = useState(1);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [loading, setLoading] = useState(true);
 
-  const form = useForm<z.infer<typeof RoomSchema>>({
-    resolver: zodResolver(RoomSchema),
-    defaultValues: {
-      code: "",
-      status: 1,
-      room_catalogue_id: BigInt(0), // Thay đổi giá trị phù hợp
-      department_id: BigInt(0), // Thay đổi giá trị phù hợp
-      current_bed: 0,
-      total_bed: 0,
-    },
+  const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
+  const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
+
+  const { toast } = useToast();
+
+  const formCreate=useForm<z.infer<typeof RoomSchema>>({
+    resolver:zodResolver(RoomSchema),
+
   });
+  const formUpdate=useForm<z.infer<typeof RoomSchema>>({
+    resolver:zodResolver(RoomSchema),
+  });
+  const { reset: resetFormCreate } = formCreate; 
+  const { reset: resetFormUpdate } = formUpdate;
 
-  const { reset, handleSubmit } = form;
+  const handleSelecLimit = (value: number | null) => {
+    console.log("Selected value:", value)
+    if (value) {
+      setLimit(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+    }
+  }
   const handleSelectRecords = (value: number | null) => {
     console.log("Selected value:", value)
+    if (value) {
+      setTotalRecords(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+    }
   }
-  const handleEdit = (id: string | BigInt) => {
-    const itemToEdit = roomDataList.find((item) => item.id === id);
+  const handleSelectStatus = (value: number | null) => {
+      setStatus(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+  }
+  const onSubmitCreate=(values:z.infer<typeof RoomSchema>)=>{
+    console.log('Submitting form with values:', values);
+    setError("");
+    startTransition(()=>{
+      create_room(values)
+      .then((data) => {
+        if (data.error) {
+          setError(data.error);
+          toast({
+            variant:"destructive",
+            title: "Lỗi khi thêm",
+            description: data.error,
+            action: <ToastAction altText="Try again">Ok</ToastAction>,
+          });
+         
+        } else if (data.success) {
+          setError('');
+          // Hiển thị toast cho thành công
+          toast({
+            variant:"success",
+            title: "Thêm thành công",
+            description: data.success,
+            action: <ToastAction altText="Try again">Ok</ToastAction>,
+          });
+          // Điều hướng sau khi thành công
+          resetFormCreate();
+          setIsOpenDialogCreate(false);
+          fetchRoomCatalogues();
+        }
+      })
+    });
+  }
+  const handleEdit = (id: string | bigint) => {
+    setError("");
+    const itemToEdit = items.find((item) => item.id === id);
     if (itemToEdit) {
       setEditData(itemToEdit);
 
-      setIsOpen(true);
+      resetFormUpdate({
+        code:itemToEdit.code,
+        room_catalogue_id: itemToEdit.room_catalogue_id,
+        department_id: itemToEdit.department_id,
+      });
+      setIsOpenDialogUpdate(true);
+      resetFormUpdate();
     }
   };
 
   const onSubmitEdit = (formData: z.infer<typeof RoomSchema>) => {
-    console.log("Updated data:", { ...editData, ...formData });
-    setIsOpen(false);
+    if (!editData) return; // Ensure there is data to edit
+    setError("");
+    startTransition(()=>{
+      update_room(editData?.id,formData)
+      .then((data) => {
+        if (data.error) {
+          setError(data.error);
+          toast({
+            variant:"destructive",
+            title: "Lỗi khi cập nhật",
+            description: data.error,
+            action: <ToastAction altText="Try again">Ok</ToastAction>,
+          });
+         
+        } else if (data.success) {
+          setError('');
+          // Hiển thị toast cho thành công
+          toast({
+            variant:"success",
+            title: "Cập nhật thành công",
+            description: data.success,
+            action: <ToastAction altText="Try again">Ok</ToastAction>,
+          });
+          // Điều hướng sau khi thành công
+          resetFormUpdate();
+          setIsOpenDialogUpdate(false);
+          fetchRoomCatalogues();
+        }
+      })
+    });
   };
+  
 
-  const handleDelete = (id: string | BigInt) => {
+  const handleDelete = (id: string | bigint) => {
     const room = items.find((room) => room.id === id);
     const code = room?.code;
     if (code) {
-      setDeleteItem({ id, code });
+      setDeleteItem(room);
     }
   };
+  const handleSwitchChange = async (id: string | bigint, newStatus: number) => {
 
-  const confirmDelete = () => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem?.id));
-    setDeleteItem(null);
+    try {
+      const result = await update_status_room(id, newStatus);
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Cập nhật thất bại",
+          description: result.error,
+        });
+      } else {
+        toast({
+          variant: "success",
+          title: "Cập nhật thành công",
+          description: "Trạng thái khoa đã được cập nhật.",
+        });
+  
+        // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
+        setItems(prevItems =>
+          prevItems.map(item =>
+            item.id === id ? { ...item, status: newStatus } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
+      });
+    } 
   };
+  
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+  
+    try {
+      const response = await delete_room(deleteItem.id); // Gọi API để xóa phần tử từ backend
+  
+      if (response.success) {
+        // Xóa thành công, cập nhật danh sách departments
+        setItems((prevItems) => prevItems.filter((item) => item.id !== deleteItem.id));
+  
+        // Thông báo thành công
+        toast({
+          variant: "success",
+          title: "Xóa thành công",
+          description: `Khoa ${deleteItem.code} đã được xóa thành công.`,
+          action: <ToastAction altText="Ok">Ok</ToastAction>,
+        });
+        fetchRoomCatalogues();
+      } else {
+        // Thông báo lỗi nếu có
+        toast({
+          variant: "destructive",
+          title: "Lỗi khi xóa",
+          description: response.error || "Đã xảy ra lỗi khi xóa chức danh.",
+          action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting position:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi khi xóa",
+        description: "Đã xảy ra lỗi khi xóa chức danh.",
+        action: <ToastAction altText="Try again">Thử lại</ToastAction>,
+      });
+    } finally {
+      // Đóng dialog sau khi xóa hoặc có lỗi
+      setDeleteItem(null);
+    }
+  };
+  const fetchRoomCatalogues = async () => {
+    setLoading(true) // Bắt đầu trạng thái loading
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
+    try {
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: limit, // Số bản ghi trên mỗi trang
+          page: pageIndex, // Trang hiện tại
+          status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+          keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+        },
+      })
+      const { data } = response.data.data
+      console.log(data)
+      if (Array.isArray(data)) {
+        const fetchedRooms: RoomType[] = data.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          department_name:item.department.name,
+          room_catalogue_code:item.room_catalogue.name,
+          description: item.room_catalogue.description,
+          beds_count: item.beds_count,
+          status_bed:item.status_bed,
+          status: item.status,
+          department_id: item.department_id,
+          room_catalogue_id: item.room_catalogue_id,
+          
+        }));
+    
+        setItems(fetchedRooms) // Cập nhật danh sách phòng ban
+        setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+      } else {
+        throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+      }
+    } catch (err) {
+      setError('Error fetching RoomCatalogues') // Xử lý lỗi
+      console.error('Error fetching RoomCatalogues:', err)
+    } finally {
+      setLoading(false) // Kết thúc trạng thái loading
+    }
+  }
+  useEffect( () => {
+    fetchRoomCatalogues()
+  }, [limit, pageIndex,status]) // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
+  const switchConfig = [
+    { key: "status", onStatusChange: handleSwitchChange },
+  ];
+  const columns = items.length > 0 ? createColumns(items,undefined, handleEdit, handleDelete,columnHeaderMap,{view:false,edit: true, delete: true},switchConfig ) : [];
 
-  const columns = createColumns(items, handleEdit, handleDelete);
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4">
@@ -173,10 +346,10 @@ const RoomPage = () => {
                   Để chỉnh sửa phòng, click vào Lưu khi bạn hoàn thành.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
+              <Form {...formUpdate}>
+              <form onSubmit={formUpdate.handleSubmit(onSubmitEdit)} className="space-y-4">
                 {/* Thêm các trường form ở đây */}
-                <FormField control={form.control} name="code" render={({ field }) => (
+                <FormField control={formUpdate.control} name="code" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Mã phòng</FormLabel>
                     <FormControl>
@@ -185,7 +358,7 @@ const RoomPage = () => {
                   </FormItem>
                 )} />
                  <FormField 
-                      control={form.control}
+                      control={formUpdate.control}
                       name="room_catalogue_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -202,7 +375,7 @@ const RoomPage = () => {
                       )}
                     />
                  <FormField 
-                      control={form.control}
+                      control={formUpdate.control}
                       name="department_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -218,22 +391,8 @@ const RoomPage = () => {
                         </FormItem>
                       )}
                     />
-                <FormField control={form.control} name="current_bed" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số giường đang hoạt động</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" placeholder="Số giường đang hoạt động" />
-                    </FormControl>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="total_bed" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tổng số giường</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" placeholder="Số giường trong phòng" />
-                    </FormControl>
-                  </FormItem>
-                )} />
+
+
                 {/* Thêm các trường khác nếu cần */}
                 <DialogFooter>
                   <Button type="submit">Lưu</Button>
@@ -250,10 +409,10 @@ const RoomPage = () => {
                   Để chỉnh sửa phòng, click vào Lưu khi bạn hoàn thành.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmitEdit)} className="space-y-4">
+              <Form {...formCreate}>
+              <form onSubmit={formCreate.handleSubmit(onSubmitEdit)} className="space-y-4">
                 {/* Thêm các trường form ở đây */}
-                <FormField control={form.control} name="code" render={({ field }) => (
+                <FormField control={formCreate.control} name="code" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Mã phòng</FormLabel>
                     <FormControl>
@@ -262,7 +421,7 @@ const RoomPage = () => {
                   </FormItem>
                 )} />
                  <FormField 
-                      control={form.control}
+                      control={formCreate.control}
                       name="room_catalogue_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -279,7 +438,7 @@ const RoomPage = () => {
                       )}
                     />
                  <FormField 
-                      control={form.control}
+                      control={formCreate.control}
                       name="department_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
@@ -295,22 +454,6 @@ const RoomPage = () => {
                         </FormItem>
                       )}
                     />
-                <FormField control={form.control} name="current_bed" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số giường đang hoạt động</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" placeholder="Số giường đang hoạt động" />
-                    </FormControl>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="total_bed" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tổng số giường</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" placeholder="Số giường trong phòng" />
-                    </FormControl>
-                  </FormItem>
-                )} />
                 {/* Thêm các trường khác nếu cần */}
                 <DialogFooter>
                   <Button type="submit">Lưu</Button>
@@ -324,9 +467,27 @@ const RoomPage = () => {
       </div>
 
       {/* Hiển thị bảng danh sách */}
-      <div>
-        <DataTable data={items} columns={columns} />
-      </div>
+      <div className='flex item-center justify-center'>
+
+              {loading ? (
+              <p className='flex item-center justify-center'>Loading...</p>
+              ) : (
+
+              <DataTable
+              data={items}
+              columns={columns}
+              totalRecords={totalRecords}
+              pageIndex={pageIndex}
+              pageSize={limit}
+              onPageChange={(newPageIndex) => {
+              console.log("pageindex:", newPageIndex)
+              setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+              }}
+              />
+              )}
+
+
+              </div>
 
       {/* Hộp thoại xóa */}
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>

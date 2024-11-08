@@ -65,8 +65,6 @@ export interface LinkBaseRoleType {
     name: string; // Tên danh mục phòng
     description?: string; // Mô tả (optional)
     status: number; // 1-đang hoạt động, 0-bị dừng hoạt động
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
   };
   export type RoomType = {
     id: bigint; // ID tự tăng, khóa chính

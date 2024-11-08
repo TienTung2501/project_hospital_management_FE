@@ -131,11 +131,12 @@ export const RoomCatalogueSchema = z.object({
 
   export const RoomSchema = z.object({
     code: z.string().min(1, { message: "Mã phòng là bắt buộc." }), // Mã phòng (unique)
-    room_catalogue_id: z.bigint(), // Tham chiếu đến bảng room_catalogues
-    department_id: z.bigint(), // Tham chiếu đến bảng departments
-    status: z.union([z.literal(1), z.literal(0)]), // st // Trạng thái hoạt động (1-đang hoạt động, 0-bị dừng)
-    current_bed: z.union([z.literal(1), z.literal(0)]), 
-    total_bed: z.number().nonnegative({ message: "Số giường không thể âm." }), // Số giường có trong phòng
+    room_catalogue_id: z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn nhóm phòng",
+  }), // Tham chiếu đến bảng room_catalogues
+    department_id: z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn khoa",
+  }), // Thêm validate cho Khoa
   });
 
   export const BedSchema = z.object({

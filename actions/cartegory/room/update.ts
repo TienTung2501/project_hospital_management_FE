@@ -9,10 +9,15 @@ export const update_room = async (id: bigint, values: z.infer<typeof RoomSchema>
   if (!validateFields.success) {
     return { error: "Dữ liệu nhập không hợp lệ." }; // Kiểm tra validation đầu vào
   }
+  const valuesConvert={
+    ...values,
+    department_id: Number(values.department_id),
+    room_catalogue_id: Number(values.room_catalogue_id),
+  }
 
   try {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${id}`;
-    const response = await axios.patch(endpoint, values, { timeout: 5000 });
+    const response = await axios.patch(endpoint, valuesConvert, { timeout: 5000 });
 
     if (response.status === 200) {
       return { success: "Cập nhật thông tin phòng thành công!" };

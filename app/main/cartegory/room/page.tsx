@@ -1,6 +1,6 @@
 "use client";
 import { Button } from '@/components/ui/button';
-import React, { startTransition, useEffect, useState } from 'react';
+import React, { startTransition, useEffect, useState, useTransition } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   DialogTrigger
@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
 import { DataTable } from '@/components/data-table';
 import createColumns from '@/components/column-custom';
 import { RoomSchema } from '@/schema'; // Schema cho Room
-import { RoomType } from '@/types';
+import { DepartmentType, PositionType, RoomCatalogueType, RoomType } from '@/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/combobox';
@@ -20,6 +20,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { useToast } from '@/hooks/use-toast';
 import { create_room, delete_room, update_room, update_status_room } from '@/actions/cartegory/room';
 import axios from 'axios';
+import { Value } from '@radix-ui/react-select';
 
 
 const departments = [
@@ -27,10 +28,10 @@ const departments = [
   { value: 2, label: "Khoa nội" },
   { value: 3, label: "Khoa thần kinh" },
 ]
-const rooms = [
-  { value: 1, label: "Phòng khám 101" },
-  { value: 2, label: "Phòng xét nghiệm 101" },
-  { value: 3, label: "Phòng điều trị 101" },
+const statusOptions = [
+  { value: 0, label: "Không hoạt động" },
+  { value: 1, label: "Hoạt động" },
+  { value: 2, label: "Tât cả" },
 ]
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
@@ -58,7 +59,11 @@ const RoomPage = () => {
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [isPending,startTransition]=useTransition();
 
+  const [roomCatalogues, setRoomCatalogues] = useState<RoomCatalogueType[]>([]);
+  const [departments, setDepartments] = useState<DepartmentType[]>([]);
+  
   const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
   const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
 
@@ -66,10 +71,20 @@ const RoomPage = () => {
 
   const formCreate=useForm<z.infer<typeof RoomSchema>>({
     resolver:zodResolver(RoomSchema),
+    defaultValues:{
+      code:"",
+      room_catalogue_id:undefined,
+      department_id:undefined,
+    },
 
   });
   const formUpdate=useForm<z.infer<typeof RoomSchema>>({
     resolver:zodResolver(RoomSchema),
+    defaultValues:{
+      code:"",
+      room_catalogue_id:undefined,
+      department_id:undefined,
+    },
   });
   const { reset: resetFormCreate } = formCreate; 
   const { reset: resetFormUpdate } = formUpdate;
@@ -92,44 +107,58 @@ const RoomPage = () => {
       setStatus(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
   }
-  const onSubmitCreate=(values:z.infer<typeof RoomSchema>)=>{
-    console.log('Submitting form with values:', values);
+  const onSubmitCreate = async (values: z.infer<typeof RoomSchema>) => {
     setError("");
-    startTransition(()=>{
-      create_room(values)
-      .then((data) => {
-        if (data.error) {
-          setError(data.error);
-          toast({
-            variant:"destructive",
-            title: "Lỗi khi thêm",
-            description: data.error,
-            action: <ToastAction altText="Try again">Ok</ToastAction>,
-          });
-         
-        } else if (data.success) {
-          setError('');
-          // Hiển thị toast cho thành công
-          toast({
-            variant:"success",
-            title: "Thêm thành công",
-            description: data.success,
-            action: <ToastAction altText="Try again">Ok</ToastAction>,
-          });
-          // Điều hướng sau khi thành công
-          resetFormCreate();
-          setIsOpenDialogCreate(false);
-          fetchRoomCatalogues();
-        }
-      })
-    });
-  }
+  
+    try {
+      // Bắt đầu quá trình tạo phòng
+      const data = await create_room(values);
+      console.log("Response from create_room:", data); // Kiểm tra phản hồi từ create_room
+  
+      if (data.error) {
+        setError(data.error);
+        toast({
+          variant: "destructive",
+          title: "Lỗi khi thêm",
+          description: data.error,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+      } else if (data.success) {
+        setError("");
+        // Hiển thị toast cho thành công
+        toast({
+          variant: "success",
+          title: "Thêm thành công",
+          description: data.success,
+          action: <ToastAction altText="Try again">Ok</ToastAction>,
+        });
+        // Reset form và đóng dialog
+        resetFormCreate();
+        setIsOpenDialogCreate(false);
+        
+        // Gọi lại danh sách phòng sau khi thêm thành công
+        console.log("Fetching updated room catalogues...");
+        await fetchRooms();
+        console.log("Room catalogues fetched successfully");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      setError("Có lỗi xảy ra. Vui lòng thử lại.");
+      toast({
+        variant: "destructive",
+        title: "Lỗi không xác định",
+        description: "Có lỗi xảy ra khi thêm phòng.",
+        action: <ToastAction altText="Try again">Ok</ToastAction>,
+      });
+    }
+  };
+  
   const handleEdit = (id: string | bigint) => {
     setError("");
     const itemToEdit = items.find((item) => item.id === id);
     if (itemToEdit) {
       setEditData(itemToEdit);
-
+      
       resetFormUpdate({
         code:itemToEdit.code,
         room_catalogue_id: itemToEdit.room_catalogue_id,
@@ -167,7 +196,7 @@ const RoomPage = () => {
           // Điều hướng sau khi thành công
           resetFormUpdate();
           setIsOpenDialogUpdate(false);
-          fetchRoomCatalogues();
+          fetchRooms();
         }
       })
     });
@@ -195,7 +224,7 @@ const RoomPage = () => {
         toast({
           variant: "success",
           title: "Cập nhật thành công",
-          description: "Trạng thái khoa đã được cập nhật.",
+          description: "Trạng thái đã được cập nhật.",
         });
   
         // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
@@ -210,7 +239,7 @@ const RoomPage = () => {
       toast({
         variant: "destructive",
         title: "Lỗi",
-        description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
+        description: "Đã có lỗi xảy ra khi cập nhật trạng thái.",
       });
     } 
   };
@@ -229,7 +258,7 @@ const RoomPage = () => {
         toast({
           variant: "success",
           title: "Xóa thành công",
-          description: `Khoa ${deleteItem.code} đã được xóa thành công.`,
+          description: `Phòng ${deleteItem.code} đã được xóa thành công.`,
           action: <ToastAction altText="Ok">Ok</ToastAction>,
         });
         fetchRoomCatalogues();
@@ -238,7 +267,7 @@ const RoomPage = () => {
         toast({
           variant: "destructive",
           title: "Lỗi khi xóa",
-          description: response.error || "Đã xảy ra lỗi khi xóa chức danh.",
+          description: response.error || "Đã xảy ra lỗi khi xóa Phòng.",
           action: <ToastAction altText="Try again">Thử lại</ToastAction>,
         });
       }
@@ -247,7 +276,7 @@ const RoomPage = () => {
       toast({
         variant: "destructive",
         title: "Lỗi khi xóa",
-        description: "Đã xảy ra lỗi khi xóa chức danh.",
+        description: "Đã xảy ra lỗi khi xóa Phòng.",
         action: <ToastAction altText="Try again">Thử lại</ToastAction>,
       });
     } finally {
@@ -255,7 +284,7 @@ const RoomPage = () => {
       setDeleteItem(null);
     }
   };
-  const fetchRoomCatalogues = async () => {
+  const fetchRooms = async () => {
     setLoading(true) // Bắt đầu trạng thái loading
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
     try {
@@ -296,8 +325,91 @@ const RoomPage = () => {
       setLoading(false) // Kết thúc trạng thái loading
     }
   }
+  const fetchRoomCatalogues = async () => {
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/roomCatalogues`;
+      
+      try {
+          const response = await axios.get(endpoint);
+          const totalRecords=response.data.data.total;
+          const responseAll = await axios.get(endpoint, {
+            params: {
+              limit: totalRecords, // Số bản ghi trên mỗi trang
+            },
+          })
+          const {data}=responseAll.data.data;
+          if (Array.isArray(data)) {
+            const roomCataloguelist: RoomCatalogueType[] = data
+            .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
+            .map((item: any) =>({
+              id: item.id,
+              keyword: item.keyword,
+              name: item.name,
+              description: item.description,
+              status: item.status,
+            })) // Chỉ lấy các thuộc tính cần thiết
+            setRoomCatalogues(roomCataloguelist) // Cập nhật
+            }
+      } catch (err) {
+          console.error("Error fetching roomcatalogue:", err);
+          toast({ variant: "destructive", title: "Error", description: "Could not load positions." });
+      }
+  };
+
+  const fetchDepartments = async () => {
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
+      
+    try {
+        const response = await axios.get(endpoint);
+        const totalRecords=response.data.data.total;
+        const responseAll = await axios.get(endpoint, {
+          params: {
+            limit: totalRecords, // Số bản ghi trên mỗi trang
+          },
+        })
+        const {data}=responseAll.data.data;
+        if (Array.isArray(data)) {
+          const departmentlist: DepartmentType[] = data
+            .filter((item: any) => item.status === 1) // Lọc các phần tử có status bằng 1
+            .map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              status: item.status ,
+            }));
+          
+          setDepartments(departmentlist); // Cập nhật danh sách đã lọc
+        }
+        
+      } catch (err) {
+          console.error("Error fetching departments:", err);
+          toast({ variant: "destructive", title: "Error", description: "Could not load departments." });
+      }
+  };
+  const handleSelectRoomCatalogue = (value: bigint | null) => {
+    if(value!==null)
+      if(isOpenDialogCreate){
+        formCreate.setValue('room_catalogue_id', BigInt(value)); // Update the form value directly
+      }
+      else if(isOpenDialogUpdate){
+        formUpdate.setValue('room_catalogue_id', BigInt(value));
+      }
+    console.log(value)
+  };
+  const handleSelectDepartmemt = (value: bigint | null) => {
+    if(value!==null)
+      if(isOpenDialogCreate){
+        formCreate.setValue('department_id', BigInt(value)); // Update the form value directly
+      }
+      else if(isOpenDialogUpdate){
+        formUpdate.setValue('department_id', BigInt(value));
+      }
+      
+    console.log(value)
+  };
   useEffect( () => {
-    fetchRoomCatalogues()
+    fetchRoomCatalogues();
+    fetchDepartments();
+    fetchRooms();
   }, [limit, pageIndex,status]) // Thêm limit và page vào dependency để tự động gọi lại khi chúng thay đổi
   const switchConfig = [
     { key: "status", onStatusChange: handleSwitchChange },
@@ -324,9 +436,10 @@ const RoomPage = () => {
         {/* Phần bên phải */}
         <div className="flex items-center space-x-5">
           <div className='flex'>
-            <Combobox<number>
-              options={numberOptions}
-              onSelect={handleSelectRecords}
+          <Combobox<number>
+              options={statusOptions}
+              onSelect={handleSelectStatus}
+              defaultValue={null} // No default selection for status
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>
@@ -335,10 +448,8 @@ const RoomPage = () => {
             <Button type="submit">Lọc</Button>
           </div>
       
-            <Dialog>
-                  <DialogTrigger asChild>
-                  <Button className='ml-5'>+ Thêm mới</Button>
-                  </DialogTrigger>
+            <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>
+                 
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Chỉnh sửa phòng</DialogTitle>
@@ -357,40 +468,50 @@ const RoomPage = () => {
                     </FormControl>
                   </FormItem>
                 )} />
+
+                <FormField 
+                      control={formUpdate.control}
+                      name="department_id"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel className="mr-2">Khoa</FormLabel>
+                          <FormControl className="flex-grow">
+                            <Combobox<bigint>
+                              options={departments.map(department => ({
+                                value: department.id,
+                                label: department.name,
+                              }))}
+                                placeholder="Chọn khoa"
+                                onSelect={handleSelectDepartmemt}
+                                defaultValue={field.value}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                  <FormField 
                       control={formUpdate.control}
                       name="room_catalogue_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel className="mr-2">Khoa</FormLabel>
+                          <FormLabel className="mr-2">Nhóm phòng</FormLabel>
                           <FormControl className="flex-grow">
-                            <Combobox<number>
-                              options={departments}
-                              onSelect={handleSelectRecords}
-                              placeholder="Chọn khoa"
+                            <Combobox<bigint>
+                              options={roomCatalogues.map(roomCatalogue => ({
+                                value: roomCatalogue.id,
+                                label: roomCatalogue.name,
+                              }))}
+                                placeholder="Chọn nhóm phòng"
+                                onSelect={handleSelectRoomCatalogue}
+                                defaultValue={field.value}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                 <FormField 
-                      control={formUpdate.control}
-                      name="department_id"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel className="mr-2">Loại phòng</FormLabel>
-                          <FormControl className="flex-grow">
-                            <Combobox<number>
-                              options={rooms}
-                              onSelect={handleSelectRecords}
-                              placeholder="Chọn khoa"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                
 
 
                 {/* Thêm các trường khác nếu cần */}
@@ -401,36 +522,54 @@ const RoomPage = () => {
               </Form>
             </DialogContent>
           </Dialog>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <Dialog open={isOpenDialogCreate} onOpenChange={setIsOpenDialogCreate}>
+          <DialogTrigger asChild>
+              <Button className='ml-5'>+ Thêm mới</Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Chỉnh sửa phòng</DialogTitle>
+                <DialogTitle>Thêm mới phòng</DialogTitle>
                 <DialogDescription>
-                  Để chỉnh sửa phòng, click vào Lưu khi bạn hoàn thành.
+                  Thêm phòng, click vào Lưu khi bạn hoàn thành.
                 </DialogDescription>
               </DialogHeader>
               <Form {...formCreate}>
-              <form onSubmit={formCreate.handleSubmit(onSubmitEdit)} className="space-y-4">
-                {/* Thêm các trường form ở đây */}
-                <FormField control={formCreate.control} name="code" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mã phòng</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Mã phòng" />
-                    </FormControl>
-                  </FormItem>
-                )} />
-                 <FormField 
+              <form onSubmit={formCreate.handleSubmit(onSubmitCreate)} className="space-y-4">
+              <FormField
+                              control={formCreate.control}
+                              name="code"
+                              render={({field})=>(
+                                <FormItem>
+                                  <FormLabel>
+                                    Mã phòng
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input {...field}
+                                      disabled={isPending}
+                                      placeholder='Mã phòng'
+                                      type="text"
+                                    />
+                                  </FormControl>
+                                  <FormMessage/>
+                                </FormItem>
+                              )}
+                            />
+                <FormField 
                       control={formCreate.control}
-                      name="room_catalogue_id"
+                      name="department_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
                           <FormLabel className="mr-2">Khoa</FormLabel>
                           <FormControl className="flex-grow">
-                            <Combobox<number>
-                              options={departments}
-                              onSelect={handleSelectRecords}
-                              placeholder="Chọn khoa"
+                            <Combobox<bigint>
+                              
+                              options={departments.map(department => ({
+                                value: department.id,
+                                label: department.name,
+                              }))}
+                                placeholder="Chọn khoa"
+                                onSelect={handleSelectDepartmemt}
+                                defaultValue={field.value}
                             />
                           </FormControl>
                           <FormMessage />
@@ -439,15 +578,19 @@ const RoomPage = () => {
                     />
                  <FormField 
                       control={formCreate.control}
-                      name="department_id"
+                      name="room_catalogue_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel className="mr-2">Loại phòng</FormLabel>
+                          <FormLabel className="mr-2">Nhóm phòng</FormLabel>
                           <FormControl className="flex-grow">
-                            <Combobox<number>
-                              options={rooms}
-                              onSelect={handleSelectRecords}
-                              placeholder="Chọn khoa"
+                            <Combobox<bigint>
+                              options={roomCatalogues.map(roomCatalogue => ({
+                                value: roomCatalogue.id,
+                                label: roomCatalogue.name,
+                              }))}
+                                placeholder="Chọn nhóm phòng"
+                                onSelect={handleSelectRoomCatalogue}
+                                defaultValue={field.value}
                             />
                           </FormControl>
                           <FormMessage />

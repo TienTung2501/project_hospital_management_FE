@@ -49,11 +49,18 @@ import { UserInfoType } from '@/types';
 import { useRouter } from 'next/navigation'
 import axios from 'axios';
 import { delete_user } from '@/actions/cartegory/user/index';
+import { update_status_user } from '@/actions/cartegory/user/updatestatus';
 
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
   { value: 20, label: "20 bản ghi" },
   { value: 40, label: "40 bản ghi" },
+]
+ 
+const statusOptions = [
+  { value: 0, label: "Không hoạt động" },
+  { value: 1, label: "Hoạt động" },
+  { value: 2, label: "Tât cả" },
 ]
 const columnHeaderMap: { [key: string]: string } = {
   name: "Tên bệnh nhân",
@@ -84,8 +91,7 @@ const UserInfor = () => {
   //data
   const [users,setUsers]=useState<UserInfoType[]>([]);
 
-  const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
-  const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
+
   const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
   //const [items, setItems] = useState(data);
 
@@ -93,29 +99,29 @@ const UserInfor = () => {
   const [error,setError]=useState<string|undefined>("");
   const { toast } = useToast()
   const [loading, setLoading] = useState(true);
+
   const [isPending,startTransition]=useTransition();
-  const handleSelectRecords = (value: number | null) => {
+  const handleSelecLimit = (value: number | null) => {
     console.log("Selected value:", value)
+    if (value) {
+      setLimit(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+    }
   }
-  
-  const form=useForm<z.infer<typeof CreateUserSchema>>({
-    resolver:zodResolver(CreateUserSchema),
-        });
+  const handleSelectStatus = (value: number | null) => {
+      setStatus(value);
+      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+  }
+
   
   const handleClick = () => {
     // Use router in a safe way, like in an event handler or inside useEffect
     router.push('/main/cartegory/user/create');
   };
-  const { reset, handleSubmit } = form;
   const handleEdit = (id: string | bigint) => {
     router.push(`/main/cartegory/user/edit/${id}`); // Điều hướng đến trang edit với ID
   };
   
-  const onSubmitEdit = (formData: { email: string; description: string }) => {
-    // Xử lý logic cập nhật tại đây
-    // console.log("Updated data:", { ...editData, ...formData });
-    // setIsOpen(false); // Đóng dialog sau khi cập nhật
-};
   
   const handleDelete = (id: string|bigint) => {
     const user:UserInfoType|undefined=users.find((user) => user.id === id);
@@ -174,38 +180,38 @@ const UserInfor = () => {
     //   setDeleteItem(department); // Lưu phần tử cần xóa
     // }
   };
-  const handleSwitchChange = async (id: string | BigInt, newStatus: number) => {
+  const handleSwitchChange = async (id: string | bigint, newStatus: number) => {
 
-    // try {
-    //   const result = await update_status_department(id, newStatus);
-    //   if (result.error) {
-    //     toast({
-    //       variant: "destructive",
-    //       title: "Cập nhật thất bại",
-    //       description: result.error,
-    //     });
-    //   } else {
-    //     toast({
-    //       variant: "success",
-    //       title: "Cập nhật thành công",
-    //       description: "Trạng thái khoa đã được cập nhật.",
-    //     });
+    try {
+      const result = await update_status_user(id, newStatus);
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Cập nhật thất bại",
+          description: result.error,
+        });
+      } else {
+        toast({
+          variant: "success",
+          title: "Cập nhật thành công",
+          description: "Trạng thái khoa đã được cập nhật.",
+        });
   
-    //     // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
-    //     setDepartments(prevDepartments =>
-    //       prevDepartments.map(department =>
-    //         department.id === id ? { ...department, status: newStatus } : department
-    //       )
-    //     );
-    //   }
-    // } catch (error) {
-    //   console.error("Error updating status:", error);
-    //   toast({
-    //     variant: "destructive",
-    //     title: "Lỗi",
-    //     description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
-    //   });
-    // } 
+        // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách users
+        setUsers(prevUsers =>
+          prevUsers.map(user =>
+            user.id === id ? { ...user, status: newStatus } : user
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Đã có lỗi xảy ra khi cập nhật trạng thái khoa.",
+      });
+    } 
   };
   const fetchUsers = async () => {
     setLoading(true); // Bắt đầu trạng thái loading
@@ -264,28 +270,7 @@ const UserInfor = () => {
   // // Gọi createColumns
  
   
-  const onSubmit = (values: z.infer<typeof CreateDepartmentSchema>) => {
-    startTransition(() => {
-      create_department(values)
-        .then((data) => {
-          if (data.error) {
-            setError(data.error);
-           
-          } else if (data.success) {
-            setError('');
-            form.reset();
-            // Hiển thị toast cho thành công
-            toast({
-              variant:"success",
-              title: "Thêm thành công",
-              description: data.success,
-              action: <ToastAction altText="Thử lại">Ok</ToastAction>
-            });
-            // Tắt sau khi thành công
-          }
-        })
-    });
-  };
+
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
@@ -303,7 +288,7 @@ const UserInfor = () => {
 {/* Phần bên trái */}
           <Combobox<number>
           options={numberOptions}
-          onSelect={handleSelectRecords}
+          onSelect={handleSelecLimit}
           placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
           />
 
@@ -311,8 +296,8 @@ const UserInfor = () => {
         <div className="flex items-center space-x-5">
           <div className='flex'>
             <Combobox<number>
-              options={numberOptions}
-              onSelect={handleSelectRecords}
+              options={statusOptions}
+              onSelect={handleSelectStatus}
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>

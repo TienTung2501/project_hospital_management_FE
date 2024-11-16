@@ -2,24 +2,24 @@
 
 import axios from "axios";
 
-export const update_status_room = async (id: bigint | string, newStatus: number) => {
+export const update_status_medication_catalogue = async (id: bigint | string, newStatus: number) => {
   try {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${id}`;
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues/${id}`;
     const response = await axios.get(endpoint, { timeout: 5000 });
 
     if (response.status !== 200 || !response.data) {
-      return { error: "Không thể tìm thấy dịch vụ hoặc dữ liệu không hợp lệ." };
+      return { error: "Không thể tìm thấy nhóm dược hoặc dữ liệu không hợp lệ." };
     }
 
-    const roomData = response.data.data;
-    if (roomData.status === newStatus) {
+    const medicationData = response.data.data;
+    if (medicationData.status === newStatus) {
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
-
-    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds/${id}`;
+    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues/${id}`;
     const payload = {
-      code:roomData.code, // Giữ lại thông tin hiện tại
-      status:newStatus,
+      name:medicationData.name, // Giữ lại thông tin hiện tại
+      parent_id:medicationData.parent_id,
+      status: newStatus
     };
     
     const updateResponse = await axios.patch(updateEndpoint, payload, { timeout: 5000 });

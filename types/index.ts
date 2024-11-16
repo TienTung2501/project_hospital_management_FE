@@ -89,18 +89,21 @@ export interface LinkBaseRoleType {
     code: string; // Mã giường (unique)
     status: number; // Trạng thái (0-chưa có người nằm, 1-đã có người nằm)
     room_id: bigint; // Tham chiếu đến bảng rooms
+    room_code:string;
     patient_id?: bigint; // Tham chiếu đến bảng patients (optional)
+    patient_name:string;
+    room_catalogue_id:bigint;
+    department_id:bigint;
+    room_catalogue_name:string;
+    department_name:string;
     price: number; // Giá giường
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
+
   };
 
   export type PermissionType = {
     id: bigint; // ID tự tăng, khóa chính
     name: string; // Tên quyền
     keyword: string; // Từ khóa quyền
-    created_at: Date; // Ngày tạo
-    updated_at: Date; // Ngày cập nhật
   };
 
   export type PositionPermissionType = {
@@ -135,58 +138,54 @@ export type Bed = {
   updated_at: Date;
 };
 
-// Quyền (Permissions)
-export type Permission = {
-  id: bigint;
-  name: string; // tên quyền
-  keyword: string; // keyword để nhận diện quyền
-  created_at: Date;
-  updated_at: Date;
-};
 // Định nghĩa cho nhóm dịch vụ
 export type ServiceCatalogue = {
   id: bigint;                      // ID của nhóm dịch vụ
   name: string;                   // Tên nhóm dịch vụ
   description?: string;           // Mô tả về nhóm dịch vụ (tuỳ chọn)
-  status: 0 | 1;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
-  created_at: Date;                // Thời gian tạo
-  updated_at: Date;                // Thời gian cập nhật
+  status: number;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)             // Thời gian cập nhật
 };
 
 // Định nghĩa cho dịch vụ
-export type Service = {
+export type ServiceType = {
   id: bigint;                      // ID của dịch vụ
   name: string;                   // Tên dịch vụ
   description?: string;           // Mô tả về dịch vụ (tuỳ chọn)
   price: number;                  // Phí dịch vụ
-  serviceCatalogueId: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
-  status: 0 | 1;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
+  status: number;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
   detail?: string;                // Thông tin chi tiết về dịch vụ (tuỳ chọn)
-  healthInsuranceApplied?: 0 | 1; // Có áp dụng giảm phí cho bệnh nhân có bảo hiểm y tế không (tuỳ chọn, mặc định là 0)
-  healthInsuranceValue?: number;  // Giá trị giảm phí bảo hiểm y tế (%), mặc định là 0%
-  roomCatalogueId: bigint;        // ID nhóm phòng mà dịch vụ thuộc về
-  created_at: Date;                // Thời gian tạo
-  updated_at: Date;                // Thời gian cập nhật
+  health_insurance_applied?: number; // Có áp dụng giảm phí cho bệnh nhân có bảo hiểm y tế không (tuỳ chọn, mặc định là 0)
+  health_insurance_value?: number;  // Giá trị giảm phí bảo hiểm y tế (%), mặc định là 0%
+  service_catalogue_id: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
+  //service_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
+  room_catalogue_id: bigint;        // ID nhóm phòng mà dịch vụ thuộc về                // Thời gian cập nhật
+  //room_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
 };
 
-export type MedicationCatalogue = {
-  id: bigint;                         // Khóa chính         // Khóa ngoại tham chiếu đến nhóm dược cha (nếu có)
-  name: string;                       // Tên nhóm dược
-  description?: string;               // Mô tả nhóm dược
-  created_at: Date;                    // Thời gian tạo bản ghi
-  updated_at: Date;                    // Thời gian cập nhật bản ghi              // Trạng thái xóa (true: đã xóa, false: chưa xóa)
-};
+export type MedicationCatalogue ={
+  id: bigint;
+  name: string;
+  description?: string ;
+  status: number;
+  level: number;
+  parent_id: number ;
+  // _lft: number;
+  // _rgt: number;
+  // created_at: string;
+  // updated_at: string;
+  // deleted_at: string | null;
+}
 
-export type Medication = {
+export type MedicationType = {
   id: bigint;                         // Khóa chính
   name: string;                       // Tên dược phẩm
-  medicationCatalogueId: number;      // Khóa ngoại tham chiếu đến nhóm dược
+  medication_catalogue_id: number;      // Khóa ngoại tham chiếu đến nhóm dược
+  status:number;
   price: number;                      // Giá của dược phẩm
   measure: string;                    // Đơn vị đo lường (ví dụ: viên, túi, ...)
-  measureCount: number;               // Số lượng tính theo đơn vị
+  measure_count: number;               // Số lượng tính theo đơn vị
   description?: string;               // Mô tả dược phẩm
-  created_at: Date;                    // Thời gian tạo bản ghi
-  updated_at: Date;                    // Thời gian cập nhật bản ghi             // Trạng thái xóa (true: đã xóa, false: chưa xóa)
+  medication_catalogue_name:string;
 };
 
 export type MedicalRecord = {
@@ -242,14 +241,6 @@ export type DailyHealth = {
   created_at?: Date; // Thời gian nhập thông tin
   updated_at?: Date;
 };
-export type ServiceInfo = {
-  id:bigint;
-  department: string;   // Khoa
-  room: string;         // Phòng
-  service: string;      // Dịch vụ
-  servicePrice: number; // Giá dịch vụ
-};
-
 export type PatientPaymentInfo = {
   id:bigint;
   patientName: string;            // Tên bệnh nhân
@@ -278,7 +269,7 @@ export type PatientServiceInfo = {
   examination_status?:number;          // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
 };
 export type ServiceDetailField = {
-  [key: string]: 'string' | 'number'; // Bạn có thể thêm kiểu khác nếu cần
+  [key: string]: 'string' | 'number'|'float'; // Bạn có thể thêm kiểu khác nếu cần
 };
 
 export type ServiceDetail = {

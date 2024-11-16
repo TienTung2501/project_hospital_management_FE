@@ -2,23 +2,28 @@
 
 import axios from "axios";
 
-export const update_status_room = async (id: bigint | string, newStatus: number) => {
+export const update_status_user = async (id: bigint | string, newStatus: number) => {
   try {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${id}`;
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
     const response = await axios.get(endpoint, { timeout: 5000 });
 
     if (response.status !== 200 || !response.data) {
-      return { error: "Không thể tìm thấy dịch vụ hoặc dữ liệu không hợp lệ." };
+      return { error: "Không thể tìm thấy người dùng hoặc dữ liệu không hợp lệ." };
     }
 
-    const roomData = response.data.data;
-    if (roomData.status === newStatus) {
+    const user = response.data.data;
+    if (user.status === newStatus) {
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
 
-    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds/${id}`;
+    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
     const payload = {
-      code:roomData.code, // Giữ lại thông tin hiện tại
+      name:user.name,
+      cccd:user.cccd,
+      email:user.email,
+      position_id: Number(user.position_id),
+      department_id:Number(user.department_id),
+      address:user.address,
       status:newStatus,
     };
     

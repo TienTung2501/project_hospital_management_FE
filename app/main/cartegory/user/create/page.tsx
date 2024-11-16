@@ -97,15 +97,19 @@ import { useState, useEffect, useTransition } from "react";
 import * as z from "zod";
 import { create_user } from "@/actions/cartegory/user/index";
 import axios from "axios"; // Import axios for API requests
-import { DepartmentType, PositionType } from "@/types";
+import { DepartmentType, PositionType, RoomType } from "@/types";
 import { Value } from "@radix-ui/react-select";
+import React from "react";
 
 
 const CreateUser = () => {
   const [positions, setPositions] = useState<PositionType[]>([]);
   const [departments, setDepartments] = useState<DepartmentType[]>([]);
+  const [rooms, setRooms] = useState<RoomType[]>([]);
+  const [totalRecords, setTotalRecords] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>("");
+  const [error, setError] = useState<string | null>("");
   const { toast } = useToast();
   const router = useRouter();
   const form = useForm<z.infer<typeof CreateUserSchema>>({
@@ -188,21 +192,13 @@ const CreateUser = () => {
     fetchDepartments();
 }, []);
 
-const handleSelectPosition = (value: bigint | null) => {
-  if(value!==null)
-    form.setValue('position_id', BigInt(value)); // Update the form value directly
-  console.log(value)
-};
-const handleSelectDepartmemt = (value: bigint | null) => {
-  if(value!==null)
-    form.setValue('department_id', BigInt(value)); // Update the form value directly
-  console.log(value)
-};
+
 
   const onSubmit = (values: z.infer<typeof CreateUserSchema>) => {
     setError("");
+    const selectedRoomsAsNumbers = selectedRooms.map(roomId => Number(roomId));
   startTransition(()=>{
-    create_user(values)
+    create_user(values,selectedRoomsAsNumbers)
     .then((data) => {
       if (data.error) {
         setError(data.error);
@@ -228,10 +224,84 @@ const handleSelectDepartmemt = (value: bigint | null) => {
     })
   });
   };
-
+  const fetchRooms = async (departmentId: bigint) => {
+    setLoading(true);
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
+  
+    try {
+      // Gọi API để lấy tổng số bản ghi cho departmentId và keyword
+      const initialResponse = await axios.get(endpoint, {
+      });
+  
+      const totalRecords = initialResponse.data.data.total;
+  
+      // Gọi API với limit = totalRecords để lấy tất cả các phòng
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: totalRecords,
+        },
+      });
+  
+      const { data } = response.data.data;
+      if (Array.isArray(data)) {
+        // Lọc các phòng có room_catalogue.name là "NOTRU"
+        const fetchedRooms: RoomType[] = data
+          .filter((item: any) => item.department_id===departmentId) // Chỉ lấy phòng có tên "NOTRU"
+          .map((item: any) => ({
+            id: item.id,
+            code: item.code,
+            department_name: item.department.name,
+            room_catalogue_code: item.room_catalogue.keyword,
+            description: item.room_catalogue.description,
+            beds_count: item.beds_count,
+            status_bed: item.status_bed,
+            status: item.status,
+            department_id: item.department_id,
+            room_catalogue_id: item.room_catalogue_id,
+          }));
+        setRooms(fetchedRooms); // Cập nhật danh sách phòng
+        setTotalRecords(totalRecords);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err) {
+      setError('Error fetching rooms');
+      console.error('Error fetching rooms:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleReset = () => {
     form.reset();
     form.clearErrors();
+  };
+  const handleSelectPosition = (value: bigint | null) => {
+    if(value!==null)
+      form.setValue('position_id', BigInt(value)); // Update the form value directly
+  };
+  const handleSelectDepartmemt = (value: bigint | null) => {
+    if (value !== null) {
+      form.setValue('department_id', BigInt(value)); // Cập nhật giá trị trong form
+      setSelectedRooms([]); // Reset danh sách phòng đã chọn
+      setSelectedValue(null); // Reset giá trị Combobox
+      fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+    }
+  };
+
+// room_ids
+  const [selectedRooms, setSelectedRooms] = React.useState<bigint[]>([]);
+  const [selectedValue, setSelectedValue] = React.useState<bigint | null>(null);
+
+  const handleSelectRoom = (value: bigint | null) => {
+    // Chỉ thêm nếu giá trị chưa có trong danh sách đã chọn
+    if (value !== null && !selectedRooms.includes(value)) {
+      setSelectedRooms((prev) => [...prev, value]);
+      setSelectedValue(null); // Reset giá trị Combobox về mặc định
+    }
+  };
+
+  const handleRemoveCategory = (value: bigint) => {
+    setSelectedRooms((prev) => prev.filter((category) => category !== value));
   };
 
   return (
@@ -447,77 +517,93 @@ const handleSelectDepartmemt = (value: bigint | null) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-              <div className="grid gap-6">
-                <div className="grid gap-1">
-                <FormField 
-                              control={form.control}
-                              name="department_id"
-                              render={({ field }) => (
-                                  <FormItem>
-                                      <FormLabel>Chọn khoa</FormLabel>
-                                      <FormControl>
-                                      <Combobox<bigint>
-                                          options={departments.map(department => ({
-                                          value: department.id,
-                                          label: department.name,
-                                        }))}
-                                          placeholder="Chọn khoa"
-                                          onSelect={handleSelectDepartmemt}
-                                          defaultValue={field.value}
-                                      />
+              <div className="flex flex-col gap-4">
 
-                                      </FormControl>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}
-                          />
-                </div>
-                <div className="grid gap-1">
-                <FormField 
-                              control={form.control}
-                              name="position_id"
-                              render={({ field }) => (
-                                  <FormItem>
-                                      <FormLabel>Chức danh</FormLabel>
-                                      <FormControl>
-                                      <Combobox<bigint>
-                                          options={positions && positions.length > 0 ? 
-                                              positions.map(position => ({
-                                                  value: position.id,
-                                                  label: position.name,
-                                              })) 
-                                              : []
-                                          }
-                                          placeholder="Chọn chức danh"
-                                          onSelect={handleSelectPosition}
-                                          defaultValue={field.value}
-                                      />
-                                      </FormControl>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}
-                          />
-                </div>
-                <div className="grid gap-1">
-                  {/* <FormField 
-                    control={form.control}
-                    name="position"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel className="mr-2">Chức danh</FormLabel>
-                        <FormControl className="flex-grow">
-                          <Combobox<number>
-                            options={departments}
-                            onSelect={handleSelectRecords}
-                            placeholder="Chọn chức danh"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  /> */}
-                </div>
-              </div>
+<FormField
+    control={form.control}
+    name="department_id"
+    render={({ field }) => {
+      return (
+        <FormItem className="flex flex-col">
+          <FormLabel className="mr-2">Khoa</FormLabel>
+          <FormControl className="flex-grow">
+            <Combobox<bigint>
+              options={departments.map((dep) => ({ value: dep.id, label: dep.name }))}
+              placeholder="Chọn khoa"
+              defaultValue={field.value} // Dựa vào giá trị trong form
+              onSelect={handleSelectDepartmemt}
+              {...field}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      );
+    }}
+  />
+
+  <FormField
+    control={form.control}
+    name="position_id"
+    render={({ field }) => {
+      return (
+        <FormItem className="flex flex-col">
+          <FormLabel className="mr-2">Chức danh</FormLabel>
+          <FormControl className="flex-grow">
+            <Combobox<bigint>
+              options={positions.map((pos) => ({ value: pos.id, label: pos.name }))}
+              placeholder="Chọn chức danh"
+              defaultValue={field.value} // Dựa vào giá trị trong form
+              onSelect={handleSelectPosition}
+              {...field}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      );
+    }}
+  />
+
+  
+  <div className="grid gap-1">
+  <p className="font-semibold text-l"> Chọn phòng</p>
+  <Combobox<bigint>
+    options={rooms.map(room => ({
+      value: room.id,
+      label: room.code,
+    }))}
+    onSelect={handleSelectRoom}
+    placeholder="Chọn phòng"
+    defaultValue={selectedValue} // Liên kết với selectedValue
+  />
+
+
+  {selectedRooms.length !== 0 && (
+        <div className="flex flex-wrap mt-4 space-x-1 border border-black-300 rounded-md p-2 pb-0">
+        {selectedRooms.map((roomId) => {
+
+          console.log(selectedRooms)
+          const room = rooms.find((room) => room.id === roomId);
+          console.log(room?.code)
+          return (
+            <div
+              key={roomId}
+              className="flex items-center justify-between p-2 bg-black-100 text-black-800 border border-black-300 rounded-md shadow-sm transition-all duration-300 hover:shadow-md w-fit mb-2" // Thêm width cố định
+            >
+              <span className="text-sm">{room?.code}</span>
+              <button
+                onClick={() => handleRemoveCategory(roomId)}
+                className="text-black-500 hover:text-black-700 font-bold text-xs pl-1"
+              >
+                x
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      
+    )}
+</div>
+</div>
               </CardContent>
             </Card>
 

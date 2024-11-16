@@ -1,41 +1,9 @@
 import { description } from "@/app/custom/page";
 import * as z from "zod";
-// types/serviceTypes.ts
-import { ServiceDetail, SchemaAccumulator, ServiceDetailField } from '@/types/index';
-const fetchServiceDetails = async (): Promise<ServiceDetail[]> => {
-    const response = await fetch('/api/services');
-    if (!response.ok) {
-      throw new Error('Failed to fetch services');
-    }
-    return await response.json();
-  };
 
   
-  // Hàm tạo schema cho dịch vụ
-// Hàm tạo schema cho dịch vụ
-export const createServiceSchema = async () => {
-    const services: ServiceDetail[] = await fetchServiceDetails();
+
   
-    const fields: SchemaAccumulator = services.reduce((acc: SchemaAccumulator, service) => {
-      const serviceDetail: ServiceDetailField = JSON.parse(service.detail);
-      
-      // Thêm các trường vào schema
-      for (const [field, type] of Object.entries(serviceDetail)) {
-        if (type === 'number') {
-          acc[field] = z.number().min(0, "Giá trị không hợp lệ");
-        } else if (type === 'string') {
-          acc[field] = z.string().nonempty("Không được để trống");
-        }
-        // Có thể thêm các loại kiểu dữ liệu khác nếu cần
-      }
-  
-      return acc;
-    }, {});
-  
-    return z.object({
-      details: z.object(fields)
-    });
-  };
 // zod dùng để validate
 export const LoginSchema=z.object({
     email:z.string().email({
@@ -99,16 +67,38 @@ export const CreateUserSchema = z.object({
     cccd: z.string().min(1, {
         message: "Yêu cầu điền",
     }),
-    gender: z.union([z.literal(0), z.literal(1)]).refine(
-      (value) => value === 0 || value === 1,
-      { message: "Yêu cầu chọn giới tính" }
-  ),  
+    gender:  z.number().min(0, "Bạn phải chọn giới tính"),
     email: z.string().min(1, {
         message: "Yêu cầu điền",
     }).email("Email không hợp lệ"),
     password: z.string().min(1, {
         message: "Yêu cầu điền",
     }),
+    certificate: z.string().optional(), // Trường này có thể có hoặc không
+    phone: z.string().min(1, {
+        message: "Yêu cầu điền số điện thoại",
+    }), // Thêm validate cho Số điện thoại
+    address: z.string().min(1, {
+        message: "Yêu cầu điền địa chỉ",
+    }), // Thêm validate cho Địa chỉ
+    department_id: z.bigint().min(BigInt(1), {
+        message: "Yêu cầu chọn khoa",
+    }), // Thêm validate cho Khoa
+    position_id: z.bigint().min(BigInt(1), {
+        message: "Yêu cầu chọn chức danh",
+    }), // Thêm validate cho Chức danh
+});
+export const UpdateUserSchema = z.object({
+    name: z.string().min(1, {
+        message: "Yêu cầu điền",
+    }),
+    cccd: z.string().min(1, {
+        message: "Yêu cầu điền",
+    }),
+    gender:  z.number().min(0, "Bạn phải chọn giới tính"),
+    email: z.string().min(1, {
+        message: "Yêu cầu điền",
+    }).email("Email không hợp lệ"),
     certificate: z.string().optional(), // Trường này có thể có hoặc không
     phone: z.string().min(1, {
         message: "Yêu cầu điền số điện thoại",
@@ -141,12 +131,11 @@ export const RoomCatalogueSchema = z.object({
 
   export const BedSchema = z.object({
     code: z.string().min(1, "Mã giường là bắt buộc"), // Mã giường (unique)
-    room_id: z.bigint(), // Tham chiếu đến bảng rooms
-    patient_id: z.bigint().optional(), // Tham chiếu đến bảng patients (optional)
-    status: z.number().int().min(0).max(1, "Trạng thái không hợp lệ"), // Trạng thái (0-chưa có người nằm, 1-đã có người nằm)
+    room_id: z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn nhóm phòng",
+  }), 
     price: z.number().min(0, "Giá giường không được âm"), // Giá giường
-    created_at: z.date(), // Ngày tạo
-    updated_at: z.date(), // Ngày cập nhật
+   
   });
 
   export const PermissionSchema = z.object({
@@ -161,36 +150,54 @@ export const RoomCatalogueSchema = z.object({
     name: z.string()
       .min(1, { message: "Tên nhóm dịch vụ không được để trống" }), // Tên nhóm dịch vụ là chuỗi và không được để trống
     description: z.string().optional(), // Mô tả là chuỗi và có thể là tùy chọn
-    status: z.number().int().min(0).max(1).default(1), // Changed to a number
   });
 
 
 
-  export const ServiceSchema = z.object({
+export const ServiceSchema = z.object({
     name: z.string().min(1, "Tên dịch vụ là bắt buộc"),
     description: z.string().optional(),
-    price: z.number().min(0, "Giá dịch vụ phải lớn hơn hoặc bằng 0"),
-    serviceCatalogueId: z.bigint(),
-    status: z.union([z.literal(0), z.literal(1)]),
+    price: z.number().min(0, "Giá dịch vụ phải lớn hơn hoặc bằng 0").refine(val => !isNaN(val), {
+      message: "Giá trị không hợp lệ",
+    }),
+    
+    service_catalogue_id: z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn nhóm dịch vụ",
+  }), // Tham chiếu đến bảng room_catalogues
     detail: z.string().optional(),
-    healthInsuranceApplied: z.union([z.literal(0), z.literal(1)]).optional(),
-    healthInsuranceValue: z.number().optional(),
-    roomCatalogueId: z.bigint(),
+    health_insurance_applied: z.number().optional(),
+    health_insurance_value: z.number().optional(),
+    room_catalogue_id:  z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn nhóm phòng",
+  }), // Tham chiếu đến bảng room_catalogues
+  
   });
-
+  const ServiceDetailField = z.object({
+    detail: z.array(
+      z.object({
+        attributeName: z.string().min(1,"Tên thuộc tính là bắt buộc"),
+        fields: z.array(
+          z.object({
+            fieldName: z.string().min(1,"Tên trường là bắt buộc"),
+            value: z.string().min(1,"Giá trị là bắt buộc"),
+          })
+        )
+      })
+    )
+  });
   export const MedicationCatalogueSchema = z.object({
     name: z.string().min(1, 'Tên nhóm dược là bắt buộc'), // Tên nhóm dược
     description: z.string().optional(), // Mô tả nhóm dược
+    parent_id:z.number().min(0, 'Vui lòng chọn danh mục cha'), // Tên nhóm dược
   });
 
 
 export const MedicationSchema = z.object({
-  id: z.bigint(),
-  name: z.string().nonempty("Tên dược phẩm không được để trống"),
-  medicationCatalogueId: z.number().min(1, "ID nhóm dược phẩm không hợp lệ"),
+  name: z.string().min(1,"Tên dược phẩm không được để trống"),
+  medication_catalogue_id: z.bigint().min(BigInt(1), "ID nhóm dược phẩm không hợp lệ"),
   price: z.number().min(0, "Giá thuốc không được âm"),
-  measure: z.string().nonempty("Đơn vị không được để trống"),
-  measureCount: z.number().min(1, "Số lượng phải lớn hơn 0"),
+  measure: z.string().min(1,"Đơn vị không được để trống"),
+  measure_count: z.number().min(1, "Số lượng phải lớn hơn 0"),
   description: z.string().optional(),
 });
 

@@ -23,11 +23,6 @@ import axios from 'axios';
 import { Value } from '@radix-ui/react-select';
 
 
-const departments = [
-  { value: 1, label: "Khoa ngoại" },
-  { value: 2, label: "Khoa nội" },
-  { value: 3, label: "Khoa thần kinh" },
-]
 const statusOptions = [
   { value: 0, label: "Không hoạt động" },
   { value: 1, label: "Hoạt động" },
@@ -165,7 +160,6 @@ const RoomPage = () => {
         department_id: itemToEdit.department_id,
       });
       setIsOpenDialogUpdate(true);
-      resetFormUpdate();
     }
   };
 
@@ -297,7 +291,6 @@ const RoomPage = () => {
         },
       })
       const { data } = response.data.data
-      console.log(data)
       if (Array.isArray(data)) {
         const fetchedRooms: RoomType[] = data.map((item: any) => ({
           id: item.id,
@@ -393,7 +386,6 @@ const RoomPage = () => {
       else if(isOpenDialogUpdate){
         formUpdate.setValue('room_catalogue_id', BigInt(value));
       }
-    console.log(value)
   };
   const handleSelectDepartmemt = (value: bigint | null) => {
     if(value!==null)
@@ -404,7 +396,6 @@ const RoomPage = () => {
         formUpdate.setValue('department_id', BigInt(value));
       }
       
-    console.log(value)
   };
   useEffect( () => {
     fetchRoomCatalogues();
@@ -438,8 +429,8 @@ const RoomPage = () => {
           <div className='flex'>
           <Combobox<number>
               options={statusOptions}
-              onSelect={handleSelectStatus}
-              defaultValue={null} // No default selection for status
+              onSelect={handleSelecLimit}
+              defaultValue={limit} // No default selection for status
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>
@@ -569,7 +560,6 @@ const RoomPage = () => {
                               }))}
                                 placeholder="Chọn khoa"
                                 onSelect={handleSelectDepartmemt}
-                                defaultValue={field.value}
                             />
                           </FormControl>
                           <FormMessage />
@@ -590,7 +580,6 @@ const RoomPage = () => {
                               }))}
                                 placeholder="Chọn nhóm phòng"
                                 onSelect={handleSelectRoomCatalogue}
-                                defaultValue={field.value}
                             />
                           </FormControl>
                           <FormMessage />
@@ -623,7 +612,6 @@ const RoomPage = () => {
               pageIndex={pageIndex}
               pageSize={limit}
               onPageChange={(newPageIndex) => {
-              console.log("pageindex:", newPageIndex)
               setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
               }}
               />

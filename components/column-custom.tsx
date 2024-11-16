@@ -17,6 +17,7 @@ enum ColumnType {
   StatusBed = "status_bed",
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
+  health_insurance_applied = "health_insurance_applied",
 }
 
 // Interface for data type
@@ -90,6 +91,8 @@ const renderCellContent = (
 
     case ColumnType.InsuranceApplicable:
       return <div>{value === 1 ? "Có" : "Không"}</div>;
+    case ColumnType.health_insurance_applied:
+      return <div>{value === 1 ? "Có" : "Không"}</div>;
     case ColumnType.StatusBed:
       return <div>{value === 1 ? "Đã đầy" : "Chưa đầy"}</div>;
 
@@ -143,7 +146,7 @@ const createColumns = <T extends DataType>(
     return [];
   }
 
-  const keys = Object.keys(data[0]).filter((key) => !key.includes("id"));
+  const keys = Object.keys(data[0]).filter((key) => !key.includes("id")&&!key.includes("detail")&&!key.includes("level"));
 
 
   keys.forEach((key) => {
@@ -169,6 +172,9 @@ const createColumns = <T extends DataType>(
       columnType = ColumnType.PaymentStatus;
     } else if (key === "insuranceApplicable") {
       columnType = ColumnType.InsuranceApplicable;
+    }
+    else if (key === "health_insurance_applied") {
+      columnType = ColumnType.health_insurance_applied;
     }
     else if (key === "status_bed") {
       columnType = ColumnType.StatusBed;

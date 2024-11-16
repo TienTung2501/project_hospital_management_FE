@@ -49,7 +49,7 @@ export function Combobox<T>({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-fit justify-between"
         >
           {selectedValue !== null
             ? options.find((option) => option.value === selectedValue)?.label
@@ -57,7 +57,7 @@ export function Combobox<T>({
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-fit p-0">
         <Command>
           <CommandInput
             placeholder={placeholder}

@@ -32,6 +32,11 @@ const numberOptions = [
   { value: 20, label: "20 bản ghi" },
   { value: 40, label: "40 bản ghi" },
 ];
+const statusOptions = [
+  { value: 0, label: "Không hoạt động" },
+  { value: 1, label: "Hoạt động" },
+  { value: 2, label: "Tât cả" },
+]
 const columnHeaderMap: { [key: string]: string } = {
   keyword: "Từ khóa",
   name: "Tên nhóm phòng",
@@ -309,6 +314,14 @@ const RoomCataloguePage = () => {
               defaultValue={limit} // Default to 20 records
               />
           <div className="flex items-center space-x-5">
+          <div className='flex'>
+          <Combobox<number>
+              options={statusOptions}
+              onSelect={handleSelectStatus}
+              defaultValue={null} // No default selection for status
+              placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
+            />
+          </div>
             <Input type="text" placeholder="Tìm kiếm phòng" />
             <Button type="submit">Lọc</Button>
 

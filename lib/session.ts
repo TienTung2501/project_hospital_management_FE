@@ -44,11 +44,12 @@ export async function decrypt(session: string | undefined = '') {
 }
 
 // Tạo session và lưu trong cookie
-export async function createSession(email: string, role: string) {
+export async function createSession(email: string, role: string,room_ids: Number[]) {
   try {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 ngày
     const session = await encrypt({
       email,
+      room_ids,
       role,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(expiresAt.getTime() / 1000),

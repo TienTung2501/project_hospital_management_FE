@@ -59,7 +59,7 @@ const LoginForm = () => {
             });
             // Điều hướng sau khi thành công
             setTimeout(() => {
-              window.location.href = '/dashboard';
+              window.location.href = '/main';
             }, 2000);  // Chờ 2 giây để người dùng thấy thông báo trước khi chuyển trang
           }
         })

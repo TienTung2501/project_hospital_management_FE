@@ -3,7 +3,7 @@ import React from 'react'
 const UpdateSetting = () => {
   return (
     <div>
-      This is update setting
+      Cập nhật thông tin cá nhân
     </div>
   )
 }

@@ -52,7 +52,6 @@ const servicesData: Service[] = [
       hemoglobin: "g/dL",
       leukocytes: "cells/µL",
       platelets: "cells/µL",
-      conclusion: "" // Thêm trường kết luận
     },
   },
   {
@@ -66,7 +65,6 @@ const servicesData: Service[] = [
       glucose: "mg/dL",
       protein: "mg/dL",
       pH: "pH",
-      conclusion: "" // Thêm trường kết luận
     },
   },
   {
@@ -80,7 +78,6 @@ const servicesData: Service[] = [
       color: "N/A",
       consistency: "N/A",
       blood: "N/A",
-      conclusion: "" // Thêm trường kết luận
     },
   },
 ];
@@ -196,16 +193,14 @@ const ServiceForm = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {key !== 'conclusion'
-                        ? `${key.charAt(0).toUpperCase() + key.slice(1)} (Đơn vị: ${details[key]})`
-                        : 'Kết luận'}
+                      
+                         {`${key.charAt(0).toUpperCase() + key.slice(1)} (Đơn vị: ${details[key]})`}
+    
                     </FormLabel>
                     <FormControl>
-                      {key !== 'conclusion' ? (
+
                         <Input {...field} type="text" placeholder={`Nhập ${key}`} />
-                      ) : (
-                        <Textarea {...field} placeholder="Nhập kết luận" rows={4} />
-                      )}
+              
                     </FormControl>
                     <FormMessage />
                   </FormItem>

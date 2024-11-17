@@ -470,26 +470,16 @@ const AdminPage = () => {
       //     })
       // });
     };
-    const columnPatientCurrently = partient_currently.length > 0 ? createColumns(partient_currently,handleView, handleEdit, handleDelete, columnPartientCurrentlyHeaderMap,{view: true, edit: false, delete: false},switchConfig ) : [];
-    const columnMedicalRecords = medicalRecords.length > 0 ? createColumns(medicalRecords,handleView, handleEdit, handleDelete, columnMedicalRecordHeaderMap,{view: true, edit: false, delete: false},switchConfig ) : [];
-    const columnServiceInfor = serviceData.length > 0 ? createColumns(serviceData,handleView, handleEdit, handleDelete, columnServiceInfoHeaderMap,{view: true, edit: false, delete: false},switchConfig ) : [];
   return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
         <div className="flex w-full items-center">
-          <h1 className="text-lg font-semibold md:text-xl">Quản lý tiếp nhận bệnh nhân</h1>
+          <h1 className="text-lg font-semibold md:text-xl">Quản lý tiếp nhận bệnh nhân mới</h1>
         
         </div>
         <div
           className="flex flex-col flex-1 rounded-lg px-5 border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"
         >
-         
-        <Tabs defaultValue="newPatientReception" className='w-full mt-2'>
-          <TabsList className="grid w-full grid-cols-3 w-[400px]">
-            <TabsTrigger value="newPatientReception">Tiếp nhận mới</TabsTrigger>
-            <TabsTrigger value="currentlyExamining">Đang khám</TabsTrigger>
-            <TabsTrigger value="appointmentList">Hẹn khám</TabsTrigger>
-          </TabsList>
-          <TabsContent value="newPatientReception">
+
             <Card>
               <CardHeader className='pb-1'>
                 <CardTitle>Tiếp nhận mới</CardTitle>
@@ -507,11 +497,22 @@ const AdminPage = () => {
                               Thông tin bệnh nhân
                             </h1>
                             <div className="hidden items-center gap-2 md:ml-auto md:flex">
-                                    <Button variant="outline" size="sm" onClick={handleReset}>
-                                    Reset
-                                  </Button>
+                            <div className="flex items-center space-x-2 bg-white">
+                                <Input type="text" placeholder="Tìm kiếm bệnh nhân" 
+                                  value={keyword} // Đặt giá trị từ state keyword
+                                  onChange={(e) => setKeyword(e.target.value)}
+                                  />
+                                <Button variant="outline" size="sm" onClick={() => fetchDepartments()}>Tìm</Button>
+                              </div>
+                                 
 
-                              <Button size="sm" type="submit" onClick={form.handleSubmit(onSubmit)}>Thêm Người Dùng</Button>
+                              <Button variant="outline" size="sm" type="submit" onClick={form.handleSubmit(onSubmit)}>Lưu thông tin</Button>
+                              <Button variant="outline" size="sm" onClick={handleReset}>
+                                    Đặt lại
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={()=>router.back()}>
+                                    Quay lại
+                              </Button>
                             </div>
                           </div>
                           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -659,109 +660,6 @@ const AdminPage = () => {
                                   </div>
                                 </CardContent>
                               </Card>
-                              <Card x-chunk="dashboard-07-chunk-3">
-                                <CardHeader>
-                                <FormField
-                                          control={form.control}
-                                          name="diagnosis"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Chuẩn đoán</FormLabel>
-                                              <FormControl>
-                                                <Textarea
-                                                  {...field}
-                                                  disabled={isPending}
-                                                  placeholder="Bình thường"
-                                                  type="teratext"
-                                                />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                  <CardTitle>Chỉ định dịch vụ</CardTitle>
-                                  <CardDescription>
-                                    Chỉ định các dịch vụ cho bệnh nhân
-                                  </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                <div className="grid gap-3">
-                                        <div className="grid grid-cols-2 gap-4">
-                                        <FormField 
-                                      control={form.control}
-                                      name="department"
-                                      render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                          <FormLabel className="mr-2">Khoa</FormLabel>
-                                          <FormControl className="flex-grow">
-                                            <Combobox<number>
-                                              options={departments}
-                                              onSelect={handleSelectRecords}
-                                              placeholder="Chọn khoa"
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    <FormField 
-                                      control={form.control}
-                                      name="room"
-                                      render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                          <FormLabel className="mr-2">Phòng</FormLabel>
-                                          <FormControl className="flex-grow">
-                                            <Combobox<number>
-                                              options={departments}
-                                              onSelect={handleSelectRecords}
-                                              placeholder="Chọn Phòng"
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                                    <FormField 
-                                      control={form.control}
-                                      name="position"
-                                      render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                          <FormLabel className="mr-2">Nhóm dịch vụ</FormLabel>
-                                          <FormControl className="flex-grow">
-                                            <Combobox<number>
-                                              options={departments}
-                                              onSelect={handleSelectRecords}
-                                              placeholder="Chọn nhóm dịch vụ"
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                                    <FormField 
-                                      control={form.control}
-                                      name="position"
-                                      render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                          <FormLabel className="mr-2">Dịch vụ</FormLabel>
-                                          <FormControl className="flex-grow">
-                                            <Combobox<number>
-                                              options={departments}
-                                              onSelect={handleSelectRecords}
-                                              placeholder="Chọn dịch vụ"
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                    <Button>Save changes</Button>
-                                        </div>
-                                      </div>
-                               
-                      
-                                </CardContent>
-                              </Card>
                             </div>
                             <div className="grid auto-rows-max items-start gap-4 lg:gap-8">
                               <Card x-chunk="dashboard-07-chunk-3">
@@ -896,293 +794,16 @@ const AdminPage = () => {
                                   </div>
                                 </CardContent>
                               </Card>
-                              <Card x-chunk="dashboard-07-chunk-0">
-                              <CardHeader>
-                                  <CardTitle>Chỉ số sức khỏe</CardTitle>
-                                  <CardDescription>
-                                    Các chỉ số đo lường tình trạng sức khỏe
-                                  </CardDescription>
-                                </CardHeader>
-                            
-                                <CardContent>
-                                  <div className="grid gap-6">
-                                      <div className="grid gap-3">
-                                        <div className="grid grid-cols-2 gap-2">
-                                          <FormField
-                                            control={form.control}
-                                            name="temperature"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Nhiệt độ thân thể(Đơn vị đo:Độ C)</FormLabel>
-                                                <FormControl>
-                                                  <Input
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="18"
-                                                    type="text"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                              
-                                          <FormField
-                                            control={form.control}
-                                            name="blood_pressure"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Huyết áp( Đơn vị đó: mmHg)</FormLabel>
-                                                <FormControl>
-                                                  <Input
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="80"
-                                                    type="text"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="heart_rate"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Nhịp tim (nhịp / ph)</FormLabel>
-                                                <FormControl>
-                                                  <Input
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="80"
-                                                    type="text"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                              
-                                          <FormField
-                                            control={form.control}
-                                            name="blood_sugar"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Đường huyết( Đơn vị đo:ml/lit)</FormLabel>
-                                                <FormControl>
-                                                  <Input
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="80"
-                                                    type="text"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                           
-                                        </div>
-                                      </div>
-
-                                      <FormField
-                                          control={form.control}
-                                          name="note"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Ghi chú</FormLabel>
-                                              <FormControl>
-                                                <Textarea
-                                                  {...field}
-                                                  disabled={isPending}
-                                                  placeholder="Tình trạng tổng quan đáng báo động"
-                                                  type="teratext"
-                                                />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-     
-                                  </div>
-                                </CardContent>
-                              </Card>
                             </div>
                            
                           </div>
-                          <Card x-chunk="dashboard-07-chunk-3" className='mt-8'>
-                                <CardHeader className='pb-1'>
-                                  
-                                  <CardTitle>Danh sách các dịch vụ chỉ định</CardTitle>
-                                  <CardDescription>
-                                    Chỉ định các dịch vụ cho bệnh nhân
-                                  </CardDescription>
-                                  <div className='border-b'></div>
-                                </CardHeader>
-                                <CardContent >
-                                <div>
-                                  <DataTable
-                                    data={serviceData}
-                                    columns={columnServiceInfor}
-                                    totalRecords={totalRecords}
-                                    pageIndex={pageIndex}
-                                    pageSize={limit}
-                                    onPageChange={(newPageIndex) => {
-                                      console.log("pageindex:", newPageIndex)
-                                      setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                                    }}
-                                  />
-                                </div>                  
-                                </CardContent>
-                              </Card>
                           </form>
                         </div>
                     </Form>
                   </main>
                   </CardContent>
-                <CardFooter>
-                <Button>Save changes</Button>
-              </CardFooter>
             </Card>
-          </TabsContent>
-          <TabsContent value="currentlyExamining">
-            <Card className='mb-5'>
-              <CardHeader className='pb-0'>
-                <CardTitle>Danh sách bệnh nhân đang khám</CardTitle>
-                <CardDescription>
-                  Các bệnh nhân đang khám
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-              <div className="flex flex-col gap-1 border-b pb-5">
-              <div className='flex mt-5 justify-between'>
 
-                <Combobox<number>
-                options={numberOptions}
-                onSelect={handleSelectRecords}
-                placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                />
-      
-
-              <div className="flex items-center space-x-5">
-                    <div className='flex'>
-                    <Combobox<number>
-                      options={numberOptions}
-                      onSelect={handleSelectRecords}
-                      placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
-                    />
-                    </div>
-                    <div className="flex items-center space-x-2 bg-white">
-                      <Input type="text" placeholder="Tìm kiếm" />
-                      <Button type="submit">Lọc</Button>
-                    </div>
-                    <Button className='ml-5' onClick={handleClick}>+ Thêm mới</Button>
-                    <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Bạn đang xóa chức danh là :{" "}
-                            <strong>{deleteItem?.name}</strong>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDeleteItem(null)}>Hủy</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-              </div>
-              </div>
-              </div>
-              <div>
-                <DataTable
-                  data={partient_currently}
-                  columns={columnPatientCurrently}
-                  totalRecords={totalRecords}
-                  pageIndex={pageIndex}
-                  pageSize={limit}
-                  onPageChange={(newPageIndex) => {
-                    console.log("pageindex:", newPageIndex)
-                    setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                  }}
-                />
-              </div>
-              </CardContent>  
-            </Card >
-          </TabsContent> 
-         
-          <TabsContent value="appointmentList">
-            <Card>
-              <CardHeader className='pb-0'>
-              <CardTitle>Danh sách hẹn khám</CardTitle>
-                <CardDescription>
-                  Danh sách bệnh nhân tái khám
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-              <div className="flex flex-col gap-1 border-b pb-5">
-              <div className='flex mt-5 justify-between'>
-    {/* Phần bên trái */}
-                <Combobox<number>
-                options={numberOptions}
-                onSelect={handleSelectRecords}
-                placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                />
-      
-              {/* Phần bên phải */}
-              <div className="flex items-center space-x-5">
-                    <div className='flex'>
-                    <Combobox<number>
-                      options={numberOptions}
-                      onSelect={handleSelectRecords}
-                      placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
-                    />
-                    </div>
-                    <div className="flex items-center space-x-2 bg-white">
-                      <Input type="text" placeholder="Tìm kiếm" />
-                      <Button type="submit">Lọc</Button>
-                    </div>
-                    <Button className='ml-5' onClick={handleClick}>+ Thêm mới</Button>
-                    <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Hành động này không thể hoàn tác. Bạn đang xóa chức danh là :{" "}
-                            <strong>{deleteItem?.name}</strong>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDeleteItem(null)}>Hủy</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-              </div>
-              </div>
-              </div>
-              <div>
-                <DataTable
-                  data={medicalRecords}
-                  columns={columnMedicalRecords}
-                  totalRecords={totalRecords}
-                  pageIndex={pageIndex}
-                  pageSize={limit}
-                  onPageChange={(newPageIndex) => {
-                    console.log("pageindex:", newPageIndex)
-                    setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                  }}
-                />
-              </div>
-              </CardContent>
-            </Card>
-         
-          </TabsContent>
-        </Tabs>
        
           </div>
       </main>

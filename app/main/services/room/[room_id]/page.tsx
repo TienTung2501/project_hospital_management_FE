@@ -52,7 +52,7 @@ import { Textarea } from '@/components/ui/textarea';
 const columnHeaderMap: { [key: string]: string } = {
   patientName: "Tên bệnh nhân",
   gender: "Giới tính",
-  birthday_date: "Tuổi",
+  birthday_date: "Năm sinh",
   servicename:"Tên dịch vụ",
   phone: "Điện thoại",
   service_name:"Tên dịch vụ"
@@ -75,7 +75,6 @@ export type PatientService={
   gender: number;
   birthday_date: number;
   phone: string;
-  service_name:string;
   service_id:bigint;
 }
 const patientServiceData: PatientService[] = [
@@ -85,7 +84,6 @@ const patientServiceData: PatientService[] = [
     gender: 1,
     birthday_date: 20,
     phone: "0987654321",
-    service_name:"Xét nghiệm máu",
     service_id:BigInt(1),
   },
   {
@@ -94,7 +92,6 @@ const patientServiceData: PatientService[] = [
     gender: 0,
     birthday_date: 20,
     phone: "0987654321",
-    service_name:"Xét nghiệm máu",
     service_id:BigInt(2),
     
   },
@@ -104,7 +101,6 @@ const patientServiceData: PatientService[] = [
     gender: 1,
     birthday_date: 20,
     phone: "0901234567",
-    service_name:"Xét nghiệm máu",
     service_id:BigInt(3),
   },
   {
@@ -113,7 +109,6 @@ const patientServiceData: PatientService[] = [
     gender: 0,
     birthday_date: 20,
     phone: "0934567890",
-    service_name:"Xét nghiệm máu",
     service_id:BigInt(4),
   },
   {
@@ -122,7 +117,6 @@ const patientServiceData: PatientService[] = [
     gender: 1,
     birthday_date: 20,
     phone: "0967890123",
-    service_name:"Xét nghiệm máu",
     service_id:BigInt(5),
   },
   // Thêm 5 bộ dữ liệu nữa
@@ -183,6 +177,8 @@ const PaymentPage = () => {
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
         <div className="w-full items-center">
           <h1 className="text-lg font-semibold md:text-xl">Khoa Xét nghiệm</h1>
+          <h2 className="text-lg font-semibold md:text-x">Nhóm dịch vụ: Xét nghiệm</h2>
+          <h2 className="text-lg font-semibold md:text-x">Dịch vụ: Xét nghiệm maú</h2>
           <h2 className="text-lg font-semibold md:text-x">Phòng xét nghiệm 302</h2>
           <h2 className="text-lg font-semibold md:text-x">Bác sĩ: Nguyên Văn A</h2>
         

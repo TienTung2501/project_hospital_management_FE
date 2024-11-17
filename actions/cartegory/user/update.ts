@@ -23,11 +23,12 @@ export const update_user = async (id:bigint|undefined,values: z.infer<typeof Upd
     }
 
     const user = response.data.data;
-    console.log(selectedRooms)
+    console.log(user.password)
     const payload = { 
-      name:user.name,
-      cccd:user.cccd,
-      email:user.email,
+      name:values.name,
+      cccd:values.cccd,
+      email:values.email,
+      gender:values.gender,
       password:user.password,
       department_id: Number(values.department_id), // Convert BigInt to Number
       position_id: Number(values.position_id),      // Convert BigInt to Number

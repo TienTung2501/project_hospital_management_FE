@@ -1,34 +1,35 @@
-import AdminHeader from '@/components/layout/AdminHeader';
-import AdminSidebar from '@/components/layout/AdminSidebar';
+// app/main/layout.tsx
 import { getUser } from '@/lib/dal';
 import { getLinkByRole } from '@/lib/Data/link/link';
-import { getUserByEmail } from '@/lib/Data/user/user';
-import { decrypt } from '@/lib/session';
-import { LinkBaseRoleType, UserType } from '@/types';
-import { get } from 'http';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation'; // For server-side redirection
-import React from 'react';
+import {  LinkBaseRoleType, UserInfoType } from '@/types';
+import AdminSidebar from '@/components/layout/AdminSidebar';
+import AdminHeader from '@/components/layout/AdminHeader';
+import ClientLayout from '@/components/ClientLayout'; // Client layout component
+import { UserProvider } from '@/components/context/UserContext'; // Import UserContext
 
 interface AdminLayoutProps {
-  //currentUser: UserType; // Prop for passing user data
   children: React.ReactNode;
 }
 
-const AdminLayout = async ({  children }: AdminLayoutProps) => {
-  const currentUser: UserType | null | undefined = await getUser();
-  let links:LinkBaseRoleType| null | undefined;
-  if(currentUser){
-    links=await getLinkByRole(currentUser?.role);
+const AdminLayout = async ({ children }: AdminLayoutProps) => {
+  // Lấy dữ liệu từ server
+  const currentUser: UserInfoType|any = await getUser(); // Lấy user từ server
+  let links: LinkBaseRoleType | null | undefined = null;
+
+  if (currentUser) {
+    links = await getLinkByRole(currentUser?.position_name); // Lấy links theo role
   }
+
   return (
-     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <AdminSidebar links={links}/>
+    <UserProvider currentUser={currentUser ?? null}> {/* Truyền currentUser hoặc null vào UserProvider */}
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <AdminSidebar links={links} />
         <div className="flex flex-col w-full overflow-x-hidden">
-          <AdminHeader links={links}/>
-          {children}
+          <AdminHeader links={links} />
+          <ClientLayout>{children}</ClientLayout> {/* Pass children into ClientLayout */}
         </div>
-  </div>
+      </div>
+    </UserProvider>
   );
 };
 

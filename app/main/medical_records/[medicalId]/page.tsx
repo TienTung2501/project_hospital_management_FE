@@ -452,12 +452,8 @@ const patientServiceData: PatientServiceInfo[] = [
       department: "Huyết học",
       room: "101",
       referringDoctor: "Bác sĩ Nguyễn Văn K",
-      servicePrice: 500000,
       insuranceApplicable: 1,
       insuranceCoveragePercentage: 80,
-      amountDue: 100000,
-      paymentStatus: 1,
-      examination_status:1,
     },
     {
         id: BigInt(2),
@@ -465,12 +461,8 @@ const patientServiceData: PatientServiceInfo[] = [
       department: "Chẩn đoán hình ảnh",
       room: "202",
       referringDoctor: "Bác sĩ Trần Thị M",
-      servicePrice: 300000,
       insuranceApplicable: 0,
       insuranceCoveragePercentage: 0,
-      amountDue: 300000,
-      paymentStatus: 0,
-      examination_status:1,
       
     },
     {
@@ -479,12 +471,8 @@ const patientServiceData: PatientServiceInfo[] = [
       department: "Nội tổng hợp",
       room: "305",
       referringDoctor: "Bác sĩ Lê Văn N",
-      servicePrice: 700000,
       insuranceApplicable: 1,
       insuranceCoveragePercentage: 50,
-      amountDue: 350000,
-      paymentStatus: 1,
-      examination_status:1,
       
     },
     {
@@ -493,12 +481,8 @@ const patientServiceData: PatientServiceInfo[] = [
       department: "Tiêu hóa",
       room: "405",
       referringDoctor: "Bác sĩ Phạm Thị P",
-      servicePrice: 1200000,
       insuranceApplicable: 1,
       insuranceCoveragePercentage: 70,
-      amountDue: 360000,
-      paymentStatus: 1,
-      examination_status:1,
       
     },
     {
@@ -507,12 +491,8 @@ const patientServiceData: PatientServiceInfo[] = [
       department: "Ngoại khoa",
       room: "501",
       referringDoctor: "Bác sĩ Lê Văn Q",
-      servicePrice: 5000000,
       insuranceApplicable: 0,
       insuranceCoveragePercentage: 0,
-      amountDue: 5000000,
-      paymentStatus: 0,
-      examination_status:1,
       
     },
     // Thêm 5 bộ dữ liệu nữa
@@ -640,8 +620,6 @@ const healthRecords: DailyHealth =   {
     heart_rate: 75,
     blood_sugar: 5.2,
     note: "Không có triệu chứng bất thường",
-    created_at: new Date("2024-10-29T08:35:00"),
-    updated_at: new Date("2024-10-29T08:35:00"),
   }
 
   const dailyHealthData: DailyHealth[] = [
@@ -654,8 +632,6 @@ const healthRecords: DailyHealth =   {
       heart_rate: 78,
       blood_sugar: 5.2,
       note: "Bệnh nhân hơi mệt mỏi vào buổi sáng",
-      created_at: new Date('2024-10-01T09:00:00'),
-      updated_at: new Date('2024-10-01T09:00:00'),
     },
     {
       id: BigInt(2),
@@ -666,8 +642,6 @@ const healthRecords: DailyHealth =   {
       heart_rate: 80,
       blood_sugar: 5.4,
       note: "Triệu chứng ổn định",
-      created_at: new Date('2024-10-02T09:00:00'),
-      updated_at: new Date('2024-10-02T09:00:00'),
     },
     {
       id: BigInt(3),
@@ -678,8 +652,6 @@ const healthRecords: DailyHealth =   {
       heart_rate: 82,
       blood_sugar: 6.1,
       note: "Bệnh nhân có dấu hiệu sốt nhẹ, tiếp tục theo dõi",
-      created_at: new Date('2024-10-03T09:00:00'),
-      updated_at: new Date('2024-10-03T09:00:00'),
     },
     {
       id: BigInt(4),
@@ -690,8 +662,6 @@ const healthRecords: DailyHealth =   {
       heart_rate: 75,
       blood_sugar: 5.8,
       note: "Sức khỏe bệnh nhân tiến triển tốt",
-      created_at: new Date('2024-10-04T09:00:00'),
-      updated_at: new Date('2024-10-04T09:00:00'),
     },
     {
       id: BigInt(5),
@@ -702,13 +672,13 @@ const healthRecords: DailyHealth =   {
       heart_rate: 77,
       blood_sugar: 5.5,
       note: "Chỉ số sức khỏe ổn định, không có triệu chứng bất thường",
-      created_at: new Date('2024-10-05T09:00:00'),
-      updated_at: new Date('2024-10-05T09:00:00'),
     },
   ];
   
 const MedicalRecordDetail = () => {
   const router = useRouter(); 
+
+  const [isPrescriptionVisible, setPrescriptionVisible] = useState(false); // Trạng thái hiển thị đơn thuốc
   const [error,setError]=useState<string|undefined>("");
   const [isPending,startTransition]=useTransition();
   const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
@@ -1176,10 +1146,11 @@ return (
                         <div> <strong>Bác sĩ nhận xét</strong></div>
                         <div><strong>Chuẩn đoán:</strong> {medicalInfor.diagnosis}</div>
                         <div><strong>Kết luận:</strong> {medicalInfor.conclusion}</div>
-                        <div><strong>Ngày tái khám:</strong> {medicalInfor.followUpDate}</div>
+                        {/* <div><strong>Ngày tái khám:</strong> {medicalInfor.followUpDate}</div>
                         <div><strong>Điều trị nội trú:</strong> {medicalInfor.inpatientTreatment ? "Có" : "Không"}</div>
-                        <p><i>Tình trạng bệnh xấu:</i><strong className='text-green-500 cursor-pointer' onClick={changeDepartment}> Nhập viện </strong> </p>
-                        <div><strong>Tình trạng tái khám:</strong> {medicalInfor.followUpStatus}</div>
+                        <p><i>Tình trạng bệnh xấu:</i><strong className='text-green-500 cursor-pointer' onClick={changeDepartment}> Nhập viện </strong> </p> */}
+                        {/* <div><strong>Tình trạng tái khám:</strong> {medicalInfor.followUpStatus}</div> */}
+                        <div><strong>Ghi chú:</strong>: </div>
                     </div>
                 </div>
                  
@@ -1213,8 +1184,6 @@ return (
                         <Input type="text" placeholder="Tìm kiếm" />
                         <Button type="submit">Lọc</Button>
                       </div>
-                      <Button className='ml-5' onClick={addService}>+ Thêm mới</Button>
-                    
                 </div>
                 </div>
                 </div>
@@ -1232,7 +1201,7 @@ return (
                   />
                 </div>
               </div>
-
+              
               <Dialog open={isOpenAddMedication} 
             onOpenChange={(isOpen) => {
               if (!isOpen) {
@@ -1241,11 +1210,60 @@ return (
               setIsOpenAddMedication(isOpen);
             }}
             >
+
+             <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className="mb-6 border-b max-w-[600px]">
+                  <h3 className="text-lg font-bold mb-4">Nhận xét của bác sĩ</h3>
+                  <FormField
+                                          control={form.control}
+                                          name="conclusion"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Kết luận</FormLabel>
+                                              <FormControl>
+                                                <Textarea
+                                                  {...field}
+                                                  disabled={isPending}
+                                                  placeholder="kết luận"
+                                                  type="teratext"
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                  <FormField
+                                          control={form.control}
+                                          name="note"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Ghi chú</FormLabel>
+                                              <FormControl>
+                                                <Textarea
+                                                  {...field}
+                                                  disabled={isPending}
+                                                  placeholder="Ghi chú: cần nhập viện hay điều trị ngoại trú"
+                                                  type="teratext"
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+              </div> 
+              
+                </form>
+            </Form>
+            <div className=' flex gap-2'>
+                <Button  onClick={() => setPrescriptionVisible(!isPrescriptionVisible)}> Kê thuốc</Button>
+                <Button> Nhập viện</Button>
+              </div>
              <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                   <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                      <DialogTitle>Chỉ định dịch vụ</DialogTitle>
+                      <DialogTitle>Kê đơn thuốc</DialogTitle>
                     </DialogHeader>
                       <div className="grid gap-3">
                         <div className="grid grid-cols-2 gap-4">
@@ -1254,12 +1272,12 @@ return (
                             name="department"
                             render={({ field }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel className="mr-2">Nhóm thuốc</FormLabel>
+                                <FormLabel className="mr-2">Nhóm dược</FormLabel>
                                 <FormControl className="flex-grow">
                                   <Combobox<number>
                                     options={departments}
                                     onSelect={handleSelectRecords}
-                                    placeholder="Chọn nhóm thuốc"
+                                    placeholder="Chọn nhóm dược"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1271,12 +1289,12 @@ return (
                             name="department"
                             render={({ field }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel className="mr-2">Thuốc</FormLabel>
+                                <FormLabel className="mr-2">Dược</FormLabel>
                                 <FormControl className="flex-grow">
                                   <Combobox<number>
                                     options={departments}
                                     onSelect={handleSelectRecords}
-                                    placeholder="Chọn Thuốc"
+                                    placeholder="Chọn dược"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1293,7 +1311,7 @@ return (
                                     <Input
                                       {...field}
                                       disabled={isPending}
-                                      placeholder="Example: 2 lần 1 ngày"
+                                      placeholder="Example: 80"
                                       type="text"
                                     />
                                   </FormControl>
@@ -1311,7 +1329,7 @@ return (
                                   <Input
                                     {...field}
                                     disabled={isPending}
-                                    placeholder="Example: 2 viên 1 lần"
+                                    placeholder="Example:viên"
                                     type="text"
                                   />
                                 </FormControl>
@@ -1330,7 +1348,7 @@ return (
                                 <Textarea
                                   {...field}
                                   disabled={isPending}
-                                  placeholder="Example: Uống sau ăn"
+                                  placeholder="Example: Uống sau ăn, 2 viên 1 lần"
                                   type="teratext"
                                 />
                               </FormControl>
@@ -1345,52 +1363,54 @@ return (
             </Form>
               </Dialog>
               
-              <div>
-                <div className="flex flex-col gap-1 border-b pb-5">
-                <div className="mb-6 border-b">
-                  <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
-                  {/* Thêm mã hiển thị bảng dịch vụ ở đây */}
-              </div>  
-                <div className='flex mt-5 justify-between'>
-              
-                  <Combobox<number>
-                  options={numberOptions}
-                  onSelect={handleSelectRecords}
-                  placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                  />
-        
+              {isPrescriptionVisible && (
+        <div>
+          <div className="flex flex-col gap-1 border-b pb-5">
+            <div className="mb-6 border-b">
+              <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+            </div>
 
-                <div className="flex items-center space-x-5">
-                      <div className='flex'>
-                      <Combobox<number>
-                        options={numberOptions}
-                        onSelect={handleSelectRecords}
-                        placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
-                      />
-                      </div>
-                      <div className="flex items-center space-x-2 bg-white">
-                        <Input type="text" placeholder="Tìm kiếm" />
-                        <Button type="submit">Lọc</Button>
-                      </div>
-                      <Button className='ml-5' onClick={addMedication}>+ Thêm mới</Button>
-                    
-                </div>
-                </div>
-                </div>
-                <div>
-                  <DataTable
-                    data={medicationsPrescribed}
-                    columns={columnMedication}
-                    totalRecords={totalRecords}
-                    pageIndex={pageIndex}
-                    pageSize={limit}
-                    onPageChange={(newPageIndex) => {
-                      console.log("pageindex:", newPageIndex)
-                      setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                    }}
+            <div className='flex mt-5 justify-between'>
+              <Combobox<number>
+                options={numberOptions}
+                onSelect={handleSelectRecords}
+                placeholder="Chọn số bản ghi" // Thêm placeholder tùy chỉnh
+              />
+              
+              <div className="flex items-center space-x-5">
+                <div className='flex'>
+                  <Combobox<number>
+                    options={numberOptions}
+                    onSelect={handleSelectRecords}
+                    placeholder="Chọn tình trạng" // Thêm placeholder tùy chỉnh
                   />
                 </div>
+                <div className="flex items-center space-x-2 bg-white">
+                  <Input type="text" placeholder="Tìm kiếm" />
+                  <Button type="submit">Lọc</Button>
+                </div>
+                <Button className='ml-5' onClick={addMedication}>+ Thêm mới</Button>
               </div>
+            </div>
+          </div>
+          
+          <div>
+            <DataTable
+              data={medicationsPrescribed}
+              columns={columnMedication}
+              totalRecords={totalRecords}
+              pageIndex={pageIndex}
+              pageSize={limit}
+              onPageChange={(newPageIndex) => {
+                console.log("pageindex:", newPageIndex);
+                setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+
              
               <div>
                 <div className="flex flex-col gap-1 border-b pb-5">

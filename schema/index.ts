@@ -113,6 +113,41 @@ export const UpdateUserSchema = z.object({
         message: "Yêu cầu chọn chức danh",
     }), // Thêm validate cho Chức danh
 });
+
+export const UpdateUserSelfSchema = z.object({
+  name: z.string().min(1, {
+      message: "Yêu cầu điền",
+  }),
+  cccd: z.string().min(1, {
+      message: "Yêu cầu điền",
+  }),
+  gender:  z.number().min(0, "Bạn phải chọn giới tính"),
+  email: z.string().min(1, {
+      message: "Yêu cầu điền",
+  }).email("Email không hợp lệ"),
+  certificate: z.string().optional(), // Trường này có thể có hoặc không
+  phone: z.string().min(1, {
+      message: "Yêu cầu điền số điện thoại",
+  }), // Thêm validate cho Số điện thoại
+  address: z.string().min(1, {
+      message: "Yêu cầu điền địa chỉ",
+  }), // Thêm validate cho Địa chỉ
+});
+export const ResetPasswordSchema = z.object({
+  email: z.string().min(1, {
+      message: "Yêu cầu điền",
+  }).email("Email không hợp lệ"),
+  old_password:z.string().min(6, {
+    message: "Mật khẩu tối thiểu 6 kí tự",
+}),
+  new_password:z.string().min(6, {
+    message: "Mật khẩu tối thiểu 6 kí tự",
+}),
+  repeat_new_password:z.string().min(6, {
+    message: "Mật khẩu tối thiểu 6 kí tự",
+}),
+
+});
 export const RoomCatalogueSchema = z.object({
     keyword: z.string().min(1), // keyword không được bỏ trống
     name: z.string().min(1), // tên không được bỏ trống
@@ -216,6 +251,8 @@ export const PatientSchema = z.object({
     gender: z.enum(['male', 'female'], {
         errorMap: () => ({ message: "Yêu cầu chọn giới tính" }),
     }),
+    conclusion:z.string().min(1, "Vui lòng đưa ra kết luận"),
+    note:z.string().optional()
   });
   export const DailyHealthSchema = z.object({
     temperature: z.number().default(37), // Nhiệt độ mặc định
@@ -225,4 +262,5 @@ export const PatientSchema = z.object({
     diagnosis: z.string().optional(),   // Chuẩn đoán, có thể có hoặc không
     note: z.string().optional(),        // Ghi chú thêm, có thể có hoặc không
   });
+
   

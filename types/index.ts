@@ -1,13 +1,15 @@
-export interface UserType{
-    email:string;
-    password:string;
-    name:string;
-    role:string;
-}
 export interface LinkBaseRoleType {
-    role: string;
-    link: string[];
-  }
+  role: string;
+  links: Array<{
+    path: string;
+    name: string;
+    subLinks?: Array<{
+      path: string;
+      name: string;
+    }>;
+  }>;
+}
+
 
   export type UserInfoType = {
     id: bigint;
@@ -206,22 +208,20 @@ export type MedicalRecord = {
 // TH2: đến tái khám-> (xem hồ sơ-> click vào xem hồ sơ-> điền các chỉ số, kiểm tra sơ bộ-> cập nhật phát là chuyển sang đang khám, sau đó bác sĩ có thể chỉ định dịch vụ như bên kia)
 export type PatientCurrently = {
   id: bigint; // ID của bản ghi bệnh án
-  patient_id: bigint; // ID của bệnh nhân
-  user_id: bigint; //Bác sĩ thăm khám
+  //patient_id: bigint; // ID của bệnh nhân
+  patient_name:string;
+  //user_id: bigint; //Bác sĩ thăm khám
   gender: number; // ID của bác sĩ
   visit_date: string; // Ngày khám (định dạng datetime)
-  diagnosis: string; // Chuẩn đoán
-  notes: string; // Ghi chú của bác sĩ
-  inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
-  examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
+  // diagnosis: string; // Chuẩn đoán
+  // notes: string; // Ghi chú của bác sĩ
+  // inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
+  // examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
 };
 export type Patient = {
   id: bigint;
   name: string;
-  birthday?: number;
-  ward_id?: string;
-  district_id?: string;
-  province_id?: string;
+  birthday?: string;
   address?: string;
   phone?: string;
   cccd_number: string;
@@ -232,14 +232,12 @@ export type Patient = {
 export type DailyHealth = {
   id: bigint;
   treament_session_id: bigint; // Tham chiếu đến treament_sessions.id
-  check_date: Date; // Thời gian kiểm tra
-  temperature?: number; // Nhiệt độ cơ thể, default là 37
-  blood_pressure: string; // Huyết áp (vd: 120/80)
-  heart_rate: number; // Nhịp tim (số nhịp mỗi phút)
-  blood_sugar: number; // Đường huyết (mmol/L)
-  note?: string; // Các triệu chứng hoặc ghi chú bổ sung
-  created_at?: Date; // Thời gian nhập thông tin
-  updated_at?: Date;
+  check_date?: Date|null; // Thời gian kiểm tra
+  temperature?: number|null; // Nhiệt độ cơ thể, default là 37
+  blood_pressure?: string|null; // Huyết áp (vd: 120/80)
+  heart_rate?: number|null; // Nhịp tim (số nhịp mỗi phút)
+  blood_sugar?: number|null; // Đường huyết (mmol/L)
+  note?: string|null; // Các triệu chứng hoặc ghi chú bổ sung
 };
 export type PatientPaymentInfo = {
   id:bigint;
@@ -257,15 +255,15 @@ export type PatientPaymentInfo = {
 
 export type PatientServiceInfo = {
   id:bigint;
-  serviceName: string;             // Tên dịch vụ
-  department: string;              // Khoa
-  room: string;                    // Phòng
-  referringDoctor: string;         // Bác sĩ chỉ định
-  servicePrice: number;            // Giá dịch vụ
-  insuranceApplicable: number;     // Áp dụng bảo hiểm (0: Không áp dụng, 1: Có áp dụng)
-  insuranceCoveragePercentage: number; // Phần trăm áp dụng bảo hiểm
-  amountDue: number;               // Tiền cần trả
-  paymentStatus: number; 
+  serviceName?: string;             // Tên dịch vụ
+  department?: string;              // Khoa
+  room?: string;                    // Phòng
+  referringDoctor?: string;         // Bác sĩ chỉ định
+  servicePrice?: number;            // Giá dịch vụ
+  insuranceApplicable?: number;     // Áp dụng bảo hiểm (0: Không áp dụng, 1: Có áp dụng)
+  insuranceCoveragePercentage?: number; // Phần trăm áp dụng bảo hiểm
+  amountDue?: number;               // Tiền cần trả
+  paymentStatus?: number; 
   examination_status?:number;          // Trạng thái thanh toán (0: Chưa thanh toán, 1: Đã thanh toán)        // Xác nhận thanh toán
 };
 export type ServiceDetailField = {

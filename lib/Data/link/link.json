@@ -1,9 +1,52 @@
 [
-    { "role":"superadmin",
-      "link": ["admin","medical_records","services","payment","payment/detailpayment","setting","cartegory","cartegory/user","cartegory/bed","cartegory/department","cartegory/permission","cartegory/medical","cartegory/position","cartegory/room","cartegory/room_catalogue","cartegory/medical_catalogue","cartegory/service","cartegory/service_catalogue","cartegory/location"]
-    },
-    {
-      "role":"manager",
-      "link": ["setting"]
-    }
-  ]
+  {
+    "role": "Quản trị viên",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "newpatient", "name": "Tiếp nhận mới" },
+      { "path": "receivepatient", "name": "Các phòng" },
+      { "path": "medical_records", "name": "Hồ sơ bệnh án" },
+      { "path": "services", "name": "Dịch vụ" },
+      { "path": "payment", "name": "Thanh toán" },
+      { "path": "payment/detailpayment", "name": "Chi tiết thanh toán" },
+      { "path": "setting", "name": "Cài đặt" },
+      { "path": "cartegory", "name": "Danh mục", "subLinks": [
+        { "path": "cartegory/user", "name": "Người dùng" },
+        { "path": "cartegory/bed", "name": "Giường bệnh" },
+        { "path": "cartegory/department", "name": "Phòng ban" },
+        { "path": "cartegory/permission", "name": "Quyền" },
+        { "path": "cartegory/medical", "name": "Dược phẩm" },
+        { "path": "cartegory/position", "name": "Chức vụ" },
+        { "path": "cartegory/room", "name": "Phòng" },
+        { "path": "cartegory/room_catalogue", "name": "Danh mục phòng" },
+        { "path": "cartegory/medical_catalogue", "name": "Danh mục dược phẩm" },
+        { "path": "cartegory/service", "name": "Dịch vụ khám" },
+        { "path": "cartegory/service_catalogue", "name": "Danh mục dịch vụ" },
+        { "path": "cartegory/location", "name": "Địa điểm" }
+      ] }
+    ]
+  },
+  {
+    "role": "Bác sĩ xét nghiệm",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "setting", "name": "Thông tin cá nhân" }
+    ]
+  },
+  {
+    "role": "Bác sĩ khám",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "receivepatient", "name": "Tiếp nhận bệnh nhân khám" },
+      { "path": "setting", "name": "Thông tin cá nhân" }
+    ]
+  }
+  ,
+  {
+    "role": "Điều dưỡng viên",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "setting", "name": "Thông tin cá nhân" }
+    ]
+  }
+]

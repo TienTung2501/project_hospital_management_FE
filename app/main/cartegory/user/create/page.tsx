@@ -388,9 +388,9 @@ const CreateUser = () => {
                                 <label className="flex items-center space-x-2">
                                   <input
                                     type="radio"
-                                    value={0}
-                                    checked={Number(field.value) === 0} // Convert field.value to a number
-                                    onChange={() => field.onChange(0)}
+                                    value={1}
+                                    checked={Number(field.value) === 1} // Convert field.value to a number
+                                    onChange={() => field.onChange(1)}
                                     disabled={isPending}
                                   />
                                   <span>Nam</span>
@@ -398,9 +398,9 @@ const CreateUser = () => {
                                 <label className="flex items-center space-x-2">
                                   <input
                                     type="radio"
-                                    value={1}
-                                    checked={Number(field.value) === 1} // Convert field.value to a number
-                                    onChange={() => field.onChange(1)}
+                                    value={0}
+                                    checked={Number(field.value) === 0} // Convert field.value to a number
+                                    onChange={() => field.onChange(0)}
                                     disabled={isPending}
                                   />
                                   <span>Nữ</span>

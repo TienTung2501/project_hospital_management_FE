@@ -103,7 +103,6 @@ const renderCellContent = (
 
 
 
-// Function to create columns
 const createColumns = <T extends DataType>(
   data: T[],
   onView?: (id: string | bigint) => void,
@@ -116,7 +115,7 @@ const createColumns = <T extends DataType>(
     id: string;
     header: string;
     onClickConfig: (id: string | bigint) => void;
-    content:string;
+    content: string;
   },
 ): ColumnDef<T>[] => {
   const columns: ColumnDef<T>[] = [
@@ -146,15 +145,20 @@ const createColumns = <T extends DataType>(
     return [];
   }
 
-  const keys = Object.keys(data[0]).filter((key) => !key.includes("id")&&!key.includes("detail")&&!key.includes("level"));
-
+  const keys = Object.keys(data[0]).filter((key) => !key.includes("id") && !key.includes("detail") && !key.includes("level"));
 
   keys.forEach((key) => {
+    // Kiểm tra nếu key không tồn tại trong columnHeaderMap thì không thêm cột
+    if (!columnHeaderMap[key]) {
+      return;
+    }
+
     let columnType: ColumnType = ColumnType.Text;
 
-  if (key === "room_codes") {
-    columnType = ColumnType.Text; // Đảm bảo sử dụng kiểu Text để xử lý trong renderCellContent
-  }
+    if (key === "room_codes") {
+      columnType = ColumnType.Text; // Đảm bảo sử dụng kiểu Text để xử lý trong renderCellContent
+    }
+
     const switchColumn = switchConfig.find((config) => config.key === key);
     if (switchColumn) {
       columnType = ColumnType.Switch;
@@ -172,11 +176,9 @@ const createColumns = <T extends DataType>(
       columnType = ColumnType.PaymentStatus;
     } else if (key === "insuranceApplicable") {
       columnType = ColumnType.InsuranceApplicable;
-    }
-    else if (key === "health_insurance_applied") {
+    } else if (key === "health_insurance_applied") {
       columnType = ColumnType.health_insurance_applied;
-    }
-    else if (key === "status_bed") {
+    } else if (key === "status_bed") {
       columnType = ColumnType.StatusBed;
     }
 
@@ -251,5 +253,5 @@ const createColumns = <T extends DataType>(
 
   return columns;
 };
-
 export default createColumns;
+

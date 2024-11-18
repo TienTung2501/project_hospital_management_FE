@@ -95,3 +95,64 @@ html,body,
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+.custom-daypicker {
+  width: 100%;
+  max-width: 350px; /* Giới hạn độ rộng */
+  margin: auto;
+  border: 1px solid #e5e7eb; /* Viền màu xám nhạt */
+  border-radius: 8px; /* Làm tròn các góc */
+  background-color: #ffffff; /* Nền trắng */
+  font-family: Arial, sans-serif; /* Font gọn gàng */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Hiệu ứng nổi */
+  padding: 16px; /* Khoảng cách bên trong */
+}
+
+.custom-daypicker .rdp-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151; /* Màu chữ tối hơn */
+}
+
+.custom-daypicker .rdp-months {
+  display: flex;
+  justify-content: center;
+}
+
+.custom-daypicker .rdp-head {
+  color: #6b7280; /* Màu xám cho tiêu đề ngày */
+  font-size: 12px;
+  text-align: center;
+}
+
+.custom-daypicker .rdp-day {
+  width: 36px; /* Kích thước ô ngày */
+  height: 36px;
+  line-height: 36px;
+  border-radius: 50%; /* Làm tròn */
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.custom-daypicker .rdp-day:hover {
+  background-color: #dbeafe; /* Nền xanh nhạt khi hover */
+  color: #1e40af; /* Chữ xanh đậm khi hover */
+}
+
+.custom-daypicker .rdp-day_selected {
+  background-color: #1e40af; /* Màu nền xanh đậm */
+  color: white; /* Màu chữ trắng */
+}
+
+.custom-daypicker .rdp-dropdown {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #374151;
+  background-color: #ffffff;
+}

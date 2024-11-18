@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons"
+import * as React from "react";
+import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -12,17 +12,17 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 // Tạo kiểu ComboboxOption chung
 interface ComboboxOption<T> {
-  value: T
-  label: string
+  value: T;
+  label: string;
 }
 
 interface ComboboxProps<T> {
@@ -42,6 +42,17 @@ export function Combobox<T>({
   const [selectedValue, setSelectedValue] = React.useState<T | null>(defaultValue);
   const [searchText, setSearchText] = React.useState("");
 
+  const handleSelect = (value: T | null) => {
+    setSelectedValue(value);
+    onSelect(value); // Gửi giá trị đã chọn về hàm onSelect
+    setOpen(false);
+    setSearchText(""); // Clear search text after selection
+  };
+
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -57,6 +68,7 @@ export function Combobox<T>({
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-fit p-0">
         <Command>
           <CommandInput
@@ -68,23 +80,12 @@ export function Combobox<T>({
           <CommandList>
             <CommandEmpty>No options found.</CommandEmpty>
             <CommandGroup>
-              {options
-                .filter((option) =>
-                  option.label.toLowerCase().includes(searchText.toLowerCase())
-                )
-                .map((option) => (
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
                   <CommandItem
                     key={String(option.value)}
                     value={option.label}
-                    onSelect={(label) => {
-                      const selectedOption = options.find(
-                        (option) => option.label === label
-                      );
-                      setSelectedValue(selectedOption ? selectedOption.value : null);
-                      onSelect(selectedOption ? selectedOption.value : null);
-                      setOpen(false);
-                      setSearchText(""); // Clear search text after selection
-                    }}
+                    onSelect={() => handleSelect(option.value)}
                   >
                     {option.label}
                     <CheckIcon
@@ -94,7 +95,10 @@ export function Combobox<T>({
                       )}
                     />
                   </CommandItem>
-                ))}
+                ))
+              ) : (
+                <CommandEmpty>No options found.</CommandEmpty>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>

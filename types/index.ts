@@ -149,20 +149,7 @@ export type ServiceCatalogue = {
 };
 
 // Định nghĩa cho dịch vụ
-export type ServiceType = {
-  id: bigint;                      // ID của dịch vụ
-  name: string;                   // Tên dịch vụ
-  description?: string;           // Mô tả về dịch vụ (tuỳ chọn)
-  price: number;                  // Phí dịch vụ
-  status: number;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
-  detail?: string;                // Thông tin chi tiết về dịch vụ (tuỳ chọn)
-  health_insurance_applied?: number; // Có áp dụng giảm phí cho bệnh nhân có bảo hiểm y tế không (tuỳ chọn, mặc định là 0)
-  health_insurance_value?: number;  // Giá trị giảm phí bảo hiểm y tế (%), mặc định là 0%
-  service_catalogue_id: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
-  //service_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
-  room_catalogue_id: bigint;        // ID nhóm phòng mà dịch vụ thuộc về                // Thời gian cập nhật
-  //room_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
-};
+
 
 export type MedicationCatalogue ={
   id: bigint;
@@ -189,19 +176,47 @@ export type MedicationType = {
   description?: string;               // Mô tả dược phẩm
   medication_catalogue_name:string;
 };
-
+// Định nghĩa cho dịch vụ
+export type ServiceType = {
+  id: bigint;                      // ID của dịch vụ
+  name: string;                   // Tên dịch vụ
+  description?: string;           // Mô tả về dịch vụ (tuỳ chọn)
+  price: number;                  // Phí dịch vụ
+  status: number;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
+  detail?: string;                // Thông tin chi tiết về dịch vụ (tuỳ chọn)
+  health_insurance_applied?: number; // Có áp dụng giảm phí cho bệnh nhân có bảo hiểm y tế không (tuỳ chọn, mặc định là 0)
+  health_insurance_value?: number;  // Giá trị giảm phí bảo hiểm y tế (%), mặc định là 0%
+  service_catalogue_id: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
+  //service_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
+  room_catalogue_id: bigint;        // ID nhóm phòng mà dịch vụ thuộc về                // Thời gian cập nhật
+  //room_catalogue_name: bigint;     // ID nhóm dịch vụ mà dịch vụ thuộc về
+};
+export type Patient = {
+  id: bigint;
+  name: string;
+  birthday?: string;
+  address?: string;
+  phone?: string;
+  cccd_number: string;
+  health_insurance_code?: string;
+  guardian_phone?: string;
+  gender: number; // 1 - nam, 2 - nữ, 3 - giới tính khác
+};
 export type MedicalRecord = {
-  id: bigint; // ID của bản ghi bệnh án
-  patient_id: string; // ID của bệnh nhân
-  user_id: string; // ID của bác sĩ
-  visit_date: string; // Ngày khám (định dạng datetime)
-  diagnosis: string; // Chuẩn đoán
-  notes: string; // Ghi chú của bác sĩ
-  appointment_date?: string | null; // Ngày hẹn khám (optional)
-  is_inpatient?: boolean; // Có điều trị nội trú không (true: nội trú, false: ngoại trú)
-  inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
-
-  examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
+  id:bigint;
+  patient_id:bigint;
+  user_id:bigint;
+  room_id:bigint;
+  visit_date?:string|undefined;
+  diagnosis?:string|undefined;
+  notes?:string|undefined;
+  apointment_date?:string|undefined;
+  is_inpatient:string|undefined;
+  inpatient_detail:string|undefined;
+  status:number|undefined;
+  patient_name:string;
+  service_ids: BigInt[];
+  service_names:String[];
 };
 // đối với việc tiếp nhận: có 2 trường hợp
 // TH1: đến khám mới-> thêm thông tin( thông tin cá nhân, tình trạng sức khỏe( kiểm tra sơ bộ chỉ số cơ thể) chỉ định xong rồi sẽ thêm 1 hồ sơ bệnh nhân-> hiển thị bệnh nhân với tình trạng đang khám)-> xem hồ sơ thì thấy các dịch vũ được chỉ định và trạng thái thanh toán, trạng thái xét nghiệm, sau đó đưa ra kết quả
@@ -218,17 +233,7 @@ export type PatientCurrently = {
   // inpatient_detail?: string | null; // Thông tin chi tiết về điều trị nội trú (optional)
   // examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
 };
-export type Patient = {
-  id: bigint;
-  name: string;
-  birthday?: string;
-  address?: string;
-  phone?: string;
-  cccd_number: string;
-  health_insurance_code?: string;
-  guardian_phone?: string;
-  gender: number; // 1 - nam, 2 - nữ, 3 - giới tính khác
-};
+
 export type DailyHealth = {
   id: bigint;
   treament_session_id: bigint; // Tham chiếu đến treament_sessions.id

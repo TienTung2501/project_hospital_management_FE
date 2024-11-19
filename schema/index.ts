@@ -301,4 +301,14 @@ export const PatientSchema = z.object({
     note: z.string().optional(),        // Ghi chú thêm, có thể có hoặc không
   });
 
-  
+export const PatientServiceSchema= z.object({
+  service_catalogue_id:  z.bigint().min(BigInt(1), {
+    message: "Yêu cầu chọn nhóm dịch vụ",
+}), // Tham chiếu đến bảng r
+  service_id:  z.bigint().min(BigInt(1), {
+    message: "Yêu cầu chọn dịch vụ",
+}), // Tham chiếu đến bảng r
+  room_id:  z.bigint().min(BigInt(1), {
+    message: "Yêu cầu chọn nhóm phòng",
+}), // Tham chiếu đến bảng r
+});

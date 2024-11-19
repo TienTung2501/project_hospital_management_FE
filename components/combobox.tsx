@@ -78,7 +78,6 @@ export function Combobox<T>({
             onValueChange={(value) => setSearchText(value)}
           />
           <CommandList>
-            <CommandEmpty>No options found.</CommandEmpty>
             <CommandGroup>
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => (

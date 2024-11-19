@@ -78,181 +78,114 @@ const ServicePage = () => {
   
   const [isOpenDialogCreate, setIsOpenDialogCreate] = useState(false);
   const [isOpenDialogUpdate, setIsOpenDialogUpdate] = useState(false);
-  const [isOpenDialogDetail, setIsOpenDialogDetail] = useState(false);
 
 
-  // detail service:
-  type Field = {
+  type DetailField = {
+    keyword: string;
     name: string;
-    value: string;
+    reference_range: string;
+    unit: string;
   };
-  
-  type Attribute = {
-    name: string;
-    fields: Field[];
-  };
-  const [attributeName, setAttributeName] = useState("");
-  const [fieldName, setFieldName] = useState("");
-  const [fieldValue, setFieldValue] = useState("");
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
 
-  const [selectedAttributeIndex, setSelectedAttributeIndex] = useState<number | null>(null);
-  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
-  const [editingFieldName, setEditingFieldName] = useState("");
-  const [editingFieldValue, setEditingFieldValue] = useState("");
-  const [editingAttributeName, setEditingAttributeName] = useState("");
-
-    // Trạng thái dialog
-    const [isAddFieldOpen, setIsAddFieldOpen] = useState(false);
-    const [isEditFieldOpen, setIsEditFieldOpen] = useState(false);
-    const [isEditAttributeOpen, setIsEditAttributeOpen] = useState(false);
+  const [details, setDetails] = useState<DetailField[]>([]);
+  const [newDetail, setNewDetail] = useState<DetailField>({
+    keyword: "",
+    name: "",
+    reference_range: "",
+    unit: "",
+  });
+  const [editingDetail, setEditingDetail] = useState<DetailField | null>(null);
+  const [editingDetailIndex, setEditingDetailIndex] = useState<number | null>(null);
+  const [isOpenDialogDetail, setIsOpenDialogDetail] = useState<boolean>(false);
+  const [isEditDetailOpen, setIsEditDetailOpen] = useState<boolean>(false);
 
 
-
-    const handleSaveAttribute = () => {
-      if (!attributeName) {
-        setError("Vui lòng điền.");
-        return;
-      }
-      setError("");
-      const newAttribute: Attribute = {
-        name: attributeName,
-        fields: [],
-      };
-      setAttributes([...attributes, newAttribute]);
-      setAttributeName("");
-    };
-  
-    // Handle add field
-    const handleAddField = (index: number) => {
-      if (!fieldName || !fieldValue) {
-        setError("Yêu cầu điền.");
-        return;
-      }
-      const newField: Field = { name: fieldName, value: fieldValue };
-      const newAttributes = [...attributes];
-      newAttributes[index].fields.push(newField);
-      setAttributes(newAttributes);
-      setFieldName("");
-      setFieldValue("");
-      setIsAddFieldOpen(false); // Đóng dialog AddField sau khi thêm trường
-    };
-  
-    // Handle open edit field dialog
-    const handleOpenEditFieldDialog = (attrIndex: number, fieldIndex: number) => {
-      setSelectedAttributeIndex(attrIndex);
-      const field = attributes[attrIndex].fields[fieldIndex];
-      setEditingFieldName(field.name);
-      setEditingFieldValue(field.value);
-      setEditingFieldIndex(fieldIndex);
-      setIsAddFieldOpen(false); // Đóng dialog AddField khi mở EditField
-      setIsEditFieldOpen(true);
-    };
-  
-    // Handle save edit field
-    const handleSaveEditField = () => {
-      if (selectedAttributeIndex !== null && editingFieldIndex !== null) {
-        const newAttributes = [...attributes];
-        const field = newAttributes[selectedAttributeIndex].fields[editingFieldIndex];
-        field.name = editingFieldName;
-        field.value = editingFieldValue;
-        setAttributes(newAttributes);
-        setEditingFieldName("");
-        setEditingFieldValue("");
-        setEditingFieldIndex(null);
-        setSelectedAttributeIndex(null);
-        setIsEditFieldOpen(false); // Đóng dialog EditField sau khi lưu
-      }
-    };
-  
-    // Handle delete field
-    const handleDeleteField = (attrIndex: number, fieldIndex: number) => {
-      const newAttributes = [...attributes];
-      newAttributes[attrIndex].fields.splice(fieldIndex, 1);
-      setAttributes(newAttributes);
-    };
-  
-    // Handle open edit attribute dialog
-    const handleOpenEditAttributeDialog = (attrIndex: number) => {
-      const attribute = attributes[attrIndex];
-      setEditingAttributeName(attribute.name);
-      setSelectedAttributeIndex(attrIndex);
-      setIsAddFieldOpen(false); // Đóng dialog AddField khi mở EditAttribute
-      setIsEditAttributeOpen(true);
-    };
-  
-    // Handle save edit attribute
-    const handleSaveEditAttribute = () => {
-      if (selectedAttributeIndex !== null) {
-        const newAttributes = [...attributes];
-        newAttributes[selectedAttributeIndex].name = editingAttributeName;
-        setAttributes(newAttributes);
-        setEditingAttributeName("");
-        setSelectedAttributeIndex(null);
-        setIsEditAttributeOpen(false); // Đóng dialog EditAttribute sau khi lưu
-      }
-    };
-  
-  const onSubmitEditDetailService = () => {
-    if (attributes.length === 0) {
-      setError("Vui lòng thêm thông tin mẫu dịch vụ.");
+  const handleAddDetail = () => {
+    if (!newDetail.keyword || !newDetail.name || !newDetail.reference_range || !newDetail.unit) {
+      setError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
+    setDetails([...details, newDetail]);
+    setNewDetail({ keyword: "", name: "", reference_range: "", unit: "" });
+    setError(null);
+  };
+
+  const handleEditDetail = () => {
+    if (editingDetailIndex !== null && editingDetail) {
+      const updatedDetails = [...details];
+      updatedDetails[editingDetailIndex] = editingDetail;
+      setDetails(updatedDetails);
+      setEditingDetail(null);
+      setEditingDetailIndex(null);
+      setIsEditDetailOpen(false);
+    }
+  };
+
+  const handleDeleteDetail = (index: number) => {
+    setDetails(details.filter((_, i) => i !== index));
+  };
+
+
+
+
+
+ 
+    // Handle save edit field
+
   
-    // Định nghĩa serviceData với kiểu Record<string, any> cho phép dùng chuỗi làm key
-    const serviceData: Record<string, Record<string, string>> = {};
-  
-    // Duyệt qua các attributes và tạo cấu trúc dữ liệu cho từng attribute
-    attributes.forEach(attribute => {
-      const fieldsData: Record<string, string> = {};
-  
-      // Duyệt qua các field trong attribute để lấy name và value
-      attribute.fields.forEach(field => {
-        fieldsData[field.name] = field.value;
-      });
-  
-      // Lưu các trường vào đối tượng tương ứng với tên attribute
-      serviceData[attribute.name] = fieldsData;
-    });
-  
-    // Chuyển đổi thành chuỗi JSON
-    const jsonString = JSON.stringify(serviceData);
-      const newEditData={
-        ...editData,
-        room_catalogue_id:BigInt(editData.room_catalogue_id),
-        service_catalogue_id:BigInt(editData.service_catalogue_id),
-        detail:jsonString,
+    const onSubmitEditDetailService = () => {
+      if (details.length === 0) {
+        setError("Vui lòng thêm thông tin mẫu dịch vụ.");
+        return;
       }
-      if (!editData) return; // Ensure there is data to edit
+    
+      // Tạo danh sách các chi tiết dịch vụ theo định dạng mới
+      const serviceData = details.map((detail) => ({
+        keyword: detail.keyword,
+        name: detail.name,
+        reference_range: detail.reference_range,
+        unit: detail.unit,
+      }));
+    
+      // Chuyển thành chuỗi JSON
+      const jsonString = JSON.stringify(serviceData);
+      
+      // Chuẩn bị dữ liệu để cập nhật
+      const newEditData = {
+        ...editData,
+        room_catalogue_id: BigInt(editData.room_catalogue_id),
+        service_catalogue_id: BigInt(editData.service_catalogue_id),
+        detail: jsonString,
+      };
+      console.log(newEditData);
+      if (!editData) return;
+    
       setError("");
-      startTransition(()=>{
-        update_service(editData?.id,newEditData)
-        .then((data) => {
+      startTransition(() => {
+        update_service(editData.id, newEditData).then((data) => {
           if (data.error) {
             setError(data.error);
             toast({
-              variant:"destructive",
+              variant: "destructive",
               title: "Lỗi khi cập nhật",
               description: data.error,
               action: <ToastAction altText="Try again">Ok</ToastAction>,
             });
-           
           } else if (data.success) {
-            setError('');
-            // Hiển thị toast cho thành công
+            setError("");
             toast({
-              variant:"success",
+              variant: "success",
               title: "Cập nhật thành công",
               description: data.success,
               action: <ToastAction altText="Try again">Ok</ToastAction>,
             });
-            // Điều hướng sau khi thành công
             setIsOpenDialogDetail(false);
-            fetchServices();
+            fetchServices(); // Reload dịch vụ
           }
-        })
+        });
       });
     };
+    
     // end detail service:
 
   const { toast } = useToast();
@@ -611,51 +544,39 @@ const fetchServiceCatalogues = async () => {
     { key: "status", onStatusChange: handleSwitchChange },
   ];
   const buttonColumnConfig = {
-    id: 'customButton',
-    header: 'Chi tiết mẫu',
+    id: "customButton",
+    header: "Chi tiết mẫu",
     onClickConfig: (id: string | BigInt) => {
       const item = items.find((service) => service.id === id);
       setEditData(item);
   
       if (item && item.detail) {
         try {
-          // Phân tích chuỗi JSON vào đối tượng JavaScript
-          const parsedDetail = JSON.parse(item.detail); // item.result_details chứa chuỗi JSON
-          console.log(parsedDetail);
-      
-          // Kiểm tra nếu parsedDetail là một đối tượng hợp lệ
-          if (parsedDetail && typeof parsedDetail === 'object' && !Array.isArray(parsedDetail)) {
-            // Ép kiểu parsedDetail thành một đối tượng với kiểu cụ thể
-            const parsedDetailObject = parsedDetail as { [key: string]: any }; // Giả sử parsedDetail là một object
-          
-            // Bây giờ bạn có thể an toàn gọi Object.entries
-            const attributeEntries = Object.entries(parsedDetailObject); 
-            const attributes = attributeEntries.map(([key, value]) => ({
-              name: key,
-              fields: Object.entries(value).map(([fieldKey, fieldValue]) => ({
-                name: fieldKey,
-                value: String(fieldValue), // Ép kiểu value thành string
-              }))
+          const parsedDetail = JSON.parse(item.detail);
+  
+          if (Array.isArray(parsedDetail)) {
+            // Chuyển JSON sang danh sách các chi tiết
+            const attributes = parsedDetail.map((detail: DetailField) => ({
+              keyword: detail.keyword,
+              name: detail.name,
+              reference_range: detail.reference_range,
+              unit: detail.unit,
             }));
-          
-            setAttributes(attributes); // Lưu các thuộc tính vào state
+            setDetails(attributes);
           } else {
-            setAttributes([]); // Nếu parsedDetail không phải là object hợp lệ
+            setDetails([]); // Nếu không phải mảng hợp lệ
           }
-          
         } catch (e) {
           console.error("Lỗi khi phân tích JSON:", e);
-          setAttributes([]); // Nếu gặp lỗi khi phân tích chuỗi JSON, đặt lại attributes
+          setDetails([]); // Xử lý lỗi JSON
         }
       } else {
-        setAttributes([]); // Nếu không có item hoặc item không có 'detail'
+        setDetails([]);
       }
-      
-      setIsOpenDialogDetail(true); // Mở dialog
   
       setIsOpenDialogDetail(true); // Mở dialog
     },
-    content: 'Chi tiết',
+    content: "Chi tiết",
   };
   
   
@@ -687,238 +608,152 @@ const fetchServiceCatalogues = async () => {
             <Button type="submit">Lọc</Button>
           </div>
 
+          <Dialog open={isOpenDialogDetail} onOpenChange={setIsOpenDialogDetail}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Thông tin mẫu dịch vụ</DialogTitle>
+          <DialogDescription>Chi tiết mẫu dịch vụ</DialogDescription>
+        </DialogHeader>
 
-  <Dialog open={isOpenDialogDetail} onOpenChange={setIsOpenDialogDetail}>
-          
-    <DialogContent className="max-h-[80vh] overflow-y-auto">
-    <DialogHeader>
-            <DialogTitle>Thông tin mẫu dịch vụ</DialogTitle>
-            <DialogDescription>Chi tiết mẫu dịch vụ</DialogDescription>
-          </DialogHeader>
-
-        {/* Enter attribute name */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Thuộc tính</label>
-          <input
-            className="w-full p-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            type="text"
-            placeholder="Nhập thuộc tính"
-            value={attributeName}
-            onChange={(e) => setAttributeName(e.target.value)}
-          />
+        {/* Form nhập liệu */}
+        <div className="grid gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Keyword</label>
+            <Input
+              value={newDetail.keyword}
+              onChange={(e) => setNewDetail({ ...newDetail, keyword: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <Input
+              value={newDetail.name}
+              onChange={(e) => setNewDetail({ ...newDetail, name: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Reference Range</label>
+            <Input
+              value={newDetail.reference_range}
+              onChange={(e) => setNewDetail({ ...newDetail, reference_range: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Unit</label>
+            <Input
+              value={newDetail.unit}
+              onChange={(e) => setNewDetail({ ...newDetail, unit: e.target.value })}
+            />
+          </div>
+          {error && <p className="text-red-600">{error}</p>}
+          <Button onClick={handleAddDetail}>Thêm</Button>
         </div>
 
-        {/* Show error message if fields are missing */}
-        {error && <p className="text-red-600 mb-4">{error}</p>}
-
-        {/* Save attribute button */}
-        <Button
-          onClick={handleSaveAttribute}
-        >
-          Thêm
-        </Button>
-
-        {/* Display attribute list */}
+        {/* Danh sách chi tiết */}
         <div className="mt-6">
-          <h4 className="text-lg font-semibold">Thông tin chi tiết:</h4>
+          <h3 className="text-lg font-semibold">Chi tiết mẫu dịch vụ</h3>
+          <Button className='w-full' onClick={onSubmitEditDetailService}>Lưu thay đổi</Button>
           <ul className="space-y-4 mt-4">
-            {attributes.map((attribute, attrIndex) => (
-              <li key={attrIndex} className="border p-4 rounded-lg shadow-sm">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Thuộc tính: {attribute.name}</span>
-                  <div className="grid grid-cols-2 flex gap-2">
-                    {/* Edit attribute button */}
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenEditAttributeDialog(attrIndex)}
-                    >
-                      Sửa thuộc tính
-                    </Button>
-
-                    {/* Delete attribute */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newAttributes = attributes.filter((_, i) => i !== attrIndex);
-                        setAttributes(newAttributes);
-                      }}
-                    >
-                      Xóa thuộc tính
-                    </Button>
-
-                    {/* Add field button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedAttributeIndex(attrIndex);
-                        setIsAddFieldOpen(true);
-                      }}
-                    >
-                      Thêm trường
-                    </Button>
+            {details.map((detail, index) => (
+              <li key={index} className="border p-4 rounded-lg shadow-sm">
+                <div>
+                  <div>
+                    <strong>Keyword:</strong> {detail.keyword}
+                  </div>
+                  <div>
+                    <strong>Name:</strong> {detail.name}
+                  </div>
+                  <div>
+                    <strong>Reference Range:</strong> {detail.reference_range}
+                  </div>
+                  <div>
+                    <strong>Unit:</strong> {detail.unit}
                   </div>
                 </div>
-
-                {/* Fields list */}
-                <ul className="mt-4">
-  {attribute.fields && attribute.fields.length > 0 ? (
-    attribute.fields.map((field, fieldIndex) => (
-      <li key={fieldIndex} className="flex justify-between items-center mb-2">
-        <div>
-          <strong>{field.name}:</strong> {field.value}
-        </div>
-        <div className="space-x-2">
-          {/* Edit Field */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleOpenEditFieldDialog(attrIndex, fieldIndex)}
-          >
-            Edit
-          </Button>
-          {/* Delete Field */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDeleteField(attrIndex, fieldIndex)}
-          >
-            Delete
-          </Button>
-        </div>
-      </li>
-    ))
-  ) : (
-    <li>No fields available</li>
-  )}
-</ul>
-
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingDetail(detail);
+                      setEditingDetailIndex(index);
+                      setIsEditDetailOpen(true);
+                    }}
+                  >
+                    Chỉnh sửa
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteDetail(index)}
+                  >
+                    Xóa
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Edit Attribute Dialog */}
-        <Dialog open={isEditAttributeOpen} onOpenChange={setIsEditAttributeOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Attribute</DialogTitle>
-            <DialogDescription>Update the name of the attribute.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="editingAttributeName" className="text-right">
-                Attribute Name
-              </Label>
-              <Input
-                id="editingAttributeName"
-                value={editingAttributeName}
-                onChange={(e) => setEditingAttributeName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveEditAttribute}>Save Changes</Button>
-            <DialogClose asChild>
-              <Button variant="ghost" onClick={() => setIsEditAttributeOpen(false)}>
-                Close
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Field Dialog */}
-      <Dialog open={isAddFieldOpen} onOpenChange={setIsAddFieldOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add Field</DialogTitle>
-            <DialogDescription>Add a new field to this attribute.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldName" className="text-right">
-                Field Name
-              </Label>
-              <Input
-                id="fieldName"
-                value={fieldName}
-                onChange={(e) => setFieldName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldValue" className="text-right">
-                Field Value
-              </Label>
-              <Input
-                id="fieldValue"
-                value={fieldValue}
-                onChange={(e) => setFieldValue(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => handleAddField(selectedAttributeIndex!)}>Add Field</Button>
-            <DialogClose asChild>
-              <Button variant="ghost" onClick={() => setIsAddFieldOpen(false)}>
-                Close
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Field Dialog */}
-      <Dialog open={isEditFieldOpen} onOpenChange={setIsEditFieldOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Field</DialogTitle>
-            <DialogDescription>Edit the name and value of the field.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="editingFieldName" className="text-right">
-                Field Name
-              </Label>
-              <Input
-                id="editingFieldName"
-                value={editingFieldName}
-                onChange={(e) => setEditingFieldName(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="editingFieldValue" className="text-right">
-                Field Value
-              </Label>
-              <Input
-                id="editingFieldValue"
-                value={editingFieldValue}
-                onChange={(e) => setEditingFieldValue(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleSaveEditField}>Save Changes</Button>
-            <DialogClose asChild>
-              <Button variant="ghost" onClick={() => setIsEditFieldOpen(false)}>
-                Close
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-              <Button onClick={onSubmitEditDetailService}> Lưu thông tin mẫu dịch vụ</Button>
-    </DialogContent>
-          
-  </Dialog>
+        {/* Dialog chỉnh sửa */}
+        <Dialog open={isEditDetailOpen} onOpenChange={setIsEditDetailOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Chỉnh sửa chi tiết</DialogTitle>
+              <DialogDescription>Chỉnh sửa thông tin chi tiết của dịch vụ.</DialogDescription>
+            </DialogHeader>
+            {editingDetail && (
+              <div className="grid gap-4 py-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Keyword</label>
+                  <Input
+                    value={editingDetail.keyword}
+                    onChange={(e) =>
+                      setEditingDetail((prev) => (prev ? { ...prev, keyword: e.target.value } : null))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <Input
+                    value={editingDetail.name}
+                    onChange={(e) =>
+                      setEditingDetail((prev) => (prev ? { ...prev, name: e.target.value } : null))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reference Range</label>
+                  <Input
+                    value={editingDetail.reference_range}
+                    onChange={(e) =>
+                      setEditingDetail((prev) =>
+                        prev ? { ...prev, reference_range: e.target.value } : null
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Unit</label>
+                  <Input
+                    value={editingDetail.unit}
+                    onChange={(e) =>
+                      setEditingDetail((prev) => (prev ? { ...prev, unit: e.target.value } : null))
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button onClick={handleEditDetail}>Lưu thay đổi</Button>
+              <DialogClose asChild>
+                <Button variant="ghost">Đóng</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
 
 
 

@@ -10,13 +10,14 @@ export const update_service = async (id: bigint, values: z.infer<typeof ServiceS
     console.log(validateFields.error); // Xem chi tiết lỗi validation
     return { error: "Dữ liệu nhập không hợp lệ." }; // Kiểm tra validation đầu vào
   }
+  
   const valuesConvert={
     ...values,
     health_insurance_value:Number(values.health_insurance_value),
     service_catalogue_id: Number(values.service_catalogue_id),
     room_catalogue_id: Number(values.room_catalogue_id),
   }
-
+  console.log(valuesConvert)
   try {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/services/${id}`;
     const response = await axios.patch(endpoint, valuesConvert, { timeout: 5000 });

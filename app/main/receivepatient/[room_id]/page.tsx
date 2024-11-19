@@ -95,8 +95,7 @@ const AdminPage = () => {
   const user_id = currentUser ? currentUser.id : null;
 
   // Lấy room_id từ URL params
-  const { room_id } = useParams<{ room_id: string }>(); // Thêm kiểu dữ liệu nếu cần thiết
-
+  const { room_id } = useParams(); // Thêm kiểu dữ liệu nếu cần thiết
   const handleClick = () => {
     // Use router in a safe way, like in an event handler or inside useEffect
     router.push('/main/cartegory/user/create');
@@ -158,25 +157,40 @@ const AdminPage = () => {
       try {
         // Gửi yêu cầu với tham số limit để lấy tất cả các phòng
         const response = await axios.get(endpoint, {
-          params: { room_id:room_id },
+          params: { limit: 1000 } // Truyền tham số limit vào đây
         });
-        
-      const data = response?.data?.data.data[0];
-       // Chuyển đổi dữ liệu API thành kiểu `RoomType`
-        const infoRoom:RoomType = {
-          id: data.id,
-          code: data.code,
-          description: data.room_catalogue?.description || "N/A", // Lấy mô tả từ room_catalogue
-          status: data.status,
-          room_catalogue_id: data.room_catalogue_id,
-          department_id: data.department_id,
-          beds_count: data.beds_count,
-          status_bed: data.status_bed,
-          department_name: data.department?.name || "N/A", // Lấy tên phòng ban từ department
-          room_catalogue_code: data.room_catalogue?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
-        }
+    
+        const data = response?.data?.data?.data; // Lấy mảng dữ liệu
         console.log(data)
-        setInforRoom(infoRoom);
+        if (Array.isArray(data)) {
+          // Thay `room_id` bằng giá trị ID bạn muốn tìm
+          const roomData = data.find((item) => Number(item.id) === Number(room_id)); // Tìm phòng có `id` phù hợp
+    
+          if (roomData) {
+            // Chuyển đổi roomData thành kiểu RoomType
+            const infoRoom: RoomType = {
+              id: roomData.id,
+              code: roomData.code,
+              description: roomData.room_catalogue?.description || "N/A", // Lấy mô tả từ room_catalogue
+              status: roomData.status,
+              room_catalogue_id: roomData.room_catalogue_id,
+              department_id: roomData.department_id,
+              beds_count: roomData.beds_count,
+              status_bed: roomData.status_bed,
+              department_name: roomData.department?.name || "N/A", // Lấy tên phòng ban từ department
+              room_catalogue_code: roomData.room_catalogue?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
+            };
+    
+            console.log("Room info:", infoRoom);
+            setInforRoom(infoRoom);
+          } else {
+            console.error(`Không tìm thấy phòng với ID: ${room_id}`);
+            setInforRoom(undefined); // Nếu không tìm thấy, đặt giá trị null
+          }
+        } else {
+          console.error("Dữ liệu không phải là một mảng:", data);
+          setInforRoom(undefined);
+        }
       } catch (err) {
         setError("Error fetching rooms. Please try again.");
         console.error("Error fetching rooms:", err);
@@ -202,7 +216,7 @@ const AdminPage = () => {
   
           // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
           const fetchedMedicalRecord: MedicalRecord[] = data.map((item: any) => ({
-            id: item.patient_id,
+            id: item.id,
             patient_id: item.patient_id,
             user_id: item.user_id,
             room_id: item.room_id,
@@ -230,7 +244,7 @@ const AdminPage = () => {
         fetchRooms();
         fetchMedicalRecords();
       }
-    }, [user_id, room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
+    }, [currentUser,user_id, room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
   
     if (loading) {

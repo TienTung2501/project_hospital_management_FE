@@ -1,10 +1,10 @@
+"use server";
 import * as z from "zod";
 import axios from "axios";
 import { MedicalRecordSchema } from "@/schema";
 import { Patient } from "@/types";
 
 export const create_patient = async (
-
   values: z.infer<typeof MedicalRecordSchema>
 ) => {
   // 1. Validate input from form
@@ -48,23 +48,31 @@ export const create_patient = async (
   };
 
   try {
+    let idPatient: bigint;
 
-    let idPatient :bigint;
     // 2. Kiểm tra xem bệnh nhân đã tồn tại với số CCCD này chưa
     const checkPatientEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients`;
     const checkPatientResponse = await axios.get(checkPatientEndpoint, {
-      params: { cccd_number: values.cccd_number }, // Truyền tham số cccd_number vào yêu cầu GET
+      params: { keyword: values.cccd_number }, // Truyền tham số cccd_number vào yêu cầu GET
     });
+    
     const patients = checkPatientResponse.data.data.data; // Lấy danh sách bệnh nhân từ response
 
-    if (patients && patients.length > 0) {
-      // Nếu bệnh nhân đã tồn tại, lấy ID bệnh nhân cũ
-      idPatient = patients[0].id; // Lấy ID của bệnh nhân đầu tiên
+    if (Array.isArray(patients)) {
+      // Thay `cccd_number` bằng giá trị CCCD bạn muốn tìm
+      const patient = patients.find((item) => item.cccd_number === values.cccd_number); // Tìm bệnh nhân có cccd_number phù hợp
+
+      if (patient) {
+        // Nếu bệnh nhân đã tồn tại, lấy ID bệnh nhân cũ
+        idPatient = patient.id; // Lấy ID của bệnh nhân đầu tiên
+      } else {
+        // Nếu bệnh nhân chưa tồn tại, tạo bệnh nhân mới
+        const createPatientEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/create`;
+        const response = await axios.post(createPatientEndpoint, convertValue, { timeout: 5000 });
+        idPatient = response.data.data.id;
+      }
     } else {
-      // Nếu bệnh nhân chưa tồn tại, tạo bệnh nhân mới
-      const createPatientEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/create`;
-      const response = await axios.post(createPatientEndpoint, convertValue, { timeout: 5000 });
-      idPatient = response.data.data.id;
+      throw new Error("Dữ liệu bệnh nhân không hợp lệ");
     }
 
     console.log("Patient ID:", idPatient);
@@ -78,23 +86,22 @@ export const create_patient = async (
     };
 
     // Đợi tạo hồ sơ bệnh án trước khi trả kết quả
-    // Đợi tạo hồ sơ bệnh án trước khi trả kết quả
+    const medicalRecordResponse = await axios.post(createMedicalRecordEndpoint, medicalRecordData, { timeout: 5000 });
 
-  const medicalRecordResponse = await axios.post(createMedicalRecordEndpoint, medicalRecordData, { timeout: 5000 });
+    // Kiểm tra status và thông điệp trả về
+    if (medicalRecordResponse.status === 200 || medicalRecordResponse.data.message === "created") {
+      return {
+        success: true,
+        message: "Bệnh nhân và hồ sơ bệnh án đã được tạo thành công.",
+        data: medicalRecordResponse.data.data,
+      };
+    } else {
+      console.error("Lỗi khi tạo hồ sơ bệnh án:", medicalRecordResponse.data);
+      return { error: "Lỗi khi tạo hồ sơ bệnh án." };
+    }
 
-  // Kiểm tra status và thông điệp trả về
-  if (medicalRecordResponse.status === 200 || medicalRecordResponse.data.message === "created") {
-    return {
-      success: true,
-      message: "Bệnh nhân và hồ sơ bệnh án đã được tạo thành công.",
-      data: medicalRecordResponse.data.data,
-    };
-  } else {
-    console.error("Lỗi khi tạo hồ sơ bệnh án:", medicalRecordResponse.data);
-    return { error: "Lỗi khi tạo hồ sơ bệnh án." };
+  } catch (error: any) {
+    console.error("API error:", error.response ? error.response.data : error);
+    return { error: "Đã xảy ra lỗi khi tạo bệnh nhân và hồ sơ bệnh án." };
   }
-} catch (error:any) {
-  console.error("API error:", error.response ? error.response.data : error);
-  return { error: "Đã xảy ra lỗi khi tạo bệnh nhân và hồ sơ bệnh án." };
-}
 };

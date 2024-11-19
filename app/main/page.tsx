@@ -97,7 +97,7 @@ const HomePage = () => {
                 if (!link) return null; // Không hiển thị link nếu không hợp lệ
                 return (
                   <li
-                    key={room.id.toString()}
+                    key={room.id}
                     className="border rounded-lg p-4 shadow hover:shadow-md transition"
                   >
                     <Link href={link}>

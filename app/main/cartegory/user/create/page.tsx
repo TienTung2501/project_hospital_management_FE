@@ -97,7 +97,7 @@ import { useState, useEffect, useTransition } from "react";
 import * as z from "zod";
 import { create_user } from "@/actions/cartegory/user/index";
 import axios from "axios"; // Import axios for API requests
-import { DepartmentType, PositionType, RoomType } from "@/types";
+import { DepartmentType, PositionType, RoomCatalogueType, RoomType } from "@/types";
 import { Value } from "@radix-ui/react-select";
 import React from "react";
 
@@ -106,9 +106,11 @@ const CreateUser = () => {
   const [positions, setPositions] = useState<PositionType[]>([]);
   const [departments, setDepartments] = useState<DepartmentType[]>([]);
   const [rooms, setRooms] = useState<RoomType[]>([]);
+  const [filterRooms, setFilterRooms] = useState<RoomType[]>([]);
   const [totalRecords, setTotalRecords] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [roomCatalogues,setRoomCatalogue]=useState<RoomCatalogueType[]>([]);
   const [error, setError] = useState<string | null>("");
   const { toast } = useToast();
   const router = useRouter();
@@ -187,7 +189,39 @@ const CreateUser = () => {
             toast({ variant: "destructive", title: "Error", description: "Could not load departments." });
         }
     };
-
+    const fetchRoomCatalogues = async () => {
+      setLoading(true) // Bắt đầu trạng thái loading
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/roomCatalogues`;
+      try {
+        const response = await axios.get(endpoint, {
+          params: {
+            limit: 1000, // Số bản ghi trên mỗi trang
+          },
+        })
+        const { data } = response.data.data
+  
+        if (Array.isArray(data)) {
+          const fetchedRoomCatalogues: RoomCatalogueType[] = data.map((item: any) => ({
+            id: item.id,
+            keyword:item.keyword,
+            name: item.name,
+            description: item.description,
+            status: item.status,
+          })) // Chỉ lấy các thuộc tính cần thiết
+      
+          setRoomCatalogue(fetchedRoomCatalogues) // Cập nhật danh sách phòng ban
+          setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+        } else {
+          throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+        }
+      } catch (err) {
+        setError('Error fetching RoomCatalogues') // Xử lý lỗi
+        console.error('Error fetching RoomCatalogues:', err)
+      } finally {
+        setLoading(false) // Kết thúc trạng thái loading
+      }
+    }
+    fetchRoomCatalogues();
     fetchPositions();
     fetchDepartments();
 }, []);
@@ -224,7 +258,7 @@ const CreateUser = () => {
     })
   });
   };
-  const fetchRooms = async (departmentId: bigint) => {
+  const fetchRooms = async (value: bigint) => {
     setLoading(true);
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
   
@@ -244,9 +278,10 @@ const CreateUser = () => {
   
       const { data } = response.data.data;
       if (Array.isArray(data)) {
+        console.log(data)
         // Lọc các phòng có room_catalogue.name là "NOTRU"
         const fetchedRooms: RoomType[] = data
-          .filter((item: any) => item.department_id===departmentId) // Chỉ lấy phòng có tên "NOTRU"
+          .filter((item: any) => item.department_id===selectedDepartment&&item.users.length===0&&item.room_catalogue_id===value) // Chỉ lấy phòng có tên "NOTRU"
           .map((item: any) => ({
             id: item.id,
             code: item.code,
@@ -282,15 +317,22 @@ const CreateUser = () => {
   const handleSelectDepartmemt = (value: bigint | null) => {
     if (value !== null) {
       form.setValue('department_id', BigInt(value)); // Cập nhật giá trị trong form
+      
       setSelectedRooms([]); // Reset danh sách phòng đã chọn
       setSelectedValue(null); // Reset giá trị Combobox
-      fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+      setSelectedDepartment(value)
+      
     }
   };
+  const handleSelectRoomCatalogue=(value: bigint | null) => {
+    if(value)
+      fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+    };
 
 // room_ids
   const [selectedRooms, setSelectedRooms] = React.useState<bigint[]>([]);
   const [selectedValue, setSelectedValue] = React.useState<bigint | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = React.useState<bigint | null>(null);
 
   const handleSelectRoom = (value: bigint | null) => {
     // Chỉ thêm nếu giá trị chưa có trong danh sách đã chọn
@@ -562,7 +604,20 @@ const CreateUser = () => {
       );
     }}
   />
-
+<FormItem className="flex flex-col">
+      <FormLabel className="mr-2">Nhóm phòng</FormLabel>
+      <FormControl className="flex-grow">
+      <Combobox<bigint|null>
+            options={roomCatalogues.map(roomCatalogue => ({
+              value: roomCatalogue.id,
+              label: roomCatalogue.name,
+            }))}
+              placeholder="Chọn nhóm phòng"
+              onSelect={handleSelectRoomCatalogue}
+              />
+              </FormControl>
+              <FormMessage />
+                            </FormItem>
   
   <div className="grid gap-1">
   <p className="font-semibold text-l"> Chọn phòng</p>
@@ -581,9 +636,7 @@ const CreateUser = () => {
         <div className="flex flex-wrap mt-4 space-x-1 border border-black-300 rounded-md p-2 pb-0">
         {selectedRooms.map((roomId) => {
 
-          console.log(selectedRooms)
           const room = rooms.find((room) => room.id === roomId);
-          console.log(room?.code)
           return (
             <div
               key={roomId}

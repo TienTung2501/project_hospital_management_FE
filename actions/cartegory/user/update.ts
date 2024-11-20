@@ -12,7 +12,7 @@ export const update_user = async (id:bigint|undefined,values: z.infer<typeof Upd
     return { error: "Dữ liệu nhập không hợp lệ." }; // Return error if validation fails
   }
 
-
+  console.log(selectedRooms);
   try {
     // 2. Create new user with the provided details
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
@@ -36,7 +36,7 @@ export const update_user = async (id:bigint|undefined,values: z.infer<typeof Upd
       room_ids: selectedRooms,                    // Example room IDs
     };
 
-    
+    console.log(payload)
 
     const responseCreate = await axios.patch(endpoint, payload, { timeout: 5000 });
 

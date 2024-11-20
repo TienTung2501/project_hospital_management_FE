@@ -76,12 +76,15 @@ export const create_patient = async (
     }
 
     console.log("Patient ID:", idPatient);
-
+    const getRoomEndpoint=`${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${values.room_id}`
+    const getRoom = await axios.get(getRoomEndpoint);
+    const user_id=getRoom.data.data.users[0].id;
+    console.log("user_id",user_id);
     // 3. Tạo hồ sơ bệnh án cho bệnh nhân sau khi tạo bệnh nhân thành công
     const createMedicalRecordEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/create`;
     const medicalRecordData = {
       patient_id: Number(idPatient), // Patient ID from the response
-      user_id: Number(values.user_id), // The doctor ID
+      user_id: Number(user_id), // The doctor ID
       room_id: Number(values.room_id), // The room ID
     };
 

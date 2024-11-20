@@ -32,7 +32,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Combobox } from '@/components/combobox'
-import { DepartmentType, MedicalRecord, Patient, PatientCurrently, RoomType, UserInfoType } from '@/types';
+import { DepartmentType, MedicalRecord, Patient, PatientCurrently, RoomCatalogueType, RoomType, UserInfoType } from '@/types';
 import { useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
@@ -65,17 +65,17 @@ const NewPatient = () => {
   const router = useRouter(); 
   const [error,setError]=useState<string|undefined>("");
   const [isPending,startTransition]=useTransition();
-  const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
+
   const [keyword, setKeyword] = useState('');
   const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
-  const [deleteItem, setDeleteItem] = useState<UserInfoType | null>(null);
+
   const [loading, setLoading] = useState(true);
-  const [departments, setDepartments] = useState<DepartmentType[]>([]);
+
   const [rooms, setRooms] = useState<RoomType[]>([]);
-  const [users, setUsers] = useState<UserInfoType[]>([]);
-  
+
+  const [roomCatalogues,setRoomCatalogue]=useState<RoomCatalogueType[]>([]);
   const [isDialogOpen, setDialogOpen] = useState(false); // Để quản lý trạng thái dialog
   const form=useForm<z.infer<typeof MedicalRecordSchema>>({
     //resolver:zodResolver(MedicalRecordSchema),
@@ -93,7 +93,6 @@ const NewPatient = () => {
       guardian_phone: '',
       gender: 1, // Mặc định là nam
       room_id:undefined,
-      user_id:undefined,
     });
 
     form.clearErrors(); // Xóa lỗi validation
@@ -164,39 +163,40 @@ const NewPatient = () => {
           })
       });
     };
-    const fetchDepartments = async () => {
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
-    
+
+    const fetchRoomCatalogues = async () => {
+      setLoading(true) // Bắt đầu trạng thái loading
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/roomCatalogues`;
       try {
-        const response = await axios.get(endpoint);
-        const totalRecords = response.data.data.total;
-    
-        const responseAll = await axios.get(endpoint, {
+        const response = await axios.get(endpoint, {
           params: {
-            limit: totalRecords,
+            limit: 1000, // Số bản ghi trên mỗi trang
           },
-        });
-    
-        const { data } = responseAll.data.data;
+        })
+        const { data } = response.data.data
+  
         if (Array.isArray(data)) {
-          const departmentlist: DepartmentType[] = data
-            .filter((item: any) => item.status === 1) // Lọc các khoa có status = 1
-            .map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              description: item.description,
-              status: item.status,
-            }));
-    
-          setDepartments(departmentlist); // Cập nhật danh sách khoa
+          const fetchedRoomCatalogues: RoomCatalogueType[] = data.map((item: any) => ({
+            id: item.id,
+            keyword:item.keyword,
+            name: item.name,
+            description: item.description,
+            status: item.status,
+          })) // Chỉ lấy các thuộc tính cần thiết
+      
+          setRoomCatalogue(fetchedRoomCatalogues) // Cập nhật danh sách phòng ban
+          setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+        } else {
+          throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
         }
       } catch (err) {
-        console.error('Error fetching departments:', err);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not load departments.' });
+        setError('Error fetching RoomCatalogues') // Xử lý lỗi
+        console.error('Error fetching RoomCatalogues:', err)
+      } finally {
+        setLoading(false) // Kết thúc trạng thái loading
       }
-    };
-    
-    const fetchRooms = async (departmentId: bigint, keyword: string) => {
+    }
+    const fetchRooms = async (value: bigint,) => {
       setLoading(true);
       const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
     
@@ -211,9 +211,17 @@ const NewPatient = () => {
         });
     
         const { data } = responseAll.data.data;
+        console.log(data)
+        if (Array.isArray(data)) {
+          data.forEach((item: any) => {
+            console.log("Room:", item.room_catalogue_id);
+            console.log("Equals:", item.room_catalogue_id === 7);
+            
+          });
+        }
         if (Array.isArray(data)) {
           const fetchedRooms: RoomType[] = data
-            .filter((item: any) => item.department_id === departmentId && item.room_catalogue.keyword === keyword) // Lọc phòng theo department_id và keyword
+            .filter((item: any) => item.department.name === "Khoa khám bệnh" && item.room_catalogue_id === value&&item.users.length>0) // Lọc phòng theo department_id và keyword
             .map((item: any) => ({
               id: item.id,
               code: item.code,
@@ -226,7 +234,7 @@ const NewPatient = () => {
               department_id: item.department_id,
               room_catalogue_id: item.room_catalogue_id,
             }));
-    
+          console.log(fetchedRooms)
           setRooms(fetchedRooms); // Cập nhật danh sách phòng
           setTotalRecords(totalRecords);
         }
@@ -238,81 +246,19 @@ const NewPatient = () => {
       }
     };
     
-    const fetchUsers = async (roomId: bigint) => {
-      setLoading(true);
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
-    
-      try {
-        const initialResponse = await axios.get(endpoint);
-        const totalRecords = initialResponse.data.data.total;
-    
-        const response = await axios.get(endpoint, {
-          params: {
-            limit: totalRecords,
-          },
-        });
-        
-        const { data } = response.data.data;
-        if (Array.isArray(data)) {
-          const fetchedUsers: UserInfoType[] = data
-            .filter((item: any) => item.rooms.some((room: any) => room.id === roomId)) // Kiểm tra phòng của bác sĩ
-            .map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              email: item.email,
-              address: item.address || '',
-              phone: item.phone || '',
-              cccd: item.cccd,
-              certificate: item.certificate || '',
-              gender: item.gender,
-              status: item.status,
-              position_id: BigInt(item.position?.id || item.position_id),
-              position_name: item.position?.name || '',
-              department_id: BigInt(item.department?.id || item.department_id),
-              department_name: item.department?.name || '',
-              room_ids: item.rooms.map((room: any) => room.id),
-              room_codes: item.rooms.map((room: any) => room.code),
-            }));
-          console.log(data)
-          console.log(roomId)
-          setUsers(fetchedUsers); // Cập nhật danh sách bác sĩ
-          setTotalRecords(totalRecords);
-        } else {
-          throw new Error('Invalid response format');
-        }
-      } catch (err) {
-        setError('Error fetching users');
-        console.error('Error fetching users:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    const handleSelectDepartment = async (departmentId: bigint | null) => {
-      if (departmentId === null) return;
-    
-      try {
-        fetchRooms(departmentId, 'KHAMBENH'); // Lấy phòng trong khoa đã chọn
-      } catch (err) {
-        console.error('Có lỗi khi lấy dữ liệu phòng', err);
-      }
-    };
-    
+
     const handleSelectRoom = (value: bigint | null) => {
       if (value !== null) {
         form.setValue('room_id', BigInt(value)); // Cập nhật phòng vào form
-        fetchUsers(value); // Gọi fetchUsers để lấy danh sách bác sĩ cho phòng đã chọn
       }
     };
-    
-    const handleSelectUser = (value: bigint | null) => {
-      if (value !== null) {
-        form.setValue('user_id', BigInt(value)); // Cập nhật bác sĩ vào form
-      }
-    };
+    const handleSelectRoomCatalogue=(value: bigint | null) => {
+      if(value)
+        fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+      };
     // Fetch departments when the component loads
   useEffect(() => {
-    fetchDepartments();
+    fetchRoomCatalogues();
   }, []); // Empty dependency array, ensures this runs only once when the component mounts
    
   return (
@@ -626,23 +572,20 @@ const NewPatient = () => {
                                   </CardHeader>
                                   <CardContent>
                                     <div className="grid gap-6">
-                                  
-                                        
-                                          <FormItem className="flex flex-col">
-                      <FormLabel className="mr-2">Khoa</FormLabel>
-                      <FormControl className="flex-grow">
-                      <Combobox<bigint|null>
-                            options={departments.map(department => ({
-                              value: department.id,
-                              label: department.name,
-                            }))}
-                              placeholder="Chọn khoa"
-                              onSelect={handleSelectDepartment}
-                              />
-                              </FormControl>
-                              <FormMessage />
-                                            </FormItem>
-
+                                    <FormItem className="flex flex-col">
+                                                    <FormLabel className="mr-2">Nhóm phòng</FormLabel>
+                                                    <FormControl className="flex-grow">
+                                                    <Combobox<bigint|null>
+                                                          options={roomCatalogues.map(roomCatalogue => ({
+                                                            value: roomCatalogue.id,
+                                                            label: roomCatalogue.name,
+                                                          }))}
+                                                            placeholder="Chọn nhóm phòng"
+                                                            onSelect={handleSelectRoomCatalogue}
+                                                            />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                              </FormItem>
                                           <FormField 
                                                 control={form.control}
                                                 name="room_id"
@@ -664,27 +607,8 @@ const NewPatient = () => {
                                                   </FormItem>
                                                 )}
                                               />
-                                            <FormField 
-                                                control={form.control}
-                                                name="user_id"
-                                                render={({ field }) => (
-                                                  <FormItem className="flex flex-col">
-                                                    <FormLabel className="mr-2">Bác Sĩ Khám</FormLabel>
-                                                    <FormControl className="flex-grow">
-                                                      <Combobox<bigint|null>
-                                                        defaultValue={form.watch('user_id') || null} // Lấy giá trị động từ form
-                                                      options={users.map(user => ({
-                                                        value: user.id,
-                                                        label: user.name,
-                                                      }))}
-                                                        placeholder="Chọn phòng"
-                                                        onSelect={handleSelectUser}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                  </FormItem>
-                                                )}
-                                              />
+
+                                              
                                     </div>
                                   </CardContent>
                                 </Card>

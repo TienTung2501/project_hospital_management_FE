@@ -197,40 +197,6 @@ const BedPage = () => {
       setDeleteItem(room);
     }
   };
-  const handleSwitchChange = async (id: string | bigint, newStatus: number) => {
-
-    try {
-      const result = await update_status_bed(id, newStatus);
-      if (result.error) {
-        toast({
-          variant: "destructive",
-          title: "Cập nhật thất bại",
-          description: result.error,
-        });
-      } else {
-        toast({
-          variant: "success",
-          title: "Cập nhật thành công",
-          description: "Trạng thái đã được cập nhật.",
-        });
-  
-        // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
-        setItems(prevItems =>
-          prevItems.map(item =>
-            item.id === id ? { ...item, status: newStatus } : item
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-      toast({
-        variant: "destructive",
-        title: "Lỗi",
-        description: "Đã có lỗi xảy ra khi cập nhật trạng thái.",
-      });
-    } 
-  };
-  
   const confirmDelete = async () => {
     if (!deleteItem) return;
   
@@ -271,6 +237,41 @@ const BedPage = () => {
       setDeleteItem(null);
     }
   };
+  const handleSwitchChange = async (id: string | bigint, newStatus: number) => {
+
+    try {
+      const result = await update_status_bed(id, newStatus);
+      if (result.error) {
+        toast({
+          variant: "destructive",
+          title: "Cập nhật thất bại",
+          description: result.error,
+        });
+      } else {
+        toast({
+          variant: "success",
+          title: "Cập nhật thành công",
+          description: "Trạng thái đã được cập nhật.",
+        });
+  
+        // Cập nhật trạng thái trực tiếp trên phần tử trong danh sách departments
+        setItems(prevItems =>
+          prevItems.map(item =>
+            item.id === id ? { ...item, status: newStatus } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Đã có lỗi xảy ra khi cập nhật trạng thái.",
+      });
+    } 
+  };
+  
+
 
 
   const fetchRoomCatalogues = async () => {

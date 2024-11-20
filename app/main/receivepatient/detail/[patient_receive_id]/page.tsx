@@ -84,7 +84,7 @@ const PatientReceive = () => {
 const [filteredServices, setFilteredServices] = useState<ServiceType[]>([]);
 const [filteredRooms, setFilteredRooms] = useState<RoomType[]>([]);
 
-  const [patient,setPatient]=useState<Patient >();
+  const [patient,setPatient]=useState<Patient>();
 
                                           
   const {patient_receive_id}=useParams();
@@ -138,22 +138,23 @@ const [filteredRooms, setFilteredRooms] = useState<RoomType[]>([]);
   const handleSave = () => {
     const payload = {
       medical_record_id: Number(patient_receive_id), // ID của hồ sơ bệnh án
-      services: servicePatients.map(({ service_id, room_id, service_name }) => ({
-        service_id,
+      services: servicePatients.map(({ service_id, room_id, service_name}) => ({
+        service_id:Number(service_id),
         service_name,
-        room_id,
+        room_id:Number(room_id),
+        patient_id:Number(patient?.id),
       })),
     };
-  
-    axios
-      .post(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivot`, payload)
-      .then((res) => {
-        toast({ variant: "success", title: "Lỗi", description: res.statusText });
-      })
-      .catch((err) => {
-        console.error("Lỗi chỉ định:", err);
-        toast({ variant: "success", title: "Lỗi", description: err });
-      });
+    console.log(payload)
+    // axios
+    //   .post(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivot`, payload)
+    //   .then((res) => {
+    //     toast({ variant: "success", title: "Lỗi", description: res.statusText });
+    //   })
+    //   .catch((err) => {
+    //     console.error("Lỗi chỉ định:", err);
+    //     toast({ variant: "success", title: "Lỗi", description: err });
+    //   });
   };
   
   

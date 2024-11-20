@@ -10,7 +10,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { DepartmentType, PositionType, RoomType, UserInfoType } from "@/types";
+import { DepartmentType, PositionType, RoomCatalogueType, RoomType, UserInfoType } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/combobox";
 import * as z from "zod";
@@ -20,6 +20,8 @@ import { ToastAction } from "@/components/ui/toast";
     const [user,setUser]=useState<UserInfoType>();
     const [positions, setPositions] = useState<PositionType[]>([]);
     const [departments, setDepartments] = useState<DepartmentType[]>([]);
+    const [selectedDepartment, setSelectedDepartment] = React.useState<bigint | null>(null);
+    const [roomCatalogues,setRoomCatalogue]=useState<RoomCatalogueType[]>([]);
     const [rooms, setRooms] = useState<RoomType[]>([]);
     const [totalRecords, setTotalRecords] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -31,7 +33,13 @@ import { ToastAction } from "@/components/ui/toast";
     const form = useForm<z.infer<typeof UpdateUserSchema>>({
         resolver: zodResolver(UpdateUserSchema),
       });
-      
+      const handleSelectRoomCatalogue=(value: bigint | null) => {
+        if(value){
+          setSelectedRooms([])
+          fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+        }
+          
+        };
   const { reset} = form;
 
  // Fetch user data, departments and positions
@@ -120,7 +128,7 @@ try {
   toast({ variant: "destructive", title: "Error", description: "Could not fetch user data." });
 }
 };
-const fetchRooms = async (departmentId: bigint) => {
+const fetchRooms = async (value: bigint) => {
   setLoading(true);
   const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
 
@@ -142,7 +150,7 @@ const fetchRooms = async (departmentId: bigint) => {
     if (Array.isArray(data)) {
       // Lọc các phòng có room_catalogue.name là "NOTRU"
       const fetchedRooms: RoomType[] = data
-        .filter((item: any) => item.department_id===departmentId) // Chỉ lấy phòng có tên "NOTRU"
+        .filter((item: any) => item.department_id===selectedDepartment&&item.users.length===0&&item.room_catalogue_id===value) // Chỉ lấy phòng có tên "NOTRU"
         .map((item: any) => ({
           id: item.id,
           code: item.code,
@@ -167,12 +175,45 @@ const fetchRooms = async (departmentId: bigint) => {
     setLoading(false);
   }
 };
+const fetchRoomCatalogues = async () => {
+  setLoading(true) // Bắt đầu trạng thái loading
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/roomCatalogues`;
+  try {
+    const response = await axios.get(endpoint, {
+      params: {
+        limit: 1000, // Số bản ghi trên mỗi trang
+      },
+    })
+    const { data } = response.data.data
+
+    if (Array.isArray(data)) {
+      const fetchedRoomCatalogues: RoomCatalogueType[] = data.map((item: any) => ({
+        id: item.id,
+        keyword:item.keyword,
+        name: item.name,
+        description: item.description,
+        status: item.status,
+      })) // Chỉ lấy các thuộc tính cần thiết
+  
+      setRoomCatalogue(fetchedRoomCatalogues) // Cập nhật danh sách phòng ban
+      setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+    } else {
+      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+    }
+  } catch (err) {
+    setError('Error fetching RoomCatalogues') // Xử lý lỗi
+    console.error('Error fetching RoomCatalogues:', err)
+  } finally {
+    setLoading(false) // Kết thúc trạng thái loading
+  }
+}
 useEffect(() => {
   const fetchAllData = async () => {
     try {
-      await fetchPositions(); // Đợi positions tải xong
-      await fetchDepartments(); // Đợi departments tải xong
       await fetchUserData(); // Sau đó mới fetch user
+       fetchPositions(); // Đợi positions tải xong
+       fetchDepartments(); // Đợi departments tải xong
+       fetchRoomCatalogues();
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -185,6 +226,7 @@ const onSubmit = (values: z.infer<typeof UpdateUserSchema>) => {
   setError("");
   const selectedRoomsAsNumbers = selectedRooms.map(roomId => Number(roomId));
 startTransition(()=>{
+  console.log(selectedRoomsAsNumbers)
   update_user(user?.id,values,selectedRoomsAsNumbers)
   .then((data) => {
     if (data.error) {
@@ -221,10 +263,10 @@ startTransition(()=>{
   };
   const handleSelectDepartmemt = (value: bigint | null) => {
     if (value !== null) {
-      form.setValue('department_id', BigInt(value)); // Cập nhật giá trị trong form
       setSelectedRooms([]); // Reset danh sách phòng đã chọn
       setSelectedValue(null); // Reset giá trị Combobox
-      fetchRooms(value); // Lấy danh sách phòng mới theo department_id
+      setSelectedDepartment(value)
+      form.setValue('department_id', BigInt(value)); // Cập nhật giá trị trong form
     }
   };
 
@@ -454,7 +496,6 @@ startTransition(()=>{
                           <Combobox<bigint>
                             options={departments.map((dep) => ({ value: dep.id, label: dep.name }))}
                             placeholder="Chọn khoa"
-                            defaultValue={field.value} // Dựa vào giá trị trong form
                             onSelect={handleSelectDepartmemt}
                             {...field}
                           />
@@ -476,7 +517,6 @@ startTransition(()=>{
                           <Combobox<bigint>
                             options={positions.map((pos) => ({ value: pos.id, label: pos.name }))}
                             placeholder="Chọn chức danh"
-                            defaultValue={field.value} // Dựa vào giá trị trong form
                             onSelect={handleSelectPosition}
                             {...field}
                           />
@@ -486,7 +526,20 @@ startTransition(()=>{
                     );
                   }}
                 />
-
+<FormItem className="flex flex-col">
+      <FormLabel className="mr-2">Nhóm phòng</FormLabel>
+      <FormControl className="flex-grow">
+      <Combobox<bigint|null>
+            options={roomCatalogues.map(roomCatalogue => ({
+              value: roomCatalogue.id,
+              label: roomCatalogue.name,
+            }))}
+              placeholder="Chọn nhóm phòng"
+              onSelect={handleSelectRoomCatalogue}
+              />
+              </FormControl>
+              <FormMessage />
+                            </FormItem>
                 
                 <div className="grid gap-1">
                 <p className="font-semibold text-l"> Chọn phòng</p>

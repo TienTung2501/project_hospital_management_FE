@@ -289,7 +289,6 @@ export const PatientSchema = z.object({
   gender: z
     .number()
     .min(0, "Bạn phải chọn giới tính"), // Bắt buộc,
-    user_id: z.bigint().min(BigInt(1), "ID bác sĩ là bắt buộc"), // Ràng buộc ID bác sĩ
     room_id: z.bigint().min(BigInt(1), "ID phòng khám là bắt buộc"), // Ràng buộc ID phòng khám
   });
   export const DailyHealthSchema = z.object({

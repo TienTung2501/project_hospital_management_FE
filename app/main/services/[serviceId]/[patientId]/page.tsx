@@ -1,227 +1,303 @@
 "use client";
-// components/ServiceForm.js
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useParams } from 'next/navigation';
 
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { FormError } from '@/components/form-error';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PatientCurrently, ServiceInfo } from '@/types';
-import { Textarea } from '@/components/ui/textarea';
-// call thông tin liên quan đến bệnh nhân
-// call thông tin liên quan đến service
-// call thông tin liên quan đến bác sĩ
-// cần phải bổ sung thêm 1 trường để thể hiện trạng thái khám của bệnh nhân
-const patientCurrentlyData: PatientCurrently = 
-{
-    id:BigInt(1),
-    patient_id: BigInt(1),
-    user_id: BigInt(1),
-    gender: 1,
-    visit_date: "2024-10-26T10:30:00",
-    diagnosis: "Viêm phổi cấp",
-    notes: "Bệnh nhân có triệu chứng ho nhiều, khó thở.",
-    inpatient_detail: "Điều trị nội trú tại phòng A1, giường 3.",
-    examination_status: 2, // 2: Đang khám
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import axios from "axios";
+
+// Import UI Components
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { FormError } from "@/components/form-error";
+import { DataTable } from "@/components/data-table";
+import createColumns from "@/components/column-custom";
+
+// Types
+export type ServiceType = {
+  id: bigint;
+  name: string;
+  description?: string;
+  price: number;
+  status: number;
+  detail: string; // API trả về detail dạng string
+  health_insurance_applied?: number;
+  health_insurance_value?: number;
+  service_catalogue_id: bigint;
+  room_catalogue_id: bigint;
 };
 
-export type Service = {
-  ServiceID: bigint;
-  ServiceName: string;
-  DepartmentID: bigint;
-  ServiceType: string;
-  Price: number;
-  Description: string;
-  ResultTemplate: { [key: string]: string };
+// Mock Patient Data
+const patientCurrentlyData = {
+  id: BigInt(1),
+  patient_id: BigInt(1),
+  user_id: BigInt(1),
+  gender: 1,
+  visit_date: "2024-10-26T10:30:00",
+  diagnosis: "Viêm phổi cấp",
+  notes: "Bệnh nhân có triệu chứng ho nhiều, khó thở.",
+  inpatient_detail: "Điều trị nội trú tại phòng A1, giường 3.",
+  examination_status: 2, // 2: Đang khám
 };
 
-const servicesData: Service[] = [
+// Dữ liệu ban đầu từ API (ví dụ, không có trường value)
+const detail = [
   {
-    ServiceID: BigInt(1),
-    ServiceName: "Xét nghiệm máu",
-    DepartmentID: BigInt(1),
-    ServiceType: "Xét nghiệm",
-    Price: 250000,
-    Description: "Xét nghiệm máu tổng quát.",
-    ResultTemplate: {
-      hemoglobin: "g/dL",
-      leukocytes: "cells/µL",
-      platelets: "cells/µL",
-    },
+    "keyword": "RBC",
+    "name": "Số lượng hồng cầu",
+    "reference_range": "74-110",
+    "unit": "mg/dL"
   },
   {
-    ServiceID: BigInt(2),
-    ServiceName: "Xét nghiệm nước tiểu",
-    DepartmentID: BigInt(2),
-    ServiceType: "Xét nghiệm",
-    Price: 150000,
-    Description: "Xét nghiệm nước tiểu tổng quát.",
-    ResultTemplate: {
-      glucose: "mg/dL",
-      protein: "mg/dL",
-      pH: "pH",
-    },
-  },
-  {
-    ServiceID: BigInt(3),
-    ServiceName: "Xét nghiệm phân",
-    DepartmentID: BigInt(3),
-    ServiceType: "Xét nghiệm",
-    Price: 100000,
-    Description: "Xét nghiệm phân tổng quát.",
-    ResultTemplate: {
-      color: "N/A",
-      consistency: "N/A",
-      blood: "N/A",
-    },
-  },
+    "keyword": "wbc",
+    "name": "Số lượng bạch cầu",
+    "reference_range": ">130",
+    "unit": "g/dL"
+  }
 ];
-
+// Khai báo kiểu cho một đối tượng trong detail
+interface DetailItem {
+  keyword: string;
+  name: string;
+  reference_range: string;
+  unit: string;
+  value?: string;  // Trường value sẽ được thêm vào sau
+  id?: string|undefined;  // Trường value sẽ được thêm vào sau có thể xóa.
+}
+interface DetailItemConvert {
+  keyword: string;
+  name: string;
+  reference_range: string;
+  unit: string;
+  value?: string;  // Trường value sẽ được thêm vào sau
+  id: string;  // Trường value sẽ được thêm vào sau có thể xóa.
+}
+const columnHeaderMap: { [key: string]: string } = {
+  keywrod: "Từ khóa",
+  name: "Tên thuộc tính",
+  reference_range:"Khoảng tham chiếu",
+  unit:"Đơn vị",
+  value:"Kết quả",
+};
+// Main Component
 const ServiceForm = () => {
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [limit, setLimit] = useState(20); // Mặc định không hiển thị bản ghi nào
+  const [totalRecords, setTotalRecords] = useState(1);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const [details, setDetails] = useState<{ [key: string]: any }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const { serviceId } = useParams();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [service, setService] = useState<ServiceType | null>(null);
+  const [enrichedDetail, setEnrichedDetail] = useState<DetailItem[]>([]);
+  const [enrichedDetailConverColumn, setEnrichedDetailConverColumn] = useState<DetailItemConvert[]>([]);
 
-  // Xử lý chuyển đổi serviceId thành kiểu BigInt
-  const serviceIdBigInt = Array.isArray(serviceId) ? BigInt(serviceId[0]) : BigInt(serviceId);
-  const service = servicesData.find((service) => service.ServiceID === serviceIdBigInt);
-  const details = service?.ResultTemplate;
-
-  const createSchema = (details: { [key: string]: string } | undefined) => {
-    if (!details) return z.object({});
-
-    const shape: { [key: string]: z.ZodTypeAny } = {};
-    Object.keys(details).forEach((key) => {
-      shape[key] = z.string().nonempty(`Field for ${key} is required`);
-    });
-    return z.object(shape);
-  };
-
-  const schema = createSchema(details);
-
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+// Sử dụng dữ liệu giả lập
+useEffect(() => {
+  setService({
+    id: BigInt(1),
+    name: "Dịch vụ xét nghiệm máu",
+    price: 150000,
+    status: 1,
+    detail: JSON.stringify(detail),
+    service_catalogue_id: BigInt(10),
+    room_catalogue_id: BigInt(20),
   });
-
-  const { register, handleSubmit, formState: { errors } } = form;
-
-  const onSubmit = async (data: any) => {
-    // Xử lý submit ở đây
-    console.log(data);
+}, []);
+  
+  const DetailResultSchema = (detail: DetailItem[]) => {
+    const schemaObject: Record<string, z.ZodString> = {};
+  
+    // Tạo mỗi trường value với keyword và xác thực nó
+    detail.forEach(item => {
+      schemaObject[item.keyword] = z.string().min(1, { message: `${item.name} là bắt buộc` });
+    });
+  
+    return z.object(schemaObject);
   };
+  // useEffect(() => {
+  //   const fetchService = async () => {
+  //     try {
+  //       const service_id = 1; // Giả lập ID dịch vụ
+  //       const response = await axios.get(
+  //         `${process.env.NEXT_PUBLIC_API_URL}/api/services/${service_id}`
+  //       );
 
+  //       const serviceData: ServiceType = response.data.data;
+
+  //       // Parse detail từ string sang JSON
+  //       const parsedDetails = JSON.parse(serviceData.detail || "{}");
+
+  //       setService(serviceData);
+  //       setDetails(parsedDetails);
+  //     } catch (error) {
+  //       console.error("Lỗi khi lấy dữ liệu dịch vụ:", error);
+  //     }
+  //   };
+
+  //   fetchService();
+  // }, []);
+
+
+ // Tạo schema zod động để xác thực các trường value
+  // Thêm trường value vào mỗi đối tượng trong mảng detail
+  useEffect(() => {
+    // Chỉ thực hiện cập nhật state một lần khi component mount
+    const enrichedDetailWithValues = detail.map(item => ({
+      ...item,
+      value: "",  // Thêm trường 'value' và khởi tạo với giá trị rỗng
+    }));
+
+    // Cập nhật state chỉ khi enrichedDetail không có giá trị hoặc đã thay đổi
+    setEnrichedDetail(enrichedDetailWithValues);
+  }, []); // Chỉ chạy khi component mount
+
+const schema = DetailResultSchema(detail); // Gọi schema tạo động từ `detail`
+const form=useForm({
+  resolver:zodResolver(schema),
+});
+const onSubmit = (data:any) => {
+  // Gán giá trị từ form vào trường value của mỗi đối tượng
+  const enrichedDetailWithValues = enrichedDetail.map(item => ({
+    ...item,
+    value: data[item.keyword] || ""  // Lấy giá trị từ form và gán vào value
+  }));
+  const enrichedDetailWithValuesColumn = enrichedDetail.map(item => ({
+    ...item,
+    id:item.keyword,
+    value: data[item.keyword] || ""  // Lấy giá trị từ form và gán vào value
+  }));
+  setEnrichedDetail(enrichedDetailWithValues);
+  setEnrichedDetailConverColumn(enrichedDetailWithValuesColumn);
+  
+};
+ 
+  // const onSubmit = async (data: any) => {
+  //   setIsLoading(true);
+  //   try {
+  //     const payload = {
+  //       ...data,
+  //       service_id: service?.id,
+  //       patient_id: patientCurrentlyData.patient_id,
+  //     };
+
+  //     const response = await axios.post(
+  //       `${process.env.NEXT_PUBLIC_API_URL}/api/results`,
+  //       payload
+  //     );
+
+  //     console.log("Lưu thành công:", response.data);
+  //   } catch (error) {
+  //     setSubmitError("Lỗi khi lưu kết quả, vui lòng thử lại.");
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  if (!service) return <p>Đang tải dữ liệu...</p>;
+  const columns = enrichedDetailConverColumn.length > 0 ? createColumns(enrichedDetailConverColumn,undefined, undefined, undefined,columnHeaderMap,{view:false,edit: false, delete: false} ) : [];
   return (
-    <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
-      <div className="flex flex-col flex-1 rounded-lg px-5 border border-dashed shadow-sm">
-                <Card className="mb-5 mt-5 bg-muted/40">
-                  <CardHeader className="pb-0">
-                    <CardTitle>Thông tin xét nghiệm</CardTitle>
-                    <CardDescription>Chi tiết thông tin dịch vụ</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-2">
-                    <div>
-                      <strong>Khoa:</strong> Xét nghiệm
-                    </div>
-                    <div>
-                      <strong>Phòng:</strong> Phòng xét {service?.ServiceName} 302
-                    </div>
-                    <div>
-                      <strong>Mô tả:</strong> {service?.Description}
-                    </div>
-                    <div>
-                      <strong>Bác sĩ phụ trách:</strong> Bác sĩ Nguyễn Văn A
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mb-5 mt-5">
-                  <CardHeader className="pb-0">
-                    <CardTitle>Thông tin bệnh nhân</CardTitle>
-                    <CardDescription>Chi tiết thông tin của bệnh nhân</CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-2">
-                    <div>
-                      <strong>Mã bệnh nhân:</strong> {patientCurrentlyData.patient_id}
-                    </div>
-                    <div>
-                      <strong>Tên bệnh nhân:</strong> Nguyễn Văn B {/* Ví dụ để hiển thị tên bệnh nhân */}
-                    </div>
-                    <div>
-                      <strong>Giới tính:</strong> {patientCurrentlyData.gender === 1 ? "Nam" : "Nữ"}
-                    </div>
-                    <div>
-                      <strong>Ngày khám:</strong> {new Date(patientCurrentlyData.visit_date).toLocaleString()}
-                    </div>
-                    <div>
-                      <strong>Chẩn đoán:</strong> {patientCurrentlyData.diagnosis}
-                    </div>
-                    <div>
-                      <strong>Ghi chú:</strong> {patientCurrentlyData.notes}
-                    </div>
-                    <div>
-                      <strong>Chi tiết nội trú:</strong> {patientCurrentlyData.inpatient_detail ? patientCurrentlyData.inpatient_detail : "Không"} <strong>(hoặc không)</strong>
-                    </div>
-                    <div>
-                      <strong>Trạng thái khám:</strong> {patientCurrentlyData.examination_status === 2 ? "Đang khám" : "Khác"}
-                    </div>
-                  </CardContent>
-                </Card>
+    <main className="flex w-full flex-1 flex-col gap-4 p-4 bg-muted/40">
+      {/* Service Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin dịch vụ</CardTitle>
+          <CardDescription>Chi tiết dịch vụ được thực hiện</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div>
+            <strong>Dịch vụ:</strong> {service.name}
+          </div>
+          <div>
+            <strong>Giá:</strong> {service.price.toLocaleString()} VND
+          </div>
+          <div>
+            <strong>Mô tả:</strong> {service.description}
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* Patient Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Thông tin bệnh nhân</CardTitle>
+          <CardDescription>Chi tiết thông tin của bệnh nhân</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div>
+            <strong>Mã bệnh nhân:</strong> {patientCurrentlyData.patient_id.toString()}
+          </div>
+          <div>
+            <strong>Chẩn đoán:</strong> {patientCurrentlyData.diagnosis}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Nhập kết quả xét nghiệm</CardTitle>
+          <CardDescription>Điền thông tin xét nghiệm theo mẫu</CardDescription>
+        </CardHeader>
+        <CardContent>
+        <Form {...form}> {/* Đây là wrapper form mà bạn muốn sử dụng */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {enrichedDetail.map((item) => (
+          <FormField
+          key={item.keyword}
+          control={form.control}
+          name={item.keyword}  // Sử dụng item.keyword làm tên trường, không phải item.value
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {item.name} ({item.reference_range}, {item.unit})
+              </FormLabel>
+              <FormControl>
+                <Input {...field} type="text" />
+              </FormControl>
+              <FormMessage>
+                <FormError/>
+              </FormMessage>
+            </FormItem>
+          )}
+        />
         
-        <Card className="mb-5 mt-5">
-          <CardHeader className="pb-0">
-            <CardTitle>Thông tin chi tiết xét nghiệm</CardTitle>
-            <CardDescription>
-              Các bệnh nhân đang chờ xét nghiệm của phòng xét nghiệm
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Form {...form}>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {details && Object.keys(details).map((key) => (
-              <FormField
-                key={key}
-                control={form.control}
-                name={key}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      
-                         {`${key.charAt(0).toUpperCase() + key.slice(1)} (Đơn vị: ${details[key]})`}
-    
-                    </FormLabel>
-                    <FormControl>
+        ))}
+        <button type="submit">Submit</button>
+      </form>
+      </Form>
+        </CardContent>
+        <div className='flex item-center justify-center'>
 
-                        <Input {...field} type="text" placeholder={`Nhập ${key}`} />
-              
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
+{loading ? (
+<p className='flex item-center justify-center'>Loading...</p>
+) : (
 
-                {submitError && <FormError message={submitError} />}
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Đang lưu..." : "Lưu"}
-            
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  Quay lại
-                </Button>
-                Chú ý cần có 1 trường để lưu trạng thái thực hiện dịch vụ của người thực hiện để sau khi lưu xong thì cập nhật trạng thái này
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
+<DataTable
+data={enrichedDetailConverColumn}
+columns={columns}
+totalRecords={totalRecords}
+pageIndex={pageIndex}
+pageSize={limit}
+onPageChange={(newPageIndex) => {
+setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+}}
+/>
+)}
+
+
+</div>
+      </Card>
     </main>
   );
 };

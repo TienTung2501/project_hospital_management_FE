@@ -107,8 +107,6 @@ const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState(false);
   
     const service = services.find((s) => BigInt(s.id )=== service_id);
     const room = rooms.find((r) => BigInt(r.id) === room_id);
-   console.log(service)
-   console.log(room)
     if (service && room) {
       // Thêm dịch vụ vào danh sách
       setServicePatients((prev) => {
@@ -124,7 +122,6 @@ const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState(false);
             room_id,
           },
         ];
-        console.log("Updated Service Patients Array: ", updatedList); // In ra mảng sau khi thêm
         return updatedList;
       });
   

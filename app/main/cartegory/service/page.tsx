@@ -520,7 +520,6 @@ const fetchServiceCatalogues = async () => {
       else if(isOpenDialogUpdate){
         formUpdate.setValue('room_catalogue_id', BigInt(value));
       }
-    console.log(value)
   };
   const handleSelectServiceCatalogue = (value: bigint | null) => {
     if(value!==null)
@@ -531,7 +530,6 @@ const fetchServiceCatalogues = async () => {
         formUpdate.setValue('service_catalogue_id', BigInt(value));
       }
       
-    console.log(value)
   };
   useEffect( () => {
     fetchServices();

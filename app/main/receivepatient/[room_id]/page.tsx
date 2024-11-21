@@ -144,7 +144,7 @@ const AdminPage = () => {
       header: 'Chi tiết thông tin',
       onClickConfig: (id: string | BigInt) => {
         const item = patientNotConclusion.find((pati) => pati.id === id);
-        router.push(`/main/medical_records/${item?.id}`); // Điều hướng đến trang chi tiết lần khám
+        router.push(`/main/receivepatient/noconclusion/${item?.id}`); // Điều hướng đến trang chi tiết lần khám
       },
       content: 'Chi tiết',
     };
@@ -199,53 +199,79 @@ const AdminPage = () => {
       }
     };
     
-   
+    const fetchMedicalRecords = async () => {
+      try {
+        const responsePatientNotExamined = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`, {
+          params: {
+            status: 0, // Lọc status = 0 ngay tại API (nếu API hỗ trợ)
+            user_id, // Lọc theo user_id
+            room_id,  // Lọc theo room_id
+            limit:1000,
+          },
+        });
+
+        const data1 = responsePatientNotExamined?.data?.data?.data || [];
+        if (!Array.isArray(data1)) throw new Error("Invalid response format");
+        console.log(data1)
+        // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
+        const fetchedPatientNotExamined: MedicalRecord[] = data1.map((item: any) => ({
+          id: item.id,
+          patient_name: item.patient.name,
+          patient_id: item.patient_id,
+          user_id: item.user_id,
+          room_id: item.room_id,
+          visit_date: item.visit_date,
+          diagnosis: item.diagnosis,
+          notes: item.notes,
+          apointment_date: item.apointment_date,
+          is_inpatient: item.is_inpatient,
+          inpatient_detail: item.inpatient_detail,
+          status: item.status,
+          service_ids: item.services.map((service: any) => service.id),
+          service_names: item.services.map((service: any) => service.name),
+        }));
+        const responsePatientNotConclusion = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/waitDiagnosis`, {
+          params: {
+            room_id, // Lọc theo user_id
+            limit:1000,
+          },
+        });
+
+        const data = responsePatientNotConclusion?.data?.data?.data || [];
+        if (!Array.isArray(data)) throw new Error("Invalid response format");
+        console.log(data)
+        // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
+        const fetchedPatientNotConclusion: MedicalRecord[] = data.map((item: any) => ({
+          id: item.id,
+          patient_name: item.patient.name,
+          patient_id: item.patient_id,
+          user_id: item.user_id,
+          room_id: item.room_id,
+          visit_date: item.visit_date,
+          diagnosis: item.diagnosis,
+          notes: item.notes,
+          apointment_date: item.apointment_date,
+          is_inpatient: item.is_inpatient,
+          inpatient_detail: item.inpatient_detail,
+          status: item.status,
+          service_ids: item.services.map((service: any) => service.id),
+          service_names: item.services.map((service: any) => service.name),
+        }));
+
+        setPatientNotExamined(fetchedPatientNotExamined);  // Cập nhật danh sách phòng phụ trách
+        setPatientNotConclusion(fetchedPatientNotConclusion);  // Cập nhật danh sách phòng phụ trách
+      } catch (error) {
+        console.error("Error fetching medical records:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
     useEffect(() => {
-      const fetchMedicalRecords = async () => {
-        try {
-          const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`, {
-            params: {
-              status: 0, // Lọc status = 0 ngay tại API (nếu API hỗ trợ)
-              user_id, // Lọc theo user_id
-              room_id,  // Lọc theo room_id
-              limit:1000,
-            },
-          });
-  
-          const data = response?.data?.data?.data || [];
-          if (!Array.isArray(data)) throw new Error("Invalid response format");
-          console.log(data)
-          // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
-          const fetchedMedicalRecord: MedicalRecord[] = data.map((item: any) => ({
-            id: item.id,
-            patient_name: item.patient.name,
-            patient_id: item.patient_id,
-            user_id: item.user_id,
-            room_id: item.room_id,
-            visit_date: item.visit_date,
-            diagnosis: item.diagnosis,
-            notes: item.notes,
-            apointment_date: item.apointment_date,
-            is_inpatient: item.is_inpatient,
-            inpatient_detail: item.inpatient_detail,
-            status: item.status,
-            service_ids: item.services.map((service: any) => service.id),
-            service_names: item.services.map((service: any) => service.name),
-          }));
-  
-          setPatientNotExamined(fetchedMedicalRecord);  // Cập nhật danh sách phòng phụ trách
-        } catch (error) {
-          console.error("Error fetching medical records:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-  
       if (user_id && room_id) {
         fetchRooms();
         fetchMedicalRecords();
       }
-    }, [currentUser,user_id, room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
+    }, [room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
   
     if (loading) {
@@ -260,8 +286,8 @@ const AdminPage = () => {
         <div className=" w-full">
           <h1 className="text-lg font-semibold md:text-xl">Quản lý tiếp nhận bệnh nhân</h1>
           <h1 className="text-lg font-semibold md:text-xl">Khoa: {currentUser?.department_name}</h1>
-          <h1 className="text-lg font-semibold md:text-xl">Nhóm phòng khám:{inforRoom?.room_catalogue_code}</h1>
-          <h2 className="text-lg font-semibold md:text-x">Phòng Khám: {inforRoom?.code}</h2>
+          <h1 className="text-lg font-semibold md:text-xl">Nhóm phòng: {inforRoom?.room_catalogue_code}</h1>
+          <h2 className="text-lg font-semibold md:text-x">Phòng: {inforRoom?.code}</h2>
           <h2 className="text-lg font-semibold md:text-x">Bác sĩ: {currentUser?.name}</h2>
         </div>
         <div
@@ -377,7 +403,7 @@ const AdminPage = () => {
           
             <DataTable
             data={patientNotConclusion}
-            columns={columnPatientNotExamined}
+            columns={columnPatientNotConclusion}
             totalRecords={totalRecords}
             pageIndex={pageIndex}
             pageSize={limit}

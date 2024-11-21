@@ -218,6 +218,53 @@ export type MedicalRecord = {
   service_ids: BigInt[];
   service_names:String[];
 };
+export type MedicalRecordRecordService = {
+  id:bigint;
+  patient_id:bigint;
+  patient_name:string;
+  user_id:bigint;
+  room_id:bigint;
+  patient_birthday:string;
+  visit_date?:string|undefined;
+  patient_phone:string;
+  diagnosis?:string|undefined;
+  notes?:string|undefined;
+  apointment_date?:string|undefined;
+  is_inpatient:string|undefined;
+  inpatient_detail:string|undefined;
+  status:number|undefined;
+};
+export type MedicalRecordRecordServicePivot = {
+  id:bigint;
+  patient_id:bigint;
+  patient_name:string;
+  patient_gender:number;
+  patient_birthday:string;
+  patient_phone:string;
+  patient_address:string;
+  patient_cccd_number:string;
+  user_id:bigint;
+  room_id:bigint;
+  visit_date?:string|undefined;
+  diagnosis?:string|undefined;
+  notes?:string|undefined;
+  apointment_date?:string|undefined;
+  is_inpatient:string|undefined;
+  inpatient_detail:string|undefined;
+  status:number|undefined;
+  services:ServicePivot[];
+};
+export type ServicePivot={
+  id: bigint;
+  name:string;
+  detail:string;
+  description:string;
+  pivot:PivotOfService;
+}
+export type PivotOfService={
+  id:bigint;
+  resultDetail:string;
+}
 // đối với việc tiếp nhận: có 2 trường hợp
 // TH1: đến khám mới-> thêm thông tin( thông tin cá nhân, tình trạng sức khỏe( kiểm tra sơ bộ chỉ số cơ thể) chỉ định xong rồi sẽ thêm 1 hồ sơ bệnh nhân-> hiển thị bệnh nhân với tình trạng đang khám)-> xem hồ sơ thì thấy các dịch vũ được chỉ định và trạng thái thanh toán, trạng thái xét nghiệm, sau đó đưa ra kết quả
 // TH2: đến tái khám-> (xem hồ sơ-> click vào xem hồ sơ-> điền các chỉ số, kiểm tra sơ bộ-> cập nhật phát là chuyển sang đang khám, sau đó bác sĩ có thể chỉ định dịch vụ như bên kia)

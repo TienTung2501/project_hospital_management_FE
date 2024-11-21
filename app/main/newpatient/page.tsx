@@ -108,14 +108,15 @@ const NewPatient = () => {
         try {
           // Gửi yêu cầu tìm kiếm bệnh nhân
           const response = await axios.get('http://localhost:8000/api/patients', {
-            params: { cccd_number: keyword },
+            params: {
+              limit: 100, // Các tham số query
+            },
           });
+          
     
           const patients = response.data.data.data; // Lấy danh sách bệnh nhân từ response
-          console.log(patients)
         // Lọc bệnh nhân có CCCD trùng với từ khoá
           const patient = patients.find((patient: Patient) => patient.cccd_number === keyword);
-          
           // Kiểm tra nếu bệnh nhân tìm thấy
           if (patient) {
             // Cập nhật giá trị vào form

@@ -83,6 +83,8 @@ const PatientReceive = () => {
 
 const [filteredServices, setFilteredServices] = useState<ServiceType[]>([]);
 const [filteredRooms, setFilteredRooms] = useState<RoomType[]>([]);
+const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState(false);
+
 
   const [patient,setPatient]=useState<Patient>();
 
@@ -135,27 +137,50 @@ const [filteredRooms, setFilteredRooms] = useState<RoomType[]>([]);
     }
   };
   
-  const handleSave = () => {
+  const handleSaveConfirmed = () => {
     const payload = {
       medical_record_id: Number(patient_receive_id), // ID của hồ sơ bệnh án
-      services: servicePatients.map(({ service_id, room_id, service_name}) => ({
-        service_id:Number(service_id),
+      services: servicePatients.map(({ service_id, room_id, service_name }) => ({
+        service_id: Number(service_id),
         service_name,
-        room_id:Number(room_id),
-        patient_id:Number(patient?.id),
+        room_id: Number(room_id),
+        patient_id: Number(patient?.id),
       })),
     };
-    console.log(payload)
-    // axios
-    //   .post(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivot`, payload)
-    //   .then((res) => {
-    //     toast({ variant: "success", title: "Lỗi", description: res.statusText });
-    //   })
-    //   .catch((err) => {
-    //     console.error("Lỗi chỉ định:", err);
-    //     toast({ variant: "success", title: "Lỗi", description: err });
-    //   });
+  
+    axios
+      .post(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivot`, payload)
+      .then((res) => {
+        console.log("Kết quả trả về từ API:", res);
+  
+        if (res.status === 200) {
+          toast({
+            variant: "success",
+            title: "Thêm dịch vụ thành công",
+            description: res.statusText,
+          });
+          setServicePatients([]);
+          router.back();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Lỗi khi thêm dịch vụ",
+            description: "Không thể thêm dịch vụ vào hồ sơ bệnh án.",
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Lỗi chỉ định:", err);
+  
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: err?.response?.data?.message || err.message,
+        });
+      });
   };
+  
+  
   
   
   const handleDelete = (id:bigint|string) => {
@@ -177,12 +202,12 @@ const fetMedicatalRecord= async () => {
       const { data } = responseAll.data.data;
 
       if (Array.isArray(data)) {
-        const medicalRecords: MedicalRecord[] = data
+        const medicalRecords: any = data
           .filter(
             (item: any) =>
               item.status === 0 && BigInt(item.id) === BigInt(Number(patient_receive_id)) // So sánh id chính xác
           )
-          const firstRecord = data[0]; // Kiểm tra bản ghi đầu tiên
+          const firstRecord = medicalRecords[0]; // Kiểm tra bản ghi đầu tiên
           const patient: Patient | undefined = firstRecord?.patient
             ? {
                 id: BigInt(firstRecord.patient.id),
@@ -380,7 +405,7 @@ const handleSelectRoom=(value: bigint | null)=>{
                 </CardDescription>
                </CardHeader>
                 <CardContent className="space-y-2">
-                    <Form {...form}>
+                
                       
                         <div className="mx-auto grid w-full flex-1 auto-rows-max gap-4 mt-4">
                           <div className="flex items-center gap-4">
@@ -441,7 +466,7 @@ const handleSelectRoom=(value: bigint | null)=>{
                               </div>   */}
                     
                            </div>
-                          <form onSubmit={form.handleSubmit(onSubmit)}>
+                         
                             <div className="grid grid-cols-3 auto-rows-max items-start gap-4 lg:gap-8">
                             
                                {/* <Card x-chunk="dashboard-07-chunk-0" className="col-span-1">
@@ -583,7 +608,9 @@ const handleSelectRoom=(value: bigint | null)=>{
                                     </CardDescription>
                                   </CardHeader>
                                   <CardContent>
-                                  <div className=" w-fit grid grid-cols-3 gap-2">
+                                  <Form {...form}>
+                                  <form onSubmit={form.handleSubmit(onSubmit)}>
+                                    <div className=" w-fit grid grid-cols-3 gap-2">
                                           <FormField 
                                         control={form.control}
                                         name="service_catalogue_id"
@@ -649,10 +676,35 @@ const handleSelectRoom=(value: bigint | null)=>{
                                       />
                                                     
                                         
-                                      <Button className='w-[100px]' size="sm" onClick={form.handleSubmit(onSubmit)}>Lưu</Button>
-                                      <Button className='w-[100px]' size="sm" onClick={handleSave}>Xác nhận</Button>
+                                      <Button className='w-[100px]' size="sm" variant="outline" onClick={form.handleSubmit(onSubmit)}>Lưu</Button>
                                     </div>
+                                  </form>
+                                  </Form>
+                                   
                                       <Card x-chunk="dashboard-07-chunk-3" className='mt-8 '>
+                                      <Button  size="sm" variant="outline" onClick={() => setConfirmSaveDialogOpen(true)}>Lưu dịch vụ</Button>
+
+                                <AlertDialog open={confirmSaveDialogOpen} onOpenChange={setConfirmSaveDialogOpen}>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Xác nhận thêm dịch vụ</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Bạn có chắc chắn muốn thêm các dịch vụ vào hồ sơ bệnh án không? Hành động này không thể hoàn tác.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={() => setConfirmSaveDialogOpen(false)}>Hủy</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          setConfirmSaveDialogOpen(false);
+                                          handleSaveConfirmed();
+                                        }}
+                                      >
+                                      Xác nhận
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                                     <CardHeader className='pb-1'>
                                       
                                       <CardTitle>Danh sách các dịch vụ chỉ định</CardTitle>
@@ -687,9 +739,9 @@ const handleSelectRoom=(value: bigint | null)=>{
                                   </CardContent>
                                 </Card>
                             </div>
-                          </form>
+                          
                         </div>
-                    </Form>
+                 
                   </CardContent>
             </Card>
           </div>

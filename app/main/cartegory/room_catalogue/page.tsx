@@ -300,11 +300,11 @@ const RoomCataloguePage = () => {
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4">
       <div className="flex w-full items-center">
-        <h1 className="text-lg font-semibold md:text-xl">Quản lý danh mục phòng</h1>
+        <h1 className="text-lg font-semibold md:text-xl">Quản lý nhóm phòng</h1>
       </div>
 
       <div className="flex flex-col gap-1 mt-2 border-b pb-5">
-        <h3 className="text-xl tracking-tight">Quản lý hệ thống phòng</h3>
+        <h3 className="text-xl tracking-tight">Quản lý hệ thống nhóm phòng</h3>
         
         <div className="flex mt-5 justify-between">
             <Combobox<number>
@@ -340,9 +340,9 @@ const RoomCataloguePage = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tên phòng</FormLabel>
+                          <FormLabel>Tên nhóm phòng</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Tên phòng" />
+                            <Input {...field} placeholder="Tên nhóm phòng" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -368,7 +368,7 @@ const RoomCataloguePage = () => {
                         <FormItem>
                           <FormLabel>Mô tả</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Mô tả về phòng" />
+                            <Input {...field} placeholder="Mô tả về nhóm phòng" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -389,9 +389,9 @@ const RoomCataloguePage = () => {
                 <Form {...formCreate}>
                   <form onSubmit={formCreate.handleSubmit(onSubmitCreate)} className="space-y-4">
                     <DialogHeader>
-                      <DialogTitle>Chỉnh sửa phòng</DialogTitle>
+                      <DialogTitle>Chỉnh sửa  nhóm phòng</DialogTitle>
                       <DialogDescription>
-                        Để Chỉnh sửa phòng, click vào Lưu khi bạn hoàn thành
+                        Để Chỉnh sửa nhóm phòng, click vào Lưu khi bạn hoàn thành
                       </DialogDescription>
                     </DialogHeader>
                     <FormField
@@ -399,9 +399,9 @@ const RoomCataloguePage = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tên phòng</FormLabel>
+                          <FormLabel>Tên nhóm phòng</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Tên phòng" />
+                            <Input {...field} placeholder="Tên nhóm phòng" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -427,7 +427,7 @@ const RoomCataloguePage = () => {
                         <FormItem>
                           <FormLabel>Mô tả</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Mô tả về phòng" />
+                            <Input {...field} placeholder="Mô tả về nhóm phòng" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -473,7 +473,7 @@ const RoomCataloguePage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Bạn đang xóa phòng:{" "}
+              Hành động này không thể hoàn tác. Bạn đang xóa nhóm phòng:{" "}
               <strong>{deleteItem?.name}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>

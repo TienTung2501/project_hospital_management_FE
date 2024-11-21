@@ -106,7 +106,7 @@ const HomePage = () => {
                         (
                           <h2 className="font-semibold text-lg">Click vào đây để thêm thêm thông tin bệnh nhân</h2>
                         ):( 
-                          <><h2 className="font-semibold text-lg">{room.description}</h2>
+                          <><h2 className="font-semibold text-lg">Nhóm phòng: {room.room_catalogue_code}</h2>
                           <p className="text-sm text-gray-600">Phòng: {room.code}</p>
                           <p className="text-sm text-gray-600">Khoa: {room.department_name}</p></>)
                       }

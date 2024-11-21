@@ -208,15 +208,17 @@ const AdminPage = () => {
               status: 0, // Lọc status = 0 ngay tại API (nếu API hỗ trợ)
               user_id, // Lọc theo user_id
               room_id,  // Lọc theo room_id
+              limit:1000,
             },
           });
   
           const data = response?.data?.data?.data || [];
           if (!Array.isArray(data)) throw new Error("Invalid response format");
-  
+          console.log(data)
           // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
           const fetchedMedicalRecord: MedicalRecord[] = data.map((item: any) => ({
             id: item.id,
+            patient_name: item.patient.name,
             patient_id: item.patient_id,
             user_id: item.user_id,
             room_id: item.room_id,
@@ -227,7 +229,6 @@ const AdminPage = () => {
             is_inpatient: item.is_inpatient,
             inpatient_detail: item.inpatient_detail,
             status: item.status,
-            patient_name: item.patient.name,
             service_ids: item.services.map((service: any) => service.id),
             service_names: item.services.map((service: any) => service.name),
           }));

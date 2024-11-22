@@ -265,6 +265,47 @@ export type PivotOfService={
   id:bigint;
   resultDetail:string;
 }
+export type MedicalRecordRecordServiceDetail = {
+  id:bigint;
+  patient_id:bigint;
+  patient_name:string;
+  patient_gender:number;
+  patient_birthday:string;
+  patient_phone:string;
+  patient_address:string;
+  patient_cccd_number:string;
+  user_id:bigint;
+  room_id:bigint;
+  visit_date?:string|undefined;
+  diagnosis?:string|undefined;
+  notes?:string|undefined;
+  apointment_date?:string|undefined;
+  is_inpatient:string|undefined;
+  inpatient_detail:string|undefined;
+  status:number|undefined;
+  services:ServiceDetailPatientResul[];
+};
+export type ServiceDetailPatientResul={
+  id:bigint;
+  name: string;
+  description:string;
+  health_insurance_applied:number;
+  health_insurance_value:string;
+  assigning_doctor_id:bigint;
+  assigning_doctor_name:string;
+  // examining_doctor_id:bigint;
+  // examining_doctor:string;
+  pivot_id:bigint;
+  result_detail:string;
+}
+
+export type MedicationDetail ={
+  id:bigint;
+  name:string;
+  dosage:number;
+  measure:string;
+  description:string;
+}
 // đối với việc tiếp nhận: có 2 trường hợp
 // TH1: đến khám mới-> thêm thông tin( thông tin cá nhân, tình trạng sức khỏe( kiểm tra sơ bộ chỉ số cơ thể) chỉ định xong rồi sẽ thêm 1 hồ sơ bệnh nhân-> hiển thị bệnh nhân với tình trạng đang khám)-> xem hồ sơ thì thấy các dịch vũ được chỉ định và trạng thái thanh toán, trạng thái xét nghiệm, sau đó đưa ra kết quả
 // TH2: đến tái khám-> (xem hồ sơ-> click vào xem hồ sơ-> điền các chỉ số, kiểm tra sơ bộ-> cập nhật phát là chuyển sang đang khám, sau đó bác sĩ có thể chỉ định dịch vụ như bên kia)
@@ -355,17 +396,3 @@ export type TreatmentSession={
   notes: string,
 }
 
-export type PatientMedicationUse ={
-  id: bigint;
-  catalogue_name: string;
-  medication_name: string;
-  price: number;
-  insurance_applicable: number,
-  insurance_coverage_percentage: number,
-  dosage: string;
-  measure: string;
-  description: string;
-  create_date: Date;
-  total_price: number;
-  amount_due:number;
-}

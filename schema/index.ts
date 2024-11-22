@@ -186,19 +186,7 @@ export const ServiceSchema = z.object({
   }), // Tham chiếu đến bảng room_catalogues
   
   });
-  const ServiceDetailField = z.object({
-    detail: z.array(
-      z.object({
-        attributeName: z.string().min(1,"Tên thuộc tính là bắt buộc"),
-        fields: z.array(
-          z.object({
-            fieldName: z.string().min(1,"Tên trường là bắt buộc"),
-            value: z.string().min(1,"Giá trị là bắt buộc"),
-          })
-        )
-      })
-    )
-  });
+
   export const MedicationCatalogueSchema = z.object({
     name: z.string().min(1, 'Tên nhóm dược là bắt buộc'), // Tên nhóm dược
     description: z.string().optional(), // Mô tả nhóm dược
@@ -257,48 +245,48 @@ export const PatientSchema = z.object({
   });
 
 
-  export const MedicalRecordSchema = z.object({
-    name: z
-    .string()
-    .min(1, "Tên bệnh nhân là bắt buộc") // Thay thế nonempty bằng min(1)
-    .max(250, "Tên bệnh nhân không được vượt quá 250 ký tự"),
-  birthday: z
-    .number()
-    .min(0, "Ngày sinh không hợp lệ") // Bắt buộc, kiểm tra giá trị tối thiểu
-    .refine(val => !isNaN(new Date(val).getTime()), "Ngày sinh không hợp lệ"), // Kiểm tra giá trị hợp lệ
-  address: z
-    .string()
-    .min(1, "Địa chỉ là bắt buộc") // Thay thế nonempty bằng min(1)
-    .max(255, "Địa chỉ không được vượt quá 255 ký tự"),
-  phone: z
-    .string()
-    .min(1, "Số điện thoại là bắt buộc") // Thay thế nonempty bằng min(1)
-    .max(20, "Số điện thoại không được vượt quá 20 ký tự"),
-  cccd_number: z
-    .string()
-    .min(1, "Số căn cước công dân là bắt buộc") // Thay thế nonempty bằng min(1)
-    .max(20, "Số căn cước công dân không được vượt quá 20 ký tự"),
-  health_insurance_code: z
-    .string()
-    .max(25, "Mã bảo hiểm y tế không được vượt quá 25 ký tự")
-    .optional(),
-  guardian_phone: z
-    .string()
-    .max(20, "Số điện thoại người giám hộ không được vượt quá 20 ký tự")
-    .optional(),
-  gender: z
-    .number()
-    .min(0, "Bạn phải chọn giới tính"), // Bắt buộc,
-    room_id: z.bigint().min(BigInt(1), "ID phòng khám là bắt buộc"), // Ràng buộc ID phòng khám
-  });
-  export const DailyHealthSchema = z.object({
-    temperature: z.number().default(37), // Nhiệt độ mặc định
-    blood_pressure: z.string().max(10, "Huyết áp không được vượt quá 10 ký tự").nonempty("Huyết áp không được để trống"),
-    heart_rate: z.number().int().positive("Nhịp tim phải là số nguyên dương").nonnegative("Nhịp tim không hợp lệ"),
-    blood_sugar: z.number().optional(), // Đường huyết, có thể có hoặc không
-    diagnosis: z.string().optional(),   // Chuẩn đoán, có thể có hoặc không
-    note: z.string().optional(),        // Ghi chú thêm, có thể có hoặc không
-  });
+export const MedicalRecordSchema = z.object({
+  name: z
+  .string()
+  .min(1, "Tên bệnh nhân là bắt buộc") // Thay thế nonempty bằng min(1)
+  .max(250, "Tên bệnh nhân không được vượt quá 250 ký tự"),
+birthday: z
+  .number()
+  .min(0, "Ngày sinh không hợp lệ") // Bắt buộc, kiểm tra giá trị tối thiểu
+  .refine(val => !isNaN(new Date(val).getTime()), "Ngày sinh không hợp lệ"), // Kiểm tra giá trị hợp lệ
+address: z
+  .string()
+  .min(1, "Địa chỉ là bắt buộc") // Thay thế nonempty bằng min(1)
+  .max(255, "Địa chỉ không được vượt quá 255 ký tự"),
+phone: z
+  .string()
+  .min(1, "Số điện thoại là bắt buộc") // Thay thế nonempty bằng min(1)
+  .max(20, "Số điện thoại không được vượt quá 20 ký tự"),
+cccd_number: z
+  .string()
+  .min(1, "Số căn cước công dân là bắt buộc") // Thay thế nonempty bằng min(1)
+  .max(20, "Số căn cước công dân không được vượt quá 20 ký tự"),
+health_insurance_code: z
+  .string()
+  .max(25, "Mã bảo hiểm y tế không được vượt quá 25 ký tự")
+  .optional(),
+guardian_phone: z
+  .string()
+  .max(20, "Số điện thoại người giám hộ không được vượt quá 20 ký tự")
+  .optional(),
+gender: z
+  .number()
+  .min(0, "Bạn phải chọn giới tính"), // Bắt buộc,
+  room_id: z.bigint().min(BigInt(1), "ID phòng khám là bắt buộc"), // Ràng buộc ID phòng khám
+});
+export const DailyHealthSchema = z.object({
+  temperature: z.number().default(37), // Nhiệt độ mặc định
+  blood_pressure: z.string().max(10, "Huyết áp không được vượt quá 10 ký tự").nonempty("Huyết áp không được để trống"),
+  heart_rate: z.number().int().positive("Nhịp tim phải là số nguyên dương").nonnegative("Nhịp tim không hợp lệ"),
+  blood_sugar: z.number().optional(), // Đường huyết, có thể có hoặc không
+  diagnosis: z.string().optional(),   // Chuẩn đoán, có thể có hoặc không
+  note: z.string().optional(),        // Ghi chú thêm, có thể có hoặc không
+});
 
 export const PatientServiceSchema= z.object({
   service_catalogue_id:  z.bigint().min(BigInt(1), {
@@ -310,4 +298,29 @@ export const PatientServiceSchema= z.object({
   room_id:  z.bigint().min(BigInt(1), {
     message: "Yêu cầu chọn nhóm phòng",
 }), // Tham chiếu đến bảng r
+});
+export const MedicalRecordUpdateDiagnose=z.object({
+  diagnosis:  z.string().min(1, {
+    message: "Yêu cầu nhập chuẩn đoán cho bệnh nhân",
+}), // Tham chiếu đến bảng r
+  notes:  z.string().min(1, {
+      message: "Vui lòng nhập ghi chú cho bệnh nhân",
+  }), // Tham chiếu đến bảng r
+  apointment_date: z
+  .number({
+    required_error: "Ngày sinh là bắt buộc.",
+    invalid_type_error: "Ngày sinh phải là một số hợp lệ.",
+  })
+  .min(new Date("1900-01-01").getTime(), "Ngày sinh không thể trước năm 1900.") // Ngày sinh không quá xa
+  .max(new Date().getTime(), "Ngày sinh không thể ở tương lai.") // Ngày sinh không thể vượt quá ngày hiện tại
+  .refine(
+    (val) => !isNaN(new Date(val).getTime()),
+    "Ngày sinh không hợp lệ."
+  ),  
+});
+export const CreateMedication=z.object({
+  name: z.string().min(1,"Tên dược phẩm không được để trống"),
+  dosage: z.number().min(1, "Liều lượng vui lòng nhập số"),
+  measure: z.string().min(1,"Đơn vị không được để trống"),
+  description: z.string().min(1,"Vui lòng nhập mô tả"),
 });

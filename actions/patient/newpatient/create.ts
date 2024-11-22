@@ -46,30 +46,28 @@ export const create_patient = async (
     guardian_phone: values.guardian_phone,
     gender: values.gender,
   };
-
   try {
     let idPatient: bigint;
 
     // 2. Kiểm tra xem bệnh nhân đã tồn tại với số CCCD này chưa
     const checkPatientEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients`;
     const checkPatientResponse = await axios.get(checkPatientEndpoint, {
-      params: { keyword: values.cccd_number }, // Truyền tham số cccd_number vào yêu cầu GET
+      params: { limit:1000 }, // Truyền tham số cccd_number vào yêu cầu GET
     });
     
     const patients = checkPatientResponse.data.data.data; // Lấy danh sách bệnh nhân từ response
-
     if (Array.isArray(patients)) {
       // Thay `cccd_number` bằng giá trị CCCD bạn muốn tìm
-      const patient = patients.find((item) => item.cccd_number === values.cccd_number); // Tìm bệnh nhân có cccd_number phù hợp
-
+      const patient = patients.find((item) => item.cccd_number.toString() === values.cccd_number); // Tìm bệnh nhân có cccd_number phù hợp
       if (patient) {
-        // Nếu bệnh nhân đã tồn tại, lấy ID bệnh nhân cũ
         idPatient = patient.id; // Lấy ID của bệnh nhân đầu tiên
-      } else {
+      } 
+    else {
         // Nếu bệnh nhân chưa tồn tại, tạo bệnh nhân mới
         const createPatientEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/create`;
         const response = await axios.post(createPatientEndpoint, convertValue, { timeout: 5000 });
         idPatient = response.data.data.id;
+
       }
     } else {
       throw new Error("Dữ liệu bệnh nhân không hợp lệ");
@@ -99,12 +97,12 @@ export const create_patient = async (
         data: medicalRecordResponse.data.data,
       };
     } else {
-      console.error("Lỗi khi tạo hồ sơ bệnh án:", medicalRecordResponse.data);
+      //console.error("Lỗi khi tạo hồ sơ bệnh án:", medicalRecordResponse.data);
       return { error: "Lỗi khi tạo hồ sơ bệnh án." };
     }
 
   } catch (error: any) {
     console.error("API error:", error.response ? error.response.data : error);
     return { error: "Đã xảy ra lỗi khi tạo bệnh nhân và hồ sơ bệnh án." };
-  }
+   }
 };

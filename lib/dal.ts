@@ -51,7 +51,7 @@ export async function getUser(): Promise<UserInfoType | any> {
     const response = await axios.get(endpoint, {
       params: { keyword: session.email },
     });
-      const user = await mapUserToUserInfoType(response);
+      const user = mapUserToUserInfoType(response);
       return user
   }
 

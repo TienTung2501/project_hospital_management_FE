@@ -307,16 +307,15 @@ export const MedicalRecordUpdateDiagnose=z.object({
       message: "Vui lòng nhập ghi chú cho bệnh nhân",
   }), // Tham chiếu đến bảng r
   apointment_date: z
-  .number({
-    required_error: "Ngày sinh là bắt buộc.",
-    invalid_type_error: "Ngày sinh phải là một số hợp lệ.",
-  })
-  .min(new Date("1900-01-01").getTime(), "Ngày sinh không thể trước năm 1900.") // Ngày sinh không quá xa
-  .max(new Date().getTime(), "Ngày sinh không thể ở tương lai.") // Ngày sinh không thể vượt quá ngày hiện tại
-  .refine(
-    (val) => !isNaN(new Date(val).getTime()),
-    "Ngày sinh không hợp lệ."
-  ),  
+    .number({
+      required_error: "Ngày tái khám là bắt buộc.",
+      invalid_type_error: "Ngày tái khám phải là một số hợp lệ.",
+    })
+    .min(new Date().getTime(), "Ngày tái khám phải từ ngày hôm nay trở đi.")
+    .refine(
+      (val) => !isNaN(new Date(val).getTime()),
+      "Ngày tái khám không hợp lệ."
+    ),
 });
 export const CreateMedication=z.object({
   name: z.string().min(1,"Tên dược phẩm không được để trống"),

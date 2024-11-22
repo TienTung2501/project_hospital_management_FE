@@ -128,6 +128,9 @@ const PatientDetail = () => {
     const [medicationDetails,setMedicationDetails]=useState<MedicationDetail[]>([]);
     const [editMedicationDetail, setEditMedicationDetail] = useState<MedicationDetail>();
     const [deleteMedicationDetail, setDeleteMedicationDetail] = useState<MedicationDetail>();
+    const [isEditing, setIsEditing] = useState(true); // Ban đầu đang chỉnh sửa
+const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút Lưu hồ sơ bị khóa
+
     const {medical_record_id}=useParams();
   let currentUser: UserInfoType | null = null;
   const user = useUser();  
@@ -409,9 +412,7 @@ useEffect(() => {
   
     
         // Đóng dialog sau khi xóa hoặc có lỗi
-const handleSaveMedication=()=>{
-  console.log(medicationDetails);
-}
+
   const handleSelectMedicationCatalogue = (value: Number | null) => {
     if(value!==null)
       fetchMedications(value);
@@ -452,9 +453,14 @@ const buttonColumnConfig = {
   content: 'Xem',
 };
 // convert medicalcatalogue 
-
-const onSubmitDiagnose=()=>{
-
+// Khi click vào nút "Sửa thông tin"
+const handleEditInformation = () => {
+  setIsEditing(true); // Cho phép chỉnh sửa lại
+  setIsSaveDisabled(true); // Khóa nút Lưu hồ sơ
+};
+const onSubmitDiagnose=(data: z.infer<typeof MedicalRecordUpdateDiagnose>)=>{
+  setIsEditing(false); // Không cho chỉnh sửa input nữa
+        setIsSaveDisabled(false); // Bật nút Lưu hồ sơ
 }
 // Hàm xử lý submit
 const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
@@ -482,6 +488,64 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
   });
   setIsOpenAddMedication(false);
 };
+const convertTimestampToDate = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Thêm '0' nếu tháng < 10
+  const day = String(date.getDate()).padStart(2, '0'); // Thêm '0' nếu ngày < 10
+  return `${year}-${month}-${day}`;
+};
+const handleSaveDedicalRecordPatient=()=>{
+  const apointment_date= convertTimestampToDate(formUpdateDiagnose.getValues('apointment_date'));
+  const diagnosis=formUpdateDiagnose.getValues('diagnosis');
+  const notes=formUpdateDiagnose.getValues('notes');
+    try {
+      const payload = {
+        medical_record: {
+          medical_record_id: medical_record_id, // ID hồ sơ y tế
+          data: {
+            apointment_date:apointment_date, // Ngày tái khám
+            diagnosis:diagnosis, // Chuẩn đoán
+            notes:notes, // Ghi chú
+          },
+        },
+        medications: {
+          data: medicationDetails.map((medication) => ({
+            medication_id: Number(medication.id), // ID của thuốc
+            name: medication.name, // Tên thuốc
+            dosage:medication.dosage.toString(),
+            measure: medication.measure, // Đơn vị đo
+            description: medication.description, // Mô tả
+          })),
+        },
+      };
+      const updateMedicalRecord = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/save`;
+      const response:any =  axios.post(updateMedicalRecord, payload, { timeout: 5000 });
+      console.log(response);
+      if (response.status === 201) {
+        // Hiển thị thông báo thành công
+        toast({
+          variant: "success",
+          title: "Thành công",
+          description: "Lưu hồ sơ bệnh án thành công.",
+        });
+        router.back()
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Có lỗi xảy ra khi lưu",
+        });
+      }
+    } catch (error:any) {
+      // Hiển thị thông báo lỗi
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: error?.response?.data?.message || error.message,
+      });
+    }  
+}
   //const columnServicePatient = servicePatients.length > 0 ? createColumns(servicePatients,undefined, undefined, handleDelete,columnServicePartientNotHeaderMap,{view:false,edit: false, delete: true},undefined) : [];
   const columnServiceDetails = serviceDetailPatients.length > 0 ? createColumns(serviceDetailPatients,undefined, undefined, undefined,columnHeaderMap,{view:false,edit: false, delete: false},undefined,buttonColumnConfig ) : [];
   const columnServiceDetailsResult = detailResultSelectedService.length > 0 ? createColumns(detailResultSelectedService,undefined, undefined, undefined,columnHeaderMapDetailResultService,{view:false,edit: false, delete: false} ) : [];
@@ -620,7 +684,8 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
 
               </CardContent>
           </Card>  
-          <Card>
+          <div className='grid grid-cols-3 gap-5'>
+            <Card className='col-span-1'>
           <CardHeader className='pb-4 border-b mb-4'>
                 <CardTitle>Nhận xét của bác sĩ</CardTitle>
                 <CardDescription>
@@ -633,86 +698,91 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
               <form onSubmit={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}>
                   <div className="mb-6 border-b max-w-[600px]">
                       <h3 className="text-lg font-bold mb-4">Nhận xét của bác sĩ</h3>
-                      <FormField
-                            control={formUpdateDiagnose.control}
-                            name="diagnosis"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Chuẩn đoán</FormLabel>
-                                <FormControl>
-                                  <Textarea
-                                    {...field}
-                                    placeholder="Chuẩn đoán"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                     <FormField
+                        control={formUpdateDiagnose.control}
+                        name="diagnosis"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Chuẩn đoán</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Nhập chuẩn đoán"
+                                disabled={!isEditing} // Khóa khi không chỉnh sửa
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                     <FormField
+                        control={formUpdateDiagnose.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ghi chú</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Uống đủ nước, ăn nhiều rau, thường xuyên tiếp xúc với ánh nắng"
+                                disabled={!isEditing} // Khóa khi không chỉnh sửa
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                      <FormField
-                                              control={formUpdateDiagnose.control}
-                                              name="notes"
-                                              render={({ field }) => (
-                                                <FormItem>
-                                                  <FormLabel>Ghi chú</FormLabel>
-                                                  <FormControl>
-                                                    <Textarea
-                                                      {...field}
-                                                      placeholder="Ghi chú: Kiêng đồ ngọt, ăn nhiều rau, kiêng nước lạnh"
-                                              
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
-                             <FormField
-                                            control={formUpdateDiagnose.control}
-                                            name="apointment_date"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel className="text-sm font-medium text-gray-700">Ngày tái khám</FormLabel>
-                                                <FormControl>
-                                                  <Popover>
-                                                    <PopoverTrigger asChild>
-                                                      <Button
-                                                        variant="outline"
-                                                        className={cn(
-                                                          "flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                                                          !field.value && "text-gray-400"
-                                                        )}
-                                                      >
-                                                        <div className="flex items-center space-x-2">
-                                                          <CalendarIcon className="h-4 w-4 text-gray-500" />
-                                                          <span>
-                                                            {field.value
-                                                              ? format(new Date(field.value), "dd/MM/yyyy")
-                                                              : "Chọn ngày"}
-                                                          </span>
-                                                        </div>
-                                                        <ChevronDownIcon className="h-4 w-4 text-gray-500" />
-                                                      </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="z-50 w-[320px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-                                                    <DayPicker
-                                                        mode="single"
-                                                        selected={field.value ? new Date(field.value) : undefined}
-                                                        onSelect={(date) =>
-                                                          field.onChange(date ? date.getTime() : undefined)
-                                                        }
-                                                        captionLayout="dropdown"
-                                                        fromYear={1900}
-                                                        toYear={new Date().getFullYear()}
-                                                        className="custom-daypicker"
-                                                      />
-                                                                    </PopoverContent>
-                                                  </Popover>
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
+                    <FormField
+                      control={formUpdateDiagnose.control}
+                      name="apointment_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-700">Ngày tái khám</FormLabel>
+                          <FormControl>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  disabled={!isEditing}
+                                  variant="outline"
+                                  className={cn(
+                                    "flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                                    !field.value && "text-gray-400"
+                                  )}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <CalendarIcon className="h-4 w-4 text-gray-500" />
+                                    <span>
+                                      {field.value
+                                        ? format(new Date(field.value), "dd/MM/yyyy")
+                                        : "Chọn ngày"}
+                                    </span>
+                                  </div>
+                                  <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="z-50 w-[320px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+                              <DayPicker
+                                  mode="single"
+                                  selected={field.value ? new Date(field.value) : undefined}
+                                  onSelect={(date) =>
+                                    field.onChange(date ? date.getTime() : undefined)
+                                  }
+                                  captionLayout="dropdown"
+                                  fromYear={1900}
+                                  toYear={new Date().getFullYear() + 10}
+                                  disabled={{
+                                    before: new Date(), // Chặn ngày trước hôm nay
+                                  }}
+                                  className="custom-daypicker"
+                                />
+                                              </PopoverContent>
+                            </Popover>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                   </div> 
                   
@@ -720,7 +790,10 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
 
             </Form>
 
-            <Button variant="outline" className='mr-5' onClick={() => setPrescriptionVisible(!isPrescriptionVisible)}> Kê thuốc</Button>
+            <Button variant="outline" className='mr-5'  onClick={() => setPrescriptionVisible(!isPrescriptionVisible)}> Kê thuốc</Button>
+            <Button variant="outline" className='mr-5'  disabled={!isEditing} onClick={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}> Lưu thông tin</Button>
+            <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleEditInformation}> Sửa thông tin</Button>
+            <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline">Nhập viện</Button>
@@ -746,7 +819,7 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
             </CardContent>
             </Card> 
             {isPrescriptionVisible && (                               
-            <Card className='mb-5 mt-5 pt-5'>
+            <Card className='mb-5 pt-5 col-span-2'>
               <CardContent>
                 <Dialog open={isOpenAddMedication} onOpenChange={setIsOpenAddMedication}
               >
@@ -855,7 +928,7 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
                               </FormItem>
                             )}
                           />
-                          <Button type='submit' onClick={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>Lưu</Button>
+                          <Button type='submit' onClick={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>Lưu thuốc</Button>
                         </div>           
                     </DialogContent>
                   </form>
@@ -882,7 +955,6 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
                             <Button type="submit">Lọc</Button>
                           </div>
                           <Button variant="outline" onClick={()=>{setIsOpenAddMedication(true)}}>Thêm thuốc</Button>
-                          <Button variant="outline" onClick={handleSaveMedication}>Lưu thuốc</Button>
                         </div>
                       </div>
                     </div>
@@ -920,7 +992,7 @@ const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
 
             </Card>
                 )}
-         
+         </div>
           </TabsContent>
           <TabsContent value="HistoryMedicalRecordDetail">
             <Card className='mb-5'>

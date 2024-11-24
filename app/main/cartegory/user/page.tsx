@@ -266,7 +266,7 @@ const UserInfor = () => {
   const switchConfig = [
     { key: "status", onStatusChange: handleSwitchChange },
   ];
-  const columns = users.length > 0 ? createColumns(users,handleView, handleEdit, handleDelete, columnHeaderMap,{view: true, edit: true, delete: true},switchConfig ) : [];
+  const columns = users.length > 0 ? createColumns(users,handleView, handleEdit, handleDelete, columnHeaderMap,{view: false, edit: true, delete: true},switchConfig ) : [];
   // // Gọi createColumns
  
   

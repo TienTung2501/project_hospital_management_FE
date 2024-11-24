@@ -115,7 +115,7 @@ const HomePage = () => {
                 );
               })
             ) : (
-              <li className="text-gray-500">Không có phòng phụ trách.</li>
+              <li className="text-gray-500">Đang đảm nhận một vai trò chung nên không hiển thị phòng phụ trách.</li>
             )}
           </ul>
         </>

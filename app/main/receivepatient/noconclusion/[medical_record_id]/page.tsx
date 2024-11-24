@@ -1027,7 +1027,59 @@ const handleSaveDedicalRecordPatient=async ()=>{
               </Form>
                 </Dialog>
               
-                
+                <Card className='mb-5 mt-5'>
+                <CardHeader className='pb-4 border-b mb-4'>
+                  <CardTitle>Chi tiết đơn thuốc ủa bệnh nhân</CardTitle>
+                  <CardDescription>
+                    Thông tin đơn thuốc bác sĩ đã kê
+                  </CardDescription>
+                </CardHeader >
+              
+                <CardContent className="space-y-2">
+                <div className="flex flex-col gap-1 border-b pb-5">
+                      <div className="mb-6 border-b">
+                        <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+                      </div>
+                    </div>
+                    <div className='flex mt-5 justify-between'>
+              
+                  <Combobox<number>
+                  options={numberOptions}
+                  onSelect={handleSelecLimit}
+                  placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
+                  />
+        
+
+                <div className="flex items-center space-x-5">
+                      <div className='flex'>
+                     
+                      </div>
+                      <div className="flex items-center space-x-2 bg-white">
+                        <Input type="text" placeholder="Tìm kiếm" 
+                          value={keyword} // Đặt giá trị từ state keyword
+                          onChange={(e) => setKeyword(e.target.value)}
+                        />
+                        <Button type="submit">Lọc</Button>
+                        <Button variant="outline" onClick={()=>{setIsOpenAddMedication(true)}}>Thêm thuốc</Button>
+                      </div>
+                </div>
+                </div>
+                    <div>
+                      <DataTable
+                        data={medicationDetails}
+                        columns={columnMedicationDetail}
+                        totalRecords={totalRecords}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={(newPageIndex) => {
+                          console.log("pageindex:", newPageIndex);
+                          setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
+                        }}
+                      />
+                    </div>
+
+                </CardContent>
+              </Card> 
                 </CardContent>
                 <AlertDialog open={!!deleteMedicationDetail} onOpenChange={() => setDeleteMedicationDetail(undefined)}>
   <AlertDialogContent>

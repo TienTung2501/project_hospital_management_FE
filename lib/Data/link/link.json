@@ -3,26 +3,19 @@
     "role": "Quản trị viên",
     "links": [
       { "path": "/", "name": "Trang chủ" },
-      { "path": "newpatient", "name": "Tiếp nhận mới" },
-      { "path": "receivepatient", "name": "Các phòng" },
-      { "path": "medical_records", "name": "Hồ sơ bệnh án" },
-      { "path": "services", "name": "Dịch vụ" },
-      { "path": "payment", "name": "Thanh toán" },
-      { "path": "payment/detailpayment", "name": "Chi tiết thanh toán" },
-      { "path": "setting", "name": "Cài đặt" },
-      { "path": "cartegory", "name": "Danh mục", "subLinks": [
-        { "path": "cartegory/user", "name": "Người dùng" },
-        { "path": "cartegory/bed", "name": "Giường bệnh" },
-        { "path": "cartegory/department", "name": "Phòng ban" },
-        { "path": "cartegory/permission", "name": "Quyền" },
-        { "path": "cartegory/medical", "name": "Dược phẩm" },
-        { "path": "cartegory/position", "name": "Chức vụ" },
-        { "path": "cartegory/room", "name": "Phòng" },
-        { "path": "cartegory/room_catalogue", "name": "Danh mục phòng" },
-        { "path": "cartegory/medical_catalogue", "name": "Danh mục dược phẩm" },
-        { "path": "cartegory/service", "name": "Dịch vụ khám" },
-        { "path": "cartegory/service_catalogue", "name": "Danh mục dịch vụ" },
-        { "path": "cartegory/location", "name": "Địa điểm" }
+      { "path": "setting", "name": "Thông tin cá nhân" },
+      { "path": "cartegory", "name": "Quản lý danh mục", "subLinks": [
+        { "path": "cartegory/user", "name": "Quản lý người dùng" },
+        { "path": "cartegory/bed", "name": "Quản lý giường bệnh" },
+        { "path": "cartegory/department", "name": "Quản lý Khoa" },
+        { "path": "cartegory/permission", "name": "Quản lý quyền" },
+        { "path": "cartegory/medical", "name": "Quản lý dược" },
+        { "path": "cartegory/position", "name": "Quản lý chức danh" },
+        { "path": "cartegory/room", "name": "Quản lý phòng" },
+        { "path": "cartegory/room_catalogue", "name": "Quản lý nhóm phòng" },
+        { "path": "cartegory/medical_catalogue", "name": "Quản lý nhóm dược" },
+        { "path": "cartegory/service", "name": "Quản lý dịch vụ khám" },
+        { "path": "cartegory/service_catalogue", "name": "Quản lý nhóm dịch vụ" }
       ] }
     ]
   },
@@ -30,6 +23,7 @@
     "role": "Bác sĩ xét nghiệm",
     "links": [
       { "path": "/", "name": "Trang chủ" },
+      { "path": "services", "name": "Tiếp nhận dịch vụ"},
       { "path": "setting", "name": "Thông tin cá nhân" }
     ]
   },
@@ -37,7 +31,7 @@
     "role": "Bác sĩ khám",
     "links": [
       { "path": "/", "name": "Trang chủ" },
-      { "path": "receivepatient", "name": "Tiếp nhận bệnh nhân khám" },
+      { "path": "receivepatient", "name": "Tiếp nhận khám" },
       { "path": "setting", "name": "Thông tin cá nhân" }
     ]
   }
@@ -45,7 +39,7 @@
   {
     "role": "Điều dưỡng viên",
     "links": [
-      { "path": "", "name": "Trang chủ" },
+      { "path": "/", "name": "Trang chủ" },
       { "path": "newpatient", "name": "Tiếp nhận mới" },
       { "path": "setting", "name": "Thông tin cá nhân" }
     ]

@@ -207,7 +207,7 @@ const MedicalRecordService = () => {
       fetchRooms();
       fetchMedicalRecordService();
     }
-  }, [limit, pageIndex,room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
+  }, [limit, pageIndex]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
 
   if (loading) {

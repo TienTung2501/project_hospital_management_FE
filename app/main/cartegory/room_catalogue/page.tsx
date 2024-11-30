@@ -330,9 +330,9 @@ const RoomCataloguePage = () => {
                 <Form {...formUpdate}>
                   <form onSubmit={formUpdate.handleSubmit(onSubmitEdit)} className="space-y-4">
                     <DialogHeader>
-                      <DialogTitle>Chỉnh sửa phòng</DialogTitle>
+                      <DialogTitle>Chỉnh sửa nhóm phòng</DialogTitle>
                       <DialogDescription>
-                        Để Chỉnh sửa phòng, click vào Lưu khi bạn hoàn thành
+                        Để Chỉnh sửa nhóm phòng, click vào Lưu khi bạn hoàn thành
                       </DialogDescription>
                     </DialogHeader>
                     <FormField

@@ -83,7 +83,7 @@ const columnHeaderMapMedicationDetail={
 }
 const columnHeaderMapMedicalRecordHistoryDetail={
   visit_date: "Ngày khám",
-  diagnosis: "Chuẩn đoán",
+  diagnosis: "Chẩn đoán",
   notes: "Ghi chú",
   apointment_date: "Ngày hẹn tái khám",
   is_inpatient: "Đối tượng nội trú",
@@ -527,7 +527,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
           medical_record_id: medical_record_id, // ID hồ sơ y tế
           data: {
             apointment_date:apointment_date, // Ngày tái khám
-            diagnosis:diagnosis, // Chuẩn đoán
+            diagnosis:diagnosis, // Chẩn đoán
             notes:notes, // Ghi chú
           },
         },
@@ -679,7 +679,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                     </div>
                     <div className="grid grid-cols-1 p-4">
                         <div> <strong>Bác sĩ nhận xét</strong></div>
-                        <div><strong>Chuẩn đoán: </strong> {medicalReacordDetail?.diagnosis||"Chưa chuẩn đoán"}</div>
+                        <div><strong>Chẩn đoán: </strong> {medicalReacordDetail?.diagnosis||"Chưa Chẩn đoán"}</div>
                         <div><strong>Ghi chú: </strong> {medicalReacordDetail?.notes||"Chưa có ghi chú"}</div>
                     </div>
                 </div>
@@ -781,7 +781,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
           <CardHeader className='pb-4 border-b mb-4'>
                 <CardTitle>Nhận xét của bác sĩ</CardTitle>
                 <CardDescription>
-                  Nhận xét, chuẩn đoán bệnh tình
+                  Nhận xét, Chẩn đoán bệnh tình
                 </CardDescription>
               </CardHeader >
              
@@ -795,11 +795,11 @@ const handleSaveDedicalRecordPatient=async ()=>{
                         name="diagnosis"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Chuẩn đoán</FormLabel>
+                            <FormLabel>Chẩn đoán</FormLabel>
                             <FormControl>
                               <Textarea
                                 {...field}
-                                placeholder="Nhập chuẩn đoán"
+                                placeholder="Nhập Chẩn đoán"
                                 disabled={!isEditing} // Khóa khi không chỉnh sửa
                               />
                             </FormControl>
@@ -1029,7 +1029,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
               
                 <Card className='mb-5 mt-5'>
                 <CardHeader className='pb-4 border-b mb-4'>
-                  <CardTitle>Chi tiết đơn thuốc ủa bệnh nhân</CardTitle>
+                  <CardTitle>Chi tiết đơn thuốc của bệnh nhân</CardTitle>
                   <CardDescription>
                     Thông tin đơn thuốc bác sĩ đã kê
                   </CardDescription>
@@ -1179,7 +1179,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                       </div>
                       <div className="grid grid-cols-1 p-4">
                           <div> <strong>Bác sĩ nhận xét</strong></div>
-                          <div><strong>Chuẩn đoán: </strong> {medicalRecordHistoryDetailItem?.diagnosis||"Chưa chuẩn đoán"}</div>
+                          <div><strong>Chẩn đoán: </strong> {medicalRecordHistoryDetailItem?.diagnosis||"Chưa chẩn đoán"}</div>
                           <div><strong>Ghi chú: </strong> {medicalRecordHistoryDetailItem?.notes||"Chưa có ghi chú"}</div>
                           <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.apointment_date ? format(new Date(medicalRecordHistoryDetailItem?.apointment_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
                       </div>

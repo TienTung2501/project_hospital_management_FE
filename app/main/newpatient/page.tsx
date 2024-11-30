@@ -235,7 +235,6 @@ const NewPatient = () => {
               department_id: item.department_id,
               room_catalogue_id: item.room_catalogue_id,
             }));
-          console.log(fetchedRooms)
           setRooms(fetchedRooms); // Cập nhật danh sách phòng
           setTotalRecords(totalRecords);
         }

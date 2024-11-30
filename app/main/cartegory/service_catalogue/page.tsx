@@ -283,7 +283,7 @@ const ServiceCataloguePage = () => {
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold md:text-xl">Quản lý danh mục dịch vụ</h1>
+      <h1 className="text-lg font-semibold md:text-xl">Quản lý nhóm dịch vụ</h1>
       
       <div className="flex justify-between">
         <Combobox<number>
@@ -312,18 +312,18 @@ const ServiceCataloguePage = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Thêm danh mục dịch vụ</DialogTitle>
+              <DialogTitle>Thêm nhóm dịch vụ</DialogTitle>
               <DialogDescription>
-                Nhập thông tin danh mục dịch vụ và nhấn Lưu.
+                Nhập thông tin nhóm dịch vụ và nhấn Lưu.
               </DialogDescription>
             </DialogHeader>
             <Form {...formCreate}>
               <form onSubmit={formCreate.handleSubmit(onSubmitCreate)} className="space-y-4">
                 <FormField control={formCreate.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tên danh mục dịch vụ</FormLabel>
+                    <FormLabel>Tên nhóm dịch vụ</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Tên danh mục dịch vụ" />
+                      <Input {...field} placeholder="Tên nhóm dịch vụ" />
                     </FormControl>
                   </FormItem>
                 )} />
@@ -348,18 +348,18 @@ const ServiceCataloguePage = () => {
          
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Chỉnh sửa danh mục dịch vụ</DialogTitle>
+              <DialogTitle>Chỉnh sửa nhóm dịch vụ</DialogTitle>
               <DialogDescription>
-                Nhập thông tin danh mục dịch vụ và nhấn Lưu.
+                Nhập thông tin nhóm dịch vụ và nhấn Lưu.
               </DialogDescription>
             </DialogHeader>
             <Form {...formUpdate}>
               <form onSubmit={formUpdate.handleSubmit(onSubmitEdit)} className="space-y-4">
                 <FormField control={formUpdate.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tên danh mục dịch vụ</FormLabel>
+                    <FormLabel>Tên nhóm dịch vụ</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Tên danh mục dịch vụ" />
+                      <Input {...field} placeholder="Tên nhóm dịch vụ" />
                     </FormControl>
                   </FormItem>
                 )} />
@@ -380,7 +380,7 @@ const ServiceCataloguePage = () => {
         </Dialog>
       </div>
       </div>
-      {/* Hiển thị bảng danh sách danh mục dịch vụ */}
+      {/* Hiển thị bảng danh sách nhóm dịch vụ */}
       <div className='flex item-center justify-center'>
       {loading ? (
       <p className='flex item-center justify-center'>Loading...</p>
@@ -407,7 +407,7 @@ const ServiceCataloguePage = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Bạn đang xóa danh mục dịch vụ:{" "}
+              Hành động này không thể hoàn tác. Bạn đang xóa nhóm dịch vụ:{" "}
               <strong>{deleteItem?.name}</strong>
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -271,7 +271,7 @@ const AdminPage = () => {
         fetchRooms();
         fetchMedicalRecords();
       }
-    }, [room_id]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
+    }, []);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
   
     if (loading) {

@@ -156,8 +156,9 @@ const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState(false);
             title: "Thêm dịch vụ thành công",
             description: res.statusText,
           });
+          
           setServicePatients([]);
-          router.back();
+         router.back();
         } else {
           toast({
             variant: "destructive",

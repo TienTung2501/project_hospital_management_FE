@@ -322,8 +322,11 @@ const RoomCataloguePage = () => {
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>
-            <Input type="text" placeholder="Tìm kiếm phòng" />
-            <Button type="submit">Lọc</Button>
+            <Input type="text" placeholder="Tìm kiếm" 
+                value={keyword} // Đặt giá trị từ state keyword
+                onChange={(e) => setKeyword(e.target.value)}
+                />
+              <Button  onClick={() => fetchRoomCatalogues()}>Lọc</Button>
 
             <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>
               <DialogContent className="sm:max-w-[425px]">

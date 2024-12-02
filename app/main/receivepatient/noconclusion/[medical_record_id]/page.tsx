@@ -313,6 +313,21 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
   
     fetchAllData();
   }, [limit]);
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // Fetch medical record details
+        await fetchMedicalRecordDetail();
+        
+        // Fetch medication catalogues
+        await fetchMedicationCatalogues();
+      } catch (error) {
+        console.error("Error while fetching data:", error);
+      }
+    };
+  
+    fetchAllData();
+  }, []);
   
 
   const onSubmit = (values: z.infer<typeof PatientServiceSchema>) => {

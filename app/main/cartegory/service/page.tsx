@@ -616,28 +616,28 @@ const fetchServiceCatalogues = async () => {
         {/* Form nhập liệu */}
         <div className="grid gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Keyword</label>
+            <label className="block text-sm font-medium text-gray-700">Ký hiệu</label>
             <Input
               value={newDetail.keyword}
               onChange={(e) => setNewDetail({ ...newDetail, keyword: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Name</label>
+            <label className="block text-sm font-medium text-gray-700">Tên chỉ số</label>
             <Input
               value={newDetail.name}
               onChange={(e) => setNewDetail({ ...newDetail, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reference Range</label>
+            <label className="block text-sm font-medium text-gray-700">Khoảng tham chiếu</label>
             <Input
               value={newDetail.reference_range}
               onChange={(e) => setNewDetail({ ...newDetail, reference_range: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Unit</label>
+            <label className="block text-sm font-medium text-gray-700">Đơn vị</label>
             <Input
               value={newDetail.unit}
               onChange={(e) => setNewDetail({ ...newDetail, unit: e.target.value })}
@@ -656,16 +656,16 @@ const fetchServiceCatalogues = async () => {
               <li key={index} className="border p-4 rounded-lg shadow-sm">
                 <div>
                   <div>
-                    <strong>Keyword:</strong> {detail.keyword}
+                    <strong>Ký hiệu:</strong> {detail.keyword}
                   </div>
                   <div>
-                    <strong>Name:</strong> {detail.name}
+                    <strong>Tên chỉ số:</strong> {detail.name}
                   </div>
                   <div>
-                    <strong>Reference Range:</strong> {detail.reference_range}
+                    <strong>Khoảng tham chiếu:</strong> {detail.reference_range}
                   </div>
                   <div>
-                    <strong>Unit:</strong> {detail.unit}
+                    <strong>Đơn vị:</strong> {detail.unit}
                   </div>
                 </div>
                 <div className="mt-2 flex gap-2">
@@ -795,7 +795,7 @@ const fetchServiceCatalogues = async () => {
                                   <Combobox<bigint>
                                   options={roomCatalogues.map(room => ({
                                     value: room.id,
-                                    label: room.keyword,
+                                    label: room.name,
                                   }))}
                                     placeholder="Chọn nhóm phòng"
                                     onSelect={handleSelectRoomCatalogue}
@@ -955,7 +955,7 @@ const fetchServiceCatalogues = async () => {
                             <Combobox<bigint>
                              options={roomCatalogues.map(room => ({
                               value: room.id,
-                              label: room.keyword,
+                              label: room.name,
                             }))}
                               placeholder="Chọn nhóm phòng"
                               onSelect={handleSelectRoomCatalogue}

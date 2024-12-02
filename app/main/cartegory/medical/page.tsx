@@ -378,7 +378,7 @@ const MedicationPage = () => {
 
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4">
-      <h1 className="text-lg font-semibold md:text-xl">Quản lý thuốc</h1>
+      <h1 className="text-lg font-semibold md:text-xl">Quản lý dược</h1>
 
       <div className="flex justify-between">
       <Combobox<number>
@@ -405,18 +405,18 @@ const MedicationPage = () => {
               </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Thêm thuốc</DialogTitle>
+            <DialogTitle>Thêm dược</DialogTitle>
             <DialogDescription>
-              Nhập thông tin thuốc và nhấn Lưu.
+              Nhập thông tin dược và nhấn Lưu.
             </DialogDescription>
           </DialogHeader>
           <Form {...formCreate}>
             <form onSubmit={formCreate.handleSubmit(onSubmitCreate)} className="space-y-4">
               <FormField control={formCreate.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên thuốc</FormLabel>
+                  <FormLabel>Tên dược</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Tên thuốc" />
+                    <Input {...field} placeholder="Tên dược" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -498,18 +498,18 @@ const MedicationPage = () => {
           <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>
         <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Thêm thuốc</DialogTitle>
+            <DialogTitle>Thêm dược</DialogTitle>
             <DialogDescription>
-              Nhập thông tin thuốc và nhấn Lưu.
+              Nhập thông tin dược và nhấn Lưu.
             </DialogDescription>
           </DialogHeader>
           <Form {...formUpdate}>
             <form onSubmit={formUpdate.handleSubmit(onSubmitEdit)} className="space-y-4">
               <FormField control={formUpdate.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên thuốc</FormLabel>
+                  <FormLabel>Tên dược</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Tên thuốc" />
+                    <Input {...field} placeholder="Tên dược" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -519,7 +519,7 @@ const MedicationPage = () => {
                       name="medication_catalogue_id"
                       render={({ field }) => (
                         <FormItem className="flex flex-col">
-                          <FormLabel className="mr-2">Nhóm thuốc</FormLabel>
+                          <FormLabel className="mr-2">Nhóm dược</FormLabel>
                           <FormControl className="flex-grow">
                             <Combobox<bigint>
                                options={medicationCatalogues.map(meidcationCatalogue => ({
@@ -621,9 +621,9 @@ setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xóa thuốc</AlertDialogTitle>
+            <AlertDialogTitle>Xóa dược</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa thuốc <strong>{deleteItem?.name}</strong> không?
+              Bạn có chắc chắn muốn xóa dược <strong>{deleteItem?.name}</strong> không?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

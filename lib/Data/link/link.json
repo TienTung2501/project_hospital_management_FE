@@ -6,16 +6,15 @@
       { "path": "setting", "name": "Thông tin cá nhân" },
       { "path": "cartegory", "name": "Quản lý danh mục", "subLinks": [
         { "path": "cartegory/user", "name": "Quản lý người dùng" },
-        { "path": "cartegory/bed", "name": "Quản lý giường bệnh" },
-        { "path": "cartegory/department", "name": "Quản lý Khoa" },
-        { "path": "cartegory/permission", "name": "Quản lý quyền" },
-        { "path": "cartegory/medical", "name": "Quản lý dược" },
         { "path": "cartegory/position", "name": "Quản lý chức danh" },
-        { "path": "cartegory/room", "name": "Quản lý phòng" },
+        { "path": "cartegory/department", "name": "Quản lý Khoa" },
         { "path": "cartegory/room_catalogue", "name": "Quản lý nhóm phòng" },
+        { "path": "cartegory/room", "name": "Quản lý phòng" },
+        { "path": "cartegory/bed", "name": "Quản lý giường bệnh" },
         { "path": "cartegory/medical_catalogue", "name": "Quản lý nhóm dược" },
-        { "path": "cartegory/service", "name": "Quản lý dịch vụ khám" },
-        { "path": "cartegory/service_catalogue", "name": "Quản lý nhóm dịch vụ" }
+        { "path": "cartegory/medical", "name": "Quản lý dược" },
+        { "path": "cartegory/service_catalogue", "name": "Quản lý nhóm dịch vụ" },
+        { "path": "cartegory/service", "name": "Quản lý dịch vụ khám" }
       ] }
     ]
   },

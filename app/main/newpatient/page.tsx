@@ -171,6 +171,7 @@ const NewPatient = () => {
       try {
         const response = await axios.get(endpoint, {
           params: {
+            keyword:"Khám",
             limit: 1000, // Số bản ghi trên mỗi trang
           },
         })

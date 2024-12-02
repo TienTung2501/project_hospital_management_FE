@@ -39,7 +39,7 @@ const columnHeaderMap: { [key: string]: string } = {
   department_name: "Tên khoa",
   status_bed:"Tình trạng giường",
   room_catalogue_code: "Nhóm phòng",
-  beds_count: "Giường hoạt động",
+  beds_count: "Số giường",
   status:"Trạng thái hoạt động"
 };
 const RoomPage = () => {

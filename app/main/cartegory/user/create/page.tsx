@@ -349,7 +349,7 @@ const CreateUser = () => {
   return (
     <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
     <div className="flex w-full items-center">
-      <h1 className="text-lg font-semibold md:text-xl">Quản lý chức danh</h1>
+      <h1 className="text-lg font-semibold md:text-xl">Quản lý người dùng</h1>
     </div>
       <div className="mx-auto grid max-w-[59rem] flex-1 auto-rows-max gap-4 mt-10">
       <Form {...form}>

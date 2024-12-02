@@ -63,7 +63,7 @@ const statusOptions = [
   { value: 2, label: "Tât cả" },
 ]
 const columnHeaderMap: { [key: string]: string } = {
-  name: "Tên bệnh nhân",
+  name: "Tên người dùng",
   email: "Địa chỉ email",
   address: "Địa chỉ",
   phone: "Điện thoại",
@@ -302,8 +302,11 @@ const UserInfor = () => {
             />
           </div>
           <div className="flex items-center space-x-2 bg-white">
-            <Input type="text" placeholder="Tìm kiếm" />
-            <Button type="submit">Lọc</Button>
+            <Input type="text" placeholder="Tìm kiếm" 
+              value={keyword} // Đặt giá trị từ state keyword
+              onChange={(e) => setKeyword(e.target.value)}
+              />
+            <Button onClick={() => fetchUsers()}>Lọc</Button>
           </div>
                 <Button className='ml-5' onClick={handleClick}>+ Thêm mới</Button>
 

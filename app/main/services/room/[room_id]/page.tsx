@@ -208,6 +208,14 @@ const MedicalRecordService = () => {
       fetchMedicalRecordService();
     }
   }, [limit, pageIndex]);  // Khi user_id hoặc room_id thay đổi, gọi lại API
+  useEffect(() => {
+    
+
+    if (room_id) {
+      fetchRooms();
+      fetchMedicalRecordService();
+    }
+  }, []);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
 
   if (loading) {

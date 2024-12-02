@@ -23,7 +23,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { create_medication_catalogue, delete_medication_catalogue, update_medication_catalogue } from '@/actions/cartegory/medicationcatalouge';
 import axios from 'axios';
 
-// Dữ liệu giả cho danh sách Nhóm thuốc
+// Dữ liệu giả cho danh sách Nhóm dược
 
 const numberOptions = [
   { value: 10, label: "10 bản ghi" },
@@ -345,16 +345,16 @@ const MedicationPage = () => {
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Thêm thuốc</DialogTitle>
+            <DialogTitle>Thêm nhóm dược</DialogTitle>
             <DialogDescription>
-              Nhập thông tin thuốc và nhấn Lưu.
+              Nhập thông tin dược và nhấn Lưu.
             </DialogDescription>
           </DialogHeader>
           <Form {...formCreate}>
             <form onSubmit={formCreate.handleSubmit(onSubmitCreate)} className="space-y-4">
               <FormField control={formCreate.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên Nhóm thuốc</FormLabel>
+                  <FormLabel>Tên Nhóm dược</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Tên nhóm dược" />
                   </FormControl>
@@ -402,18 +402,18 @@ const MedicationPage = () => {
       <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>
         <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editData ? "Chỉnh sửa Nhóm thuốc" : "Thêm Nhóm thuốc"}</DialogTitle>
+            <DialogTitle>{editData ? "Chỉnh sửa Nhóm dược" : "Thêm Nhóm dược"}</DialogTitle>
             <DialogDescription>
-              Nhập thông tin Nhóm thuốc và nhấn Lưu.
+              Nhập thông tin nhóm dược và nhấn Lưu.
             </DialogDescription>
           </DialogHeader>
           <Form {...formUpdate}>
             <form onSubmit={formUpdate.handleSubmit(onSubmitEdit)} className="space-y-4">
               <FormField control={formUpdate.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tên Nhóm thuốc</FormLabel>
+                  <FormLabel>Tên nhóm dược</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Tên Nhóm thuốc" />
+                    <Input {...field} placeholder="Tên Nhóm dược" />
                   </FormControl>
                 </FormItem>
               )} />
@@ -489,9 +489,9 @@ setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Xóa Nhóm thuốc</AlertDialogTitle>
+            <AlertDialogTitle>Xóa Nhóm dược</AlertDialogTitle>
             <AlertDialogDescription>
-              Bạn có chắc chắn muốn xóa Nhóm thuốc <strong>{deleteItem?.name}</strong> không?
+              Bạn có chắc chắn muốn xóa Nhóm dược <strong>{deleteItem?.name}</strong> không?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -429,14 +429,17 @@ const RoomPage = () => {
           <div className='flex'>
           <Combobox<number>
               options={statusOptions}
-              onSelect={handleSelecLimit}
-              defaultValue={limit} // No default selection for status
+              onSelect={handleSelectStatus}
+              defaultValue={null} // No default selection for status
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
           </div>
           <div className="flex items-center space-x-2 bg-white">
-            <Input type="text" placeholder="Tìm kiếm" />
-            <Button type="submit">Lọc</Button>
+          <Input type="text" placeholder="Tìm kiếm" 
+                value={keyword} // Đặt giá trị từ state keyword
+                onChange={(e) => setKeyword(e.target.value)}
+                />
+              <Button  onClick={() => fetchRooms()}>Lọc</Button>
           </div>
       
             <Dialog open={isOpenDialogUpdate} onOpenChange={setIsOpenDialogUpdate}>

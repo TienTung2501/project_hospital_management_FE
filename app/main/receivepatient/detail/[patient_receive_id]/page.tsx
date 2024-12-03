@@ -31,20 +31,27 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Combobox } from '@/components/combobox'
-import { DailyHealth, MedicalRecord, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceType, UserInfoType } from '@/types';
+import { DailyHealth, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServiceType, UserInfoType } from '@/types';
 import { useParams, useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ChevronLeft } from 'lucide-react';
+import { CalendarIcon, ChevronDownIcon, ChevronLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import * as z from "zod"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Textarea } from '@/components/ui/textarea';
-import {  PatientServiceSchema } from '@/schema';
+import {  CreateMedication, MedicalRecordUpdateDiagnose, PatientServiceSchema } from '@/schema';
 import axios from 'axios';
+import { Popover, PopoverTrigger } from '@radix-ui/react-popover';
+import { PopoverContent } from '@/components/ui/popover';
+import { DayPicker } from 'react-day-picker';
+import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { useUser } from '@/components/context/UserContext';
 
 export type ServicePatient={
   id:bigint;
@@ -62,6 +69,46 @@ const columnServicePartientNotHeaderMap={
   price: "giá",
 }
 
+const columnHeaderMap={
+  name:"Tên dịch vụ",
+  assigning_doctor_name:"Bác sĩ chỉ định",
+  health_insurance_applied:"Áp dụng bảo hiểm",
+  health_insurance_value: "Phần trăm",
+}
+const columnHeaderMapDetailResultService={
+  keyword:"Từ khóa",
+  name:"Thuộc tính",
+  reference_range:"Khoảng tham chiếu",
+  unit:"Đơn vị",
+  value: "Kết quả",
+}
+const columnHeaderMapMedicationDetail={
+  name:"Tên thuốc",
+  dosage:"Liều lượng",
+  measure:"Đơn vị",
+  description: "Hướng dẫn dùng",
+}
+const columnHeaderMapMedicalRecordHistoryDetail={
+  visit_date: "Ngày khám",
+  diagnosis: "Chẩn đoán",
+  notes: "Ghi chú",
+  apointment_date: "Ngày hẹn tái khám",
+  is_inpatient: "Đối tượng nội trú",
+  inpatient_detail: "Chi tiết nội trú",
+}
+const numberOptions = [
+  { value: 10, label: "10 bản ghi" },
+  { value: 20, label: "20 bản ghi" },
+  { value: 40, label: "40 bản ghi" },
+]
+export  type DetailResultService={
+  id:string;
+  keyword:string;
+  name:string;
+  reference_range:string;
+  unit:string;
+  value:string;
+}
 const PatientReceive = () => {
   const router = useRouter(); 
   const [loading, setLoading] = useState(true);
@@ -73,6 +120,9 @@ const PatientReceive = () => {
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
   const [deleteItem, setDeleteItem] = useState<ServicePatient >();
+  const [isAssignService,setIsAssignService]=useState(false);
+  const [isConclusion,setIsConclusion]=useState(false);
+
   
   const [serviceCatalogues,setServiceCatalogues] =useState<ServiceCatalogue []>([]);
  
@@ -193,8 +243,6 @@ const fetMedicatalRecord= async () => {
   const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`;
   
   try {
-      const response = await axios.get(endpoint);
-
       // Gọi API để lấy tất cả các bản ghi
       const responseAll = await axios.get(endpoint, { params: { limit: 1000 } });
       const { data } = responseAll.data.data;
@@ -220,6 +268,8 @@ const fetMedicatalRecord= async () => {
               }
             : undefined;
             setPatient(patient);
+            if(patient)
+            await fetchMedicalRecordHistoryDetail(patient?.id);
       } else {
           console.warn("Data is not an array:", data);
       }
@@ -384,7 +434,384 @@ const handleSelectRoom=(value: bigint | null)=>{
     form.setValue('room_id', BigInt(value)); // Update the form value directly
   }
 }
-  const columnServicePatient = servicePatients.length > 0 ? createColumns(servicePatients,undefined, undefined, handleDelete,columnServicePartientNotHeaderMap,{view:false,edit: false, delete: true},undefined) : [];
+const columnServicePatient = servicePatients.length > 0 ? createColumns(servicePatients,undefined, undefined, handleDelete,columnServicePartientNotHeaderMap,{view:false,edit: false, delete: true},undefined) : [];
+// chuan doan, ghi chu va lich su kham
+const [medicationCatalogues, setMedicationCatalogues] = useState<MedicationCatalogue[]>([]);
+    const [medications, setMedications] = useState<MedicationType[]>([]);
+    const [medicationDetails,setMedicationDetails]=useState<MedicationDetail[]>([]);
+    const [editMedicationDetail, setEditMedicationDetail] = useState<MedicationDetail>();
+    const [deleteMedicationDetail, setDeleteMedicationDetail] = useState<MedicationDetail>();
+    const [isEditing, setIsEditing] = useState(true); // Ban đầu đang chỉnh sửa
+    const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút Lưu hồ sơ bị khóa
+
+    const [medicalReacordDetail, setMedicalRecordDetail]=useState<MedicalRecordRecordServiceDetail>();
+    const [serviceDetailPatients,setServiceDetailPatients]=useState<ServiceDetailPatientResul[]>([]);
+    const [seletedService,setSeletedService]=useState<ServiceDetailPatientResul>();
+    const [detailResultSelectedService,setDetailResultSelectedService]=useState<DetailResultService[]>([])
+    const [isOpenDialogServiceDetailResult, setIsOpenDialogServiceDetailResult] = useState(false);
+    const [isOpenAddMedication, setIsOpenAddMedication] = useState(false);
+    const [isOpenDialogMedicalRecordHistory, setIsOpenDialogMedicalRecordHistory] = useState(false);
+    const [isPrescriptionVisible, setPrescriptionVisible] = useState(false);
+
+    let currentUser: UserInfoType | null = null;
+    const user = useUser();  
+    // Kiểm tra nếu user và currentUser tồn tại
+    if (user && user.currentUser) {
+      currentUser = user.currentUser;
+    }
+    const handleSelecLimit = (value: number | null) => {
+  if (value) {
+    setLimit(value);
+    setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+  }
+}
+const formUpdateDiagnose=useForm<z.infer<typeof MedicalRecordUpdateDiagnose>>({
+  resolver:zodResolver(MedicalRecordUpdateDiagnose),
+});
+const formCreateMedication=useForm<z.infer<typeof CreateMedication>>({
+  resolver:zodResolver(CreateMedication),
+});
+const fetchMedications = async (value:Number) => {
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications`;
+  try {
+    const response = await axios.get(endpoint, {
+      params: {
+        limit: limit, // Số bản ghi trên mỗi trang
+        page: pageIndex, // Trang hiện tại
+        status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+        keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+      },
+    })
+    
+    const {data}    = response.data.data
+    // Lọc mảng theo medication_catalogue_id nếu cần
+
+    const medical = data.filter(
+      (item: any) => item.medication_catalogue_id === value
+    );
+
+  console.log(medical)
+    if (Array.isArray(medical)) {
+      const fetchedMedication: MedicationType[] = medical.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        medication_catalogue_name:item.medication_catalogue.name,
+        price: item.price,
+        status:item.status,
+        measure:item.measure,
+        measure_count:item.measure_count,
+        medication_catalogue_id:item.medication_catalogue_id,
+      }));
+      console.log(fetchedMedication)
+      setMedications(fetchedMedication) // Cập nhật danh sách phòng ban
+    } else {
+      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+    }
+  } catch (err) {
+    console.error('Error fetching medication Catalogues:', err)
+  } finally {
+
+  }
+}
+
+const handleDeleteMedication = (id: string | BigInt) => {
+  const medicaion: MedicationDetail | undefined = medicationDetails.find((me) => me.id === id);
+  const name = medicaion?.name;
+  if (name) {
+    setDeleteMedicationDetail(medicaion); // Lưu phần tử cần xóa
+  }
+};
+
+const confirmDelete = async () => {
+  if (!deleteMedicationDetail) return;
+
+  // Xóa thành công, cập nhật danh sách medicationDetails
+  setMedicationDetails((prevItems) => {
+    if (!prevItems) {
+      return []; // Trả về mảng rỗng nếu prevItems là undefined
+    }
+
+    // Lọc phần tử bị xóa
+    const updatedItems = prevItems.filter((prevItem: any) => prevItem.id !== deleteMedicationDetail.id);
+
+    // Cập nhật lại ID cho các phần tử còn lại, bắt đầu từ 1 và tăng dần
+    const updatedItemsWithNewIds = updatedItems.map((item, index) => ({
+      ...item,
+      id: BigInt(index + 1), // Cập nhật ID bắt đầu từ 1 và chuyển thành BigInt
+    }));
+
+    return updatedItemsWithNewIds;
+  });
+
+  // Thông báo thành công
+  toast({
+    variant: "success",
+    title: "Xóa thành công",
+    description: `Thuốc ${deleteMedicationDetail.name} đã được xóa thành công.`,
+    action: <ToastAction altText="Ok">Ok</ToastAction>,
+  });
+
+  // Reset trạng thái deleteMedicationDetail
+  setDeleteMedicationDetail(undefined);
+};
+const handleSelectMedicationCatalogue = (value: Number | null) => {
+  if(value!==null)
+    fetchMedications(value);
+};
+const handleSelectMedication = (value: bigint | null) => {
+  if(value!==null){
+    const medication=medications.find((item)=>item.id===value)
+    console.log(medication)
+    if(medication)
+      formCreateMedication.setValue('name',medication.name)
+  }
+};
+
+const buttonColumnConfig = {
+id: 'customButton',
+header: 'Chi tiết kết quả',
+onClickConfig: (id: string | bigint) => {
+  const item = serviceDetailPatients.find((pati) => pati.id === id);
+
+  if (item?.result_detail) {
+    const detailResultService = JSON.parse(item.result_detail).map(
+      (result: DetailResultService) => ({
+        id: result.keyword,
+        keyword: result.keyword,
+        name: result.name,
+        reference_range: result.reference_range,
+        value: result.value.toString(),
+        unit: result.unit,
+      })
+    );
+    setSeletedService(item);
+    setDetailResultSelectedService(detailResultService);
+    setIsOpenDialogServiceDetailResult(true)
+  } else {
+    console.error('Không tìm thấy hoặc result_detail không hợp lệ.');
+  }
+},
+content: 'Xem',
+};
+
+const fetchMedicationCatalogues = async () => {
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues`;
+  
+  try {
+      const response = await axios.get(endpoint);
+      const totalRecords = response.data.data.total;
+
+      // Gọi API để lấy tất cả các bản ghi
+      const responseAll = await axios.get(endpoint, { params: { limit: totalRecords } });
+      const { data } = responseAll.data.data;
+
+      if (Array.isArray(data)) {
+          const medicationCatalogueList: MedicationCatalogue[] = data
+              .filter((item: any) => item.status === 1)
+              .map((item: any) => ({
+                  id: BigInt(item.id), // Chuyển id thành bigint
+                  name: item.name,
+                  description: item.description,
+                  status: item.status,
+                  level:item.level,
+                  parent_id:item.parent_id,
+              }));
+          setMedicationCatalogues(medicationCatalogueList);
+      } else {
+          console.warn("Data is not an array:", data);
+      }
+  } catch (err) {
+      console.error("Error fetching meidcation catalogues:", err);
+      toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load meidcation catalogues.",
+      });
+  }
+};
+
+
+useEffect(() => {
+  const fetchAllData = async () => {
+    try {
+      // Fetch medication catalogues
+      await fetchMedicationCatalogues();
+    } catch (error) {
+      console.error("Error while fetching data:", error);
+    }
+  };
+
+  fetchAllData();
+}, []);
+// convert medicalcatalogue 
+// Khi click vào nút "Sửa thông tin"
+const handleEditInformation = () => {
+setIsEditing(true); // Cho phép chỉnh sửa lại
+setIsSaveDisabled(true); // Khóa nút Lưu hồ sơ
+};
+const onSubmitDiagnose=(data: z.infer<typeof MedicalRecordUpdateDiagnose>)=>{
+setIsEditing(false); // Không cho chỉnh sửa input nữa
+      setIsSaveDisabled(false); // Bật nút Lưu hồ sơ
+}
+// Hàm xử lý submit
+const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
+// Tạo ID mới, tăng từ 1 dựa trên mảng hiện tại
+const newId = BigInt(medicationDetails.length > 0 ? Number(medicationDetails[medicationDetails.length - 1].id) + 1 : 1);
+
+// Tạo đối tượng thuốc mới
+const newMedication: MedicationDetail = {
+  id: newId,
+  name: data.name,
+  dosage: data.dosage,
+  measure: data.measure,
+  description: data.description || "",
+};
+
+// Thêm vào danh sách thuốc
+setMedicationDetails((prevDetails) => [...prevDetails, newMedication]);
+
+// Reset form sau khi thêm thành công
+formCreateMedication.reset({
+  name:"",
+  dosage:0,
+  measure:"",
+  description:"",
+});
+setIsOpenAddMedication(false);
+};
+const convertTimestampToDate = (timestamp: number) => {
+const date = new Date(timestamp);
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0'); // Thêm '0' nếu tháng < 10
+const day = String(date.getDate()).padStart(2, '0'); // Thêm '0' nếu ngày < 10
+return `${year}-${month}-${day}`;
+};
+const handleSaveDedicalRecordPatient=async ()=>{
+const apointment_date= convertTimestampToDate(formUpdateDiagnose.getValues('apointment_date'));
+const diagnosis=formUpdateDiagnose.getValues('diagnosis');
+const notes=formUpdateDiagnose.getValues('notes');
+  try {
+    const payload = {
+      medical_record: {
+        medical_record_id: patient_receive_id, // ID hồ sơ y tế
+        data: {
+          apointment_date:apointment_date, // Ngày tái khám
+          diagnosis:diagnosis, // Chẩn đoán
+          notes:notes, // Ghi chú
+        },
+      },
+      medications: {
+        data: medicationDetails.map((medication) => ({
+          medication_id: Number(medication.id), // ID của thuốc
+          name: medication.name, // Tên thuốc
+          dosage:medication.dosage.toString(),
+          measure: medication.measure, // Đơn vị đo
+          description: medication.description, // Mô tả
+        })),
+      },
+    };
+    const updateMedicalRecord = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/save`;
+    const response =await  axios.post(updateMedicalRecord, payload, { timeout: 5000 });
+    if (response.status === 200) {
+      // Hiển thị thông báo thành công
+      toast({
+        variant: "success",
+        title: "Thành công",
+        description: "Lưu hồ sơ bệnh án thành công.",
+      });
+      router.back()
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi lưu",
+      });
+    }
+  } catch (error:any) {
+    // Hiển thị thông báo lỗi
+    toast({
+      variant: "destructive",
+      title: "Lỗi",
+      description: error?.response?.data?.message || error.message,
+    });
+  }  
+}
+const columnServiceDetails = serviceDetailPatients.length > 0 ? createColumns(serviceDetailPatients,undefined, undefined, undefined,columnHeaderMap,{view:false,edit: false, delete: false},undefined,buttonColumnConfig ) : [];
+const columnServiceDetailsResult = detailResultSelectedService.length > 0 ? createColumns(detailResultSelectedService,undefined, undefined, undefined,columnHeaderMapDetailResultService,{view:false,edit: false, delete: false} ) : [];
+const columnMedicationDetail = medicationDetails.length > 0 ? createColumns(medicationDetails,undefined, undefined, handleDelete,columnHeaderMapMedicationDetail,{view:false,edit: false, delete: true} ) : [];
+const columnMedicationDetailHistory = medicationDetails.length > 0 ? createColumns(medicationDetails,undefined, undefined, undefined,columnHeaderMapMedicationDetail,{view:false,edit: false, delete: false} ) : [];
+const buttonColumnConfigHistoryDetail = {
+  id: 'buttonColumnConfigHistoryDetail',
+  header: 'Chi tiết hồ sơ',
+  onClickConfig: (id: string | bigint) => {
+    const item :MedicalRecordHistoryDetail|any= medicalRecordHistoryDetails.find((me) => me.id === id);
+    if(item){
+      const serviceDetailPatients: ServiceDetailPatientResul[] = item.services;
+      const medicationDetails : MedicationDetail[]=item.medications;
+      setMedicationDetails(medicationDetails)
+      setServiceDetailPatients(serviceDetailPatients);
+
+      setIsOpenDialogMedicalRecordHistory(true);
+      setMedicalRecordHistoryDetailItem(item)
+    }
+     else {
+      console.error('Không tìm thấy hoặc result_detail không hợp lệ.');
+    }
+  },
+  content: 'Xem',
+};
+// history: enpoint: http://localhost:8000/api/patients/history/{id}
+
+const fetchMedicalRecordHistoryDetail = async (id:bigint|string) => {
+try {
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/history/${id}`;
+  const response = await axios.get(endpoint);
+  const data = response?.data?.data ;  // Kiểm tra response đúng cách
+  const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item:any) => ({
+    id: item.id,
+    user_id: item.user_id,
+    user_name: item.user.name,
+    room_id: item.room_id,
+    visit_date: item.visit_date,
+    diagnosis: item.diagnosis,
+    notes: item.notes,
+    apointment_date: item.apointment_date,
+    is_inpatient: item.is_inpatient,
+    inpatient_detail: item.inpatient_detail,
+    services: item.services.map((service:any) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      health_insurance_applied: service.health_insurance_applied,
+      health_insurance_value: service.health_insurance_value,
+      assigning_doctor_id: item.user.id,
+      assigning_doctor_name: item.user.name, // Assuming `currentUser` exists in scope
+      pivot_id: service.pivot.id,
+      result_detail: service.pivot.result_details,
+    })),
+    medications: item.medications.map((medication:any) => ({
+      id: medication.id,
+      name: medication.name,
+      dosage: medication.pivot.dosage,
+      measure: medication.pivot.measure, // Removed incorrect `medication.measure.pivot.measure`
+      description: medication.pivot.description,
+    })),
+  }));
+  if (fetchedMedicalRecordHistoryDetail) {
+    setMedicalRecordHistoryDetails(fetchedMedicalRecordHistoryDetail);
+  }
+} catch (error) {
+  console.error("Lỗi khi lấy dữ liệu bệnh án:", error);
+} finally {
+  setLoading(false);
+}
+};
+
+// history:
+  const [medicalRecordHistoryDetails, setMedicalRecordHistoryDetails] = useState<MedicalRecordHistoryDetail[]>([]);
+  const [medicalRecordHistoryDetailItem, setMedicalRecordHistoryDetailItem] = useState<MedicalRecordHistoryDetail>();
+  const columnMedicalHistoryDetail = medicalRecordHistoryDetails.length > 0 ? createColumns(medicalRecordHistoryDetails,undefined, undefined, undefined,columnHeaderMapMedicalRecordHistoryDetail,{view:false,edit: false, delete: false},undefined,buttonColumnConfigHistoryDetail ) : [];
 
   return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
@@ -394,8 +821,13 @@ const handleSelectRoom=(value: bigint | null)=>{
         <div
           className="flex flex-col flex-1 rounded-lg px-5 border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"
         >
-      
-            <Card>
+          <Tabs defaultValue="CurrentPatien" className='w-full mt-2'>
+          <TabsList className="grid w-full grid-cols-2 w-fit">
+            <TabsTrigger value="CurrentPatien">Thông tin khám bệnh</TabsTrigger>
+            <TabsTrigger value="HistoryMedicalRecordDetail">Lịch sử khám</TabsTrigger>
+          </TabsList>
+          <TabsContent value="CurrentPatien">
+          <Card>
               <CardHeader className='pb-1'>
                 <CardTitle>Tiếp nhận mới</CardTitle>
                 <CardDescription>
@@ -439,166 +871,28 @@ const handleSelectRoom=(value: bigint | null)=>{
                               <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
                               <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
                               <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+                              <p><strong>Chỉ định của bác sĩ:</strong> 
+                              <Button variant="link"    
+                                onClick={()=>{
+                                  setIsAssignService(true)
+                                  setIsConclusion(false)
+                                  }}> Cận lâm sàng</Button> /
+                              <Button variant="link"    onClick={()=>{
+                                  setIsConclusion(true)
+                                  setIsAssignService(false)
+                                  }}> Nhận xét</Button></p>
+                              <div className='grid grid-cols-2 gap-4 mt-5 w-fit'>
 
-                              </div>
-                            {/* <div className="grid grid-cols-1 p-4 col-span-1">
-                                
-                                   <div><strong>Lý do khám:</strong> {medicalInfor.reason}</div>
-                                   <div><strong>Bác sĩ khám:</strong> {medicalInfor.doctor}</div> 
-                                   <div><strong>Ngày khám:</strong> {medicalInfor.admissionDate}</div>  
                                 
                               </div>
-                              <div className="grid grid-cols-1 p-4 col-span-1">
-                                
-                                  <div> <strong>Chỉ số sức khỏe</strong></div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div><strong>Nhiệt độ cơ thể:</strong> {healthRecords.temperature} <i className='pl-8'>(Độ C)</i> </div>
-                                    <div><strong>Huyết áp:</strong> {healthRecords.blood_pressure} <i className='pl-8'>(mmHg)</i> </div>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div><strong>Nhịp tim:</strong> {healthRecords.heart_rate} <i className='pl-8'>(Nhịp / ph)</i> </div>
-                                    <div><strong>Đường huyết:</strong> {healthRecords.blood_sugar} <i className='pl-8'>(mol/l)</i> </div>
-                                  </div>
-                                  <div><strong>Ghi chú:</strong> {healthRecords.note}</div> 
-                                
-                              </div>   */}
-                    
+                              </div>
                            </div>
                          
-                            <div className="grid grid-cols-3 auto-rows-max items-start gap-4 lg:gap-8">
+                            <div className="items-start gap-4 lg:gap-8">
                             
-                               {/* <Card x-chunk="dashboard-07-chunk-0" className="col-span-1">
-                                <CardHeader>
-                                    <CardTitle>Chỉ số sức khỏe</CardTitle>
-                                    <CardDescription>
-                                      Các chỉ số đo lường tình trạng sức khỏe
-                                    </CardDescription>
-                                  </CardHeader>
-                              
-                                  <CardContent>
-                                    <div className="grid gap-6">
-                                        <div className="grid gap-3">
-                                          <div className="grid grid-cols-2 gap-2">
-                                            <FormField
-                                              control={form.control}
-                                              name="temperature"
-                                              render={({ field }) => (
-                                                <FormItem>
-                                                  <FormLabel>Nhiệt độ thân thể (Độ C)</FormLabel>
-                                                  <FormControl>
-                                                    <Input
-                                                      {...field}
-                                                      disabled={isPending}
-                                                      placeholder="18"
-                                                      type="text"
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
-                                
-                                            <FormField
-                                              control={form.control}
-                                              name="blood_pressure"
-                                              render={({ field }) => (
-                                                <FormItem>
-                                                  <FormLabel>Huyết áp (mmHg)</FormLabel>
-                                                  <FormControl>
-                                                    <Input
-                                                      {...field}
-                                                      disabled={isPending}
-                                                      placeholder="80"
-                                                      type="text"
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
-                                          </div>
-                                          <div className="grid grid-cols-2 gap-2">
-                                          <FormField
-                                              control={form.control}
-                                              name="heart_rate"
-                                              render={({ field }) => (
-                                                <FormItem>
-                                                  <FormLabel>Nhịp tim (nhịp / ph)</FormLabel>
-                                                  <FormControl>
-                                                    <Input
-                                                      {...field}
-                                                      disabled={isPending}
-                                                      placeholder="80"
-                                                      type="text"
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
-                                
-                                            <FormField
-                                              control={form.control}
-                                              name="blood_sugar"
-                                              render={({ field }) => (
-                                                <FormItem>
-                                                  <FormLabel>Đường huyết (ml/lit)</FormLabel>
-                                                  <FormControl>
-                                                    <Input
-                                                      {...field}
-                                                      disabled={isPending}
-                                                      placeholder="80"
-                                                      type="text"
-                                                    />
-                                                  </FormControl>
-                                                  <FormMessage />
-                                                </FormItem>
-                                              )}
-                                            />
-                                            
-                                          </div>
-                                        </div>
-
-                                        <FormField
-                                            control={form.control}
-                                            name="note"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Ghi chú</FormLabel>
-                                                <FormControl>
-                                                  <Textarea
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="Tình trạng tổng quan đáng báo động"
-                                                    type="teratext"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-        <FormField
-                                            control={form.control}
-                                            name="diagnosis"
-                                            render={({ field }) => (
-                                              <FormItem>
-                                                <FormLabel>Chuẩn đoán</FormLabel>
-                                                <FormControl>
-                                                  <Textarea
-                                                    {...field}
-                                                    disabled={isPending}
-                                                    placeholder="Bình thường"
-                                                    type="teratext"
-                                                  />
-                                                </FormControl>
-                                                <FormMessage />
-                                              </FormItem>
-                                            )}
-                                          />
-                                    </div>
-                                  </CardContent>
-                                </Card>  */}
-                                <Card x-chunk="dashboard-07-chunk-3"  className="col-span-2">
+                               {
+                                isAssignService&&(
+                                  <Card x-chunk="dashboard-07-chunk-3"  className="col-span-2">
                                   <CardHeader>
                                     <CardTitle>Chỉ định dịch vụ</CardTitle>
                                     <CardDescription>
@@ -680,7 +974,26 @@ const handleSelectRoom=(value: bigint | null)=>{
                                   </Form>
                                    
                                       <Card x-chunk="dashboard-07-chunk-3" className='mt-8 '>
-                                      <Button  size="sm" variant="outline" onClick={() => setConfirmSaveDialogOpen(true)}>Lưu dịch vụ</Button>
+                                      <Button  className='m-5' size="sm" variant="outline" onClick={() => {
+                                        if(servicePatients.length===0){
+                                          alert('Vui lòng thêm dịch vụ cho bệnh nhân')
+                                        }
+                                        else{
+                                          setConfirmSaveDialogOpen(true)
+                                        }
+                                        
+
+                                      }}>Lưu dịch vụ</Button>
+                                      <Button  className='m-5' size="sm" variant="outline" 
+                                      
+                                      onClick={() => {
+
+                                        setIsAssignService(false)
+                                        setServicePatients([]);
+                                      }
+
+
+                                      }>Hủy</Button>
 
                                 <AlertDialog open={confirmSaveDialogOpen} onOpenChange={setConfirmSaveDialogOpen}>
                                   <AlertDialogContent>
@@ -736,12 +1049,536 @@ const handleSelectRoom=(value: bigint | null)=>{
                                     </Card>
                                   </CardContent>
                                 </Card>
+                                )
+                               }
+                                {
+                                  isConclusion&&(
+                                    <Card x-chunk="dashboard-07-chunk-3">
+                                <div className='grid grid-cols-3 gap-5'>
+                                  <Card className='col-span-1'>
+                                <CardHeader className='pb-4 border-b mb-4'>
+                                      <CardTitle>Nhận xét của bác sĩ</CardTitle>
+                                      <CardDescription>
+                                        Nhận xét, Chẩn đoán bệnh tình
+                                      </CardDescription>
+                                    </CardHeader >
+                                  
+                                    <CardContent className="space-y-2">
+                                    <Form {...formUpdateDiagnose}>
+                                    <form onSubmit={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}>
+                                        <div className="mb-6 border-b max-w-[600px]">
+                                            <h3 className="text-lg font-bold mb-4">Nhận xét của bác sĩ</h3>
+                                          <FormField
+                                              control={formUpdateDiagnose.control}
+                                              name="diagnosis"
+                                              render={({ field }) => (
+                                                <FormItem>
+                                                  <FormLabel>Chẩn đoán</FormLabel>
+                                                  <FormControl>
+                                                    <Textarea
+                                                      {...field}
+                                                      placeholder="Nhập Chẩn đoán"
+                                                      disabled={!isEditing} // Khóa khi không chỉnh sửa
+                                                    />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                                </FormItem>
+                                              )}
+                                            />
+                                          <FormField
+                                              control={formUpdateDiagnose.control}
+                                              name="notes"
+                                              render={({ field }) => (
+                                                <FormItem>
+                                                  <FormLabel>Ghi chú</FormLabel>
+                                                  <FormControl>
+                                                    <Textarea
+                                                      {...field}
+                                                      placeholder="Uống đủ nước, ăn nhiều rau, thường xuyên tiếp xúc với ánh nắng"
+                                                      disabled={!isEditing} // Khóa khi không chỉnh sửa
+                                                    />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                                </FormItem>
+                                              )}
+                                            />
+
+                                          <FormField
+                                            control={formUpdateDiagnose.control}
+                                            name="apointment_date"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormLabel className="text-sm font-medium text-gray-700">Ngày tái khám</FormLabel>
+                                                <FormControl>
+                                                  <Popover>
+                                                    <PopoverTrigger asChild>
+                                                      <Button
+                                                        disabled={!isEditing}
+                                                        variant="outline"
+                                                        className={cn(
+                                                          "flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                                                          !field.value && "text-gray-400"
+                                                        )}
+                                                      >
+                                                        <div className="flex items-center space-x-2">
+                                                          <CalendarIcon className="h-4 w-4 text-gray-500" />
+                                                          <span>
+                                                            {field.value
+                                                              ? format(new Date(field.value), "dd/MM/yyyy")
+                                                              : "Chọn ngày"}
+                                                          </span>
+                                                        </div>
+                                                        <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                                                      </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="z-50 w-[320px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+                                                    <DayPicker
+                                                        mode="single"
+                                                        selected={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) =>
+                                                          field.onChange(date ? date.getTime() : undefined)
+                                                        }
+                                                        captionLayout="dropdown"
+                                                        fromYear={1900}
+                                                        toYear={new Date().getFullYear() + 10}
+                                                        disabled={{
+                                                          before: new Date(), // Chặn ngày trước hôm nay
+                                                        }}
+                                                        className="custom-daypicker"
+                                                      />
+                                                                    </PopoverContent>
+                                                  </Popover>
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                                            )}
+                                          />
+
+                                        </div> 
+                                        
+                                      </form>
+
+                                  </Form>
+
+                                  <Button variant="outline" className='mr-5'  onClick={() => 
+                                    {
+                                      setMedicationDetails([]);
+                                      setPrescriptionVisible(!isPrescriptionVisible)
+                                    }
+                                  }> Kê thuốc</Button>
+                                  <Button variant="outline" className='mr-5'  disabled={!isEditing} onClick={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}> Lưu thông tin</Button>
+                                  <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleEditInformation}> Sửa thông tin</Button>
+                                  <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
+                                  <Button  className='m-5' size="sm" variant="outline" 
+                                  onClick={() => {
+                                    setIsConclusion(false)
+                                    setMedicationDetails([])
+                                  }
+
+                                  }>Hủy</Button>
+
+                        
+                                  </CardContent>
+                                  </Card> 
+                                  {isPrescriptionVisible && (                               
+                                  <Card className='mb-5 pt-5 col-span-2'>
+                                    <CardContent>
+                                      <Dialog open={isOpenAddMedication} onOpenChange={setIsOpenAddMedication}
+                                    >
+                                    <Form {...formCreateMedication}>
+                                      <form onSubmit={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>
+                                          <DialogContent className="sm:max-w-[600px]">
+                                          <DialogTrigger asChild>
+                                        </DialogTrigger>
+                                            <DialogHeader>
+                                              <DialogTitle>Kê đơn thuốc</DialogTitle>
+                                            </DialogHeader>
+                                              <div className="grid gap-3">
+                                                <div className="grid grid-cols-2 gap-4">
+                        
+                        
+                                              <FormItem className="flex flex-col">
+                                                <FormLabel className="mr-2">Nhóm dược</FormLabel>
+                                                <FormControl className="flex-grow">
+                                                  <Combobox<number>
+                                                  options={
+                                                    medicationCatalogues.map(medicationCatalogue => ({
+                                                      value: Number(medicationCatalogue.id),
+                                                      label: `${"|---".repeat(medicationCatalogue.level)}${medicationCatalogue.name}`,
+                                                    }))}
+                                                  placeholder="Chọn nhóm dược cha"
+                                                  onSelect={handleSelectMedicationCatalogue}
+                                                  />
+                                                </FormControl>
+                                                <FormMessage />
+                                              </FormItem>
+                          
+                                                  <FormField 
+                                                    control={formCreateMedication.control}
+                                                    name="name"
+                                                    render={({ field }) => (
+                                                      <FormItem className="flex flex-col">
+                                                        <FormLabel className="mr-2">Dược</FormLabel>
+                                                        <FormControl className="flex-grow">
+                                                          <Combobox<bigint>
+                                                            options={medications.map(me => ({
+                                                              value: me.id,
+                                                              label: me.name,
+                                                            }))}
+                                                              placeholder="Chọn được"
+                                                              onSelect={handleSelectMedication}
+                                                          />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                      </FormItem>
+                                                    )}
+                                                  />
+                                                  <FormField
+                                                      control={formCreateMedication.control}
+                                                      name="dosage"
+                                                      render={({ field }) => (
+                                                        <FormItem>
+                                                          <FormLabel>Liều lượng</FormLabel>
+                                                          <FormControl>
+                                                            <Input
+                                                              {...field}
+                                                            
+                                                              placeholder="Example: 80"
+                                                              type="number"
+                                                              onChange={(e) => {
+                                                                // Chuyển giá trị từ chuỗi thành number trước khi lưu vào state của form
+                                                                const newValue = e.target.value ? parseFloat(e.target.value) : undefined;
+                                                                field.onChange(newValue);
+                                                              }}
+                                                            />
+                                                          </FormControl>
+                                                          <FormMessage />
+                                                        </FormItem>
+                                                      )}
+                                                      />
+                                                  <FormField
+                                                    control={formCreateMedication.control}
+                                                    name="measure"
+                                                    render={({ field }) => (
+                                                      <FormItem>
+                                                        <FormLabel>Đơn vị</FormLabel>
+                                                        <FormControl>
+                                                          <Input
+                                                            {...field}
+                                      
+                                                            placeholder="Example:viên"
+                                                            type="text"
+                                                          />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                      </FormItem>
+                                                    )}
+                                                    />
+                                                </div>
+                                                <FormField
+                                                  control={formCreateMedication.control}
+                                                  name="description"
+                                                  render={({ field }) => (
+                                                    <FormItem>
+                                                      <FormLabel>Ghi chú</FormLabel>
+                                                      <FormControl>
+                                                        <Textarea
+                                                          {...field}
+                                                          placeholder="Example: Uống sau ăn, 2 viên 1 lần"                               />
+                                                      </FormControl>
+                                                      <FormMessage />
+                                                    </FormItem>
+                                                  )}
+                                                />
+                                                <Button type='submit' onClick={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>Lưu thuốc</Button>
+                                              </div>           
+                                          </DialogContent>
+                                        </form>
+                                    </Form>
+                                      </Dialog>
+                                    
+                                      <Card className='mb-5 mt-5'>
+                                      <CardHeader className='pb-4 border-b mb-4'>
+                                        <CardTitle>Chi tiết đơn thuốc của bệnh nhân</CardTitle>
+                                        <CardDescription>
+                                          Thông tin đơn thuốc bác sĩ đã kê
+                                        </CardDescription>
+                                      </CardHeader >
+                                    
+                                      <CardContent className="space-y-2">
+                                      <div className="flex flex-col gap-1 border-b pb-5">
+                                            <div className="mb-6 border-b">
+                                              <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+                                            </div>
+                                          </div>
+                                          <div className='flex mt-5 justify-between'>
+                                    
+                                        <Combobox<number>
+                                        options={numberOptions}
+                                        onSelect={handleSelecLimit}
+                                        placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
+                                        />
+                              
+
+                                      <div className="flex items-center space-x-5">
+                                            <div className='flex'>
+                                          
+                                            </div>
+                                            <div className="flex items-center space-x-2 bg-white">
+                                              <Input type="text" placeholder="Tìm kiếm" 
+                                                value={keyword} // Đặt giá trị từ state keyword
+                                                onChange={(e) => setKeyword(e.target.value)}
+                                              />
+                                              <Button type="submit">Lọc</Button>
+                                              <Button variant="outline" onClick={()=>{setIsOpenAddMedication(true)}}>Thêm thuốc</Button>
+                                            </div>
+                                      </div>
+                                      </div>
+                                          <div>
+                                            <DataTable
+                                              data={medicationDetails}
+                                              columns={columnMedicationDetail}
+                                              totalRecords={totalRecords}
+                                              pageIndex={pageIndex}
+                                              pageSize={limit}
+                                              onPageChange={(newPageIndex) => {
+                                                console.log("pageindex:", newPageIndex);
+                                                setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
+                                              }}
+                                            />
+                                          </div>
+
+                                      </CardContent>
+                                    </Card> 
+                                      </CardContent>
+                                      <AlertDialog open={!!deleteMedicationDetail} onOpenChange={() => setDeleteMedicationDetail(undefined)}>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Hành động này không thể hoàn tác. Bạn đang xóa thuốc:{" "}
+                                              <strong>{deleteMedicationDetail?.name}</strong>
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={() => setDeleteMedicationDetail(undefined)}>Hủy</AlertDialogCancel>
+                                            <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+
+                                  </Card>
+                                      )}
+                              </div>
+                                </Card>
+                                  )
+                                }
+
                             </div>
                           
                         </div>
                  
                   </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="HistoryMedicalRecordDetail">
+          <Card className='mb-5 mt-5'>
+              <CardHeader className='pb-4 border-b mb-4'>
+                <CardTitle>Tiền sử khám bệnh của bệnh nhân</CardTitle>
+                <CardDescription>
+                  Thông tin lịch sử khám bệnh
+                </CardDescription>
+                <div className='grid grid-cols-3 gap-4 border-t'>
+                  <div className="grid grid-cols-1 p-4 ">
+                  <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {patient?.birthday || "Không có"}</p>
+                  <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                  <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                  <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                  <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                  <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                  <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+
+                    </div>
+                </div>
+              </CardHeader >
+             
+               <CardContent className="space-y-2">
+            <div className='flex flex-col item-center justify-center w-full'>
+                <CardTitle>Danh sách các lần khám</CardTitle>
+                <CardDescription>
+                  Thông tin khám bệnh của bệnh nhân
+                </CardDescription>
+              {loading ? (
+              <p className='flex item-center justify-center'>Loading...</p>
+              ) : (
+                
+              <DataTable
+              data={medicalRecordHistoryDetails}
+              columns={columnMedicalHistoryDetail}
+              totalRecords={totalRecords}
+              pageIndex={pageIndex}
+              pageSize={limit}
+              onPageChange={(newPageIndex) => {
+              setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+              }}
+              />
+              )}
+
+
+              </div>
+              </CardContent>
+              <Dialog open={isOpenDialogMedicalRecordHistory} onOpenChange={setIsOpenDialogMedicalRecordHistory}>
+              
+            
+              <DialogContent className="w-[1200px] max-w-full max-h-[900px] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle> Thông tin chi tiết đợt khám</DialogTitle>
+              <DialogDescription>Thông tin chi tiết các dịch vụ sử dụng, kết quả, đơn thuốc được kê</DialogDescription>
+            </DialogHeader>
+              <Card className='mb-5 mt-5'>
+                <CardHeader className='pb-4 border-b mb-4'>
+                  <CardTitle>Thông tin chi tiết của bệnh nhân</CardTitle>
+                  <CardDescription>
+                    Chi tiết các thông tin cá nhân của bệnh nhân
+                  </CardDescription>
+                  <div className='grid grid-cols-3 gap-4 border-t'>
+                    <div className="grid grid-cols-1 p-4 ">
+                    <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {patient?.birthday || "Không có"}</p>
+                  <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                  <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                  <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                  <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                  <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                  <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+
+                      </div>
+                    <div className="grid grid-cols-1 p-4 ">
+                          <div> <strong>Thông tin chung</strong></div>
+                          <div><strong>Bác sĩ khám:</strong> {currentUser?.name}</div>
+                          <div><strong>Ngày vào khám:</strong> {medicalReacordDetail?.visit_date ? format(new Date(medicalReacordDetail?.visit_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+
+                        
+                      </div>
+                      <div className="grid grid-cols-1 p-4">
+                          <div> <strong>Bác sĩ nhận xét</strong></div>
+                          <div><strong>Chẩn đoán: </strong> {medicalRecordHistoryDetailItem?.diagnosis||"Chưa chẩn đoán"}</div>
+                          <div><strong>Ghi chú: </strong> {medicalRecordHistoryDetailItem?.notes||"Chưa có ghi chú"}</div>
+                          <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.apointment_date ? format(new Date(medicalRecordHistoryDetailItem?.apointment_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+                      </div>
+                  </div>
+                  
+                </CardHeader >
+              
+                <CardContent className="space-y-2">
+                <div>
+                  <div className="flex flex-col gap-1 border-b pb-5">
+                  <div className="mb-6 border-b">
+                    <h3 className="text-lg font-bold">Dịch Vụ Đã Thực Hiện</h3>
+                
+                </div>  
+                  </div>
+                  <div className='flex item-center justify-center'>
+
+                      {loading ? (
+                      <p className='flex item-center justify-center'>Loading...</p>
+                      ) : (
+
+                      <DataTable
+                      data={serviceDetailPatients}
+                      columns={columnServiceDetails}
+                      totalRecords={totalRecords}
+                      pageIndex={pageIndex}
+                      pageSize={limit}
+                      onPageChange={(newPageIndex) => {
+                      console.log("pageindex:", newPageIndex)
+                      setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+                      }}
+                      />
+                      )}
+
+
+                      </div>
+                </div>
+                <Dialog open={isOpenDialogServiceDetailResult} onOpenChange={setIsOpenDialogServiceDetailResult} 
+              >
+                
+              
+              <DialogContent className="w-[1200px] max-w-full overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle> Kết quả {seletedService?.name}</DialogTitle>
+                <DialogDescription>Thông tin chi tiết {seletedService?.description}</DialogDescription>
+              </DialogHeader>
+              <div className='flex item-center justify-center w-full'>
+
+                {loading ? (
+                <p className='flex item-center justify-center'>Loading...</p>
+                ) : (
+
+                <DataTable
+                data={detailResultSelectedService}
+                columns={columnServiceDetailsResult}
+                totalRecords={totalRecords}
+                pageIndex={pageIndex}
+                pageSize={limit}
+                onPageChange={(newPageIndex) => {
+                setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+                }}
+                />
+                )}
+
+
+                </div>
+        
+
+              <DialogFooter>
+              </DialogFooter>
+              </DialogContent>
+              </Dialog>
+
+                </CardContent>
+              </Card> 
+              <Card className='mb-5 mt-5'>
+                <CardHeader className='pb-4 border-b mb-4'>
+                  <CardTitle>Chi tiết đơn thuốc ủa bệnh nhân</CardTitle>
+                  <CardDescription>
+                    Thông tin đơn thuốc bác sĩ đã kê
+                  </CardDescription>
+                </CardHeader >
+              
+                <CardContent className="space-y-2">
+                <div className="flex flex-col gap-1 border-b pb-5">
+                      <div className="mb-6 border-b">
+                        <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <DataTable
+                        data={medicationDetails}
+                        columns={columnMedicationDetailHistory}
+                        totalRecords={totalRecords}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={(newPageIndex) => {
+                          console.log("pageindex:", newPageIndex);
+                          setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
+                        }}
+                      />
+                    </div>
+
+                </CardContent>
+              </Card> 
+              
+            </DialogContent>
+              </Dialog>
+          </Card>  
+          
+          </TabsContent> 
+
+        </Tabs>
+          
           </div>
       </main>
 )};

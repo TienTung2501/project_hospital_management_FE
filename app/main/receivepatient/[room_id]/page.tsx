@@ -214,22 +214,25 @@ const AdminPage = () => {
         if (!Array.isArray(data1)) throw new Error("Invalid response format");
         console.log(data1)
         // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
-        const fetchedPatientNotExamined: MedicalRecord[] = data1.map((item: any) => ({
-          id: item.id,
-          patient_name: item.patient.name,
-          patient_id: item.patient_id,
-          user_id: item.user_id,
-          room_id: item.room_id,
-          visit_date: item.visit_date,
-          diagnosis: item.diagnosis,
-          notes: item.notes,
-          apointment_date: item.apointment_date,
-          is_inpatient: item.is_inpatient,
-          inpatient_detail: item.inpatient_detail,
-          status: item.status,
-          service_ids: item.services.map((service: any) => service.id),
-          service_names: item.services.map((service: any) => service.name),
-        }));
+        const fetchedPatientNotExamined: MedicalRecord[] = data1
+          .filter((item: any) => item.notes === null) // Lọc những item có notes khác null
+          .map((item: any) => ({
+            id: item.id,
+            patient_name: item.patient.name,
+            patient_id: item.patient_id,
+            user_id: item.user_id,
+            room_id: item.room_id,
+            visit_date: item.visit_date,
+            diagnosis: item.diagnosis,
+            notes: item.notes,
+            apointment_date: item.apointment_date,
+            is_inpatient: item.is_inpatient,
+            inpatient_detail: item.inpatient_detail,
+            status: item.status,
+            service_ids: item.services.map((service: any) => service.id),
+            service_names: item.services.map((service: any) => service.name),
+          }));
+
         const responsePatientNotConclusion = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/waitDiagnosis`, {
           params: {
             room_id, // Lọc theo user_id

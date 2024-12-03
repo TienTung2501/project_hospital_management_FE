@@ -4,14 +4,14 @@ import * as z from "zod";
 import axios from "axios";
 import { MedicationCatalogueSchema } from "@/schema";
 
-export const update_medication_catalogue = async (id: bigint, values: z.infer<typeof MedicationCatalogueSchema>) => {
+export const update_medication_catalogue = async (id: bigint, values: z.infer<typeof MedicationCatalogueSchema>,level:number|undefined) => {
   const validateFields = MedicationCatalogueSchema.safeParse(values);
   if (!validateFields.success) {
     return { error: "Dữ liệu nhập không hợp lệ." }; // Kiểm tra validation đầu vào
   }
   try {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues/${id}`;
-    const response = await axios.patch(endpoint, values, { timeout: 5000 });
+    const response = await axios.patch(endpoint, { ...values, level: level === undefined ? 0 : level+1 }, { timeout: 5000 });
 
     if (response.status === 200) {
       return { success: "Cập nhật thông tin dịch vụ thành công!" };

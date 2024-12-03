@@ -48,6 +48,7 @@ const MedicationPage = () => {
   const [items, setItems] = useState<MedicationCatalogue[]>([]);
   const [itemConverts, setItemConvert] = useState<MedicationCatalogue[]>([]);
   const [editData, setEditData] = useState<MedicationCatalogue | null>(null);
+  const [parentMedicaionCatalogue, setParentMedicaionCatalogue] = useState<MedicationCatalogue | null>(null);
   const [error, setError] = useState<string | undefined>("");
   const [status, setStatus] = useState<number|null>(null); // Trạng thái không chọn gì
   const [keyword, setKeyword] = useState('');
@@ -85,7 +86,7 @@ const MedicationPage = () => {
     console.log('Submitting form with values:', values);
     setError("");
     startTransition(()=>{
-      create_medication_catalogue(values)
+      create_medication_catalogue(values,parentMedicaionCatalogue?.level)
       .then((data) => {
         if (data.error) {
           setError(data.error);
@@ -132,7 +133,7 @@ const MedicationPage = () => {
     if (!editData) return; // Ensure there is data to edit
     setError("");
     startTransition(()=>{
-      update_medication_catalogue(editData?.id,formData)
+      update_medication_catalogue(editData?.id,formData,parentMedicaionCatalogue?.level)
       .then((data) => {
         if (data.error) {
           setError(data.error);
@@ -248,11 +249,20 @@ const MedicationPage = () => {
     if(value!==null)
       if(isOpenDialogCreate){
         formCreate.setValue('parent_id', value); // Update the form value directly
+        const itemToEdit = items.find((item) => Number(item.id) === value);
+        if (itemToEdit) {
+          setParentMedicaionCatalogue(itemToEdit)
+      }
+  
+        
       }
       else if(isOpenDialogUpdate){
         formUpdate.setValue('parent_id', value);
+        const itemToEdit = items.find((item) => Number(item.id) === value);
+        if (itemToEdit) {
+          setParentMedicaionCatalogue(itemToEdit)
       }
-    console.log(value)
+      }
   };
   // fetch data:
   const processCataloguesWithIndentation = (data: MedicationCatalogue[]) => {

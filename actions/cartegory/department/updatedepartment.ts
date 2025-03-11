@@ -4,6 +4,7 @@ import * as z from "zod";
 import axios from "axios";
 import { CreateDepartmentSchema } from "@/schema";
 import { error } from "console";
+import { DepartmentType } from "@/types";
 
 // Hàm cập nhật thông tin khoa
 export const update_department = async (
@@ -19,9 +20,20 @@ export const update_department = async (
   const { name, description } = validateFields.data;
 
   try {
-    // 2. Kiểm tra xem khoa có tồn tại dựa vào tên
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
-    const response = await axios.get(endpoint, {
+    // 2. Kiểm tra nếu không có thay đổi trong dữ liệu
+    const existingDepartmentResponse = await axios.get(`${endpoint}/${id}`);
+    const existingDepartment = existingDepartmentResponse.data.data.data;
+    if (
+      existingDepartment.name === name && 
+      existingDepartment.description === description
+    ) {
+      console.log("dữ liệu không có sự thay đổi")
+      return { error: "Dữ liệu không thay đổi, không cần cập nhật." }; // Không cần cập nhật nếu không có thay đổi
+    }
+    else{
+    // 3.kiểm tra xem có dữ liệu trùng không:
+    const responseCheckDupdicate = await axios.get(endpoint, {
       params: {
         keyword: name,
         exclude_id: id, // Loại trừ khoa đang được chỉnh sửa
@@ -29,21 +41,22 @@ export const update_department = async (
       timeout: 5000, // Thêm thời gian timeout để ngăn chặn lỗi treo yêu cầu
     });
 
-    const existingDepartments = response.data.data;
-    if (existingDepartments.length > 0) {
-      return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." };
-    }
 
-    // 3. Kiểm tra nếu không có thay đổi trong dữ liệu
-    const existingDepartmentResponse = await axios.get(`${endpoint}/${id}`);
-    const existingDepartment = existingDepartmentResponse.data.data;
+    const existingDepartments: DepartmentType[] =
+    responseCheckDupdicate?.data?.data?.data || [];
 
     if (
-      existingDepartment.name === name && 
-      existingDepartment.description === description
+    existingDepartments.length > 0 &&
+    existingDepartments.some(
+      (department) =>
+        department?.name.trim().toLowerCase() === name.trim().toLowerCase()
+    )
     ) {
-      return { error: "Dữ liệu không thay đổi, không cần cập nhật." }; // Không cần cập nhật nếu không có thay đổi
+    return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." };
     }
+
+    }
+   
 
     // 4. Gửi yêu cầu cập nhật khoa
     const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments/${id}`;

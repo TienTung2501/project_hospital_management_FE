@@ -2,55 +2,56 @@
 
 import * as z from "zod";
 import axios from "axios";
-import { ServiceCatalogueSchema } from "@/schema";
-import { ServiceCatalogue } from "@/types";
+import { RoomCatalogueSchema } from "@/schema";
+import { RoomCatalogueType } from "@/types";
 
-export const update_service_catalogue = async (id: bigint, values: z.infer<typeof ServiceCatalogueSchema>) => {
-  const validateFields = ServiceCatalogueSchema.safeParse(values);
+export const update_room_catalogue = async (id: bigint, values: z.infer<typeof RoomCatalogueSchema>) => {
+  const validateFields = RoomCatalogueSchema.safeParse(values);
   if (!validateFields.success) {
     return { error: "Dữ liệu nhập không hợp lệ." }; // Kiểm tra validation đầu vào
   }
-  const { name, description } = validateFields.data;
+  const { keyword,name, description } = validateFields.data;
   try {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/serviceCatalogues`;
-    
+
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/roomCatalogues`;
     // 2. Kiểm tra nếu không có thay đổi trong dữ liệu
-    const existingServiceCatalogueResponse = await axios.get(`${endpoint}/${id}`);
-    const existingServiceCatalogue = existingServiceCatalogueResponse.data.data.data;
+    const existingRoomCatalogueResponse = await axios.get(`${endpoint}/${id}`);
+    const existingRoomCatalogue = existingRoomCatalogueResponse.data.data.data;
     if (
-      existingServiceCatalogue.name === name && 
-      existingServiceCatalogue.description === description
+      existingRoomCatalogue.keyword === keyword && 
+      existingRoomCatalogue.name === name && 
+      existingRoomCatalogue.description === description
     ) {
-      console.log("Dữ liệu không có sự thay đổi")
+      console.log("dữ liệu không có sự thay đổi")
       return { error: "Dữ liệu không thay đổi, không cần cập nhật." }; // Không cần cập nhật nếu không có thay đổi
     }
     else{
-      // 3.kiểm tra xem có dữ liệu trùng không:
-        const responseCheckDupdicate = await axios.get(`${endpoint}`, {
+          // 3.kiểm tra xem có dữ liệu trùng không:
+        const responseCheckDupdicate = await axios.get(endpoint, {
           params: {
-            keyword: name,
+            keyword: keyword,
             exclude_id: id, // Loại trừ khoa đang được chỉnh sửa
           },
           timeout: 5000, // Thêm thời gian timeout để ngăn chặn lỗi treo yêu cầu
         });
 
       
-        const existingServiceCatalogues: ServiceCatalogue[] =
+        const existingRoomCatalogues: RoomCatalogueType[] =
         responseCheckDupdicate?.data?.data?.data || [];
       if (
-        existingServiceCatalogues.length > 0 &&
-        existingServiceCatalogues.some(
-          (serviceCatalogue) =>
-            serviceCatalogue?.name.trim().toLowerCase() === name.trim().toLowerCase()
+        existingRoomCatalogues.length > 0 &&
+        existingRoomCatalogues.some(
+          (roomCatalogue) =>
+            roomCatalogue?.keyword.trim().toLowerCase() === keyword.trim().toLowerCase()
         )
       ) {
-        return { error: "Nhóm dịch vụ đã tồn tại, vui lòng nhập tên nhóm dịch vụ khác." };
+        return { error: "Nhóm phòng đã tồn tại, vui lòng nhập từ khóa khác." };
       }
     }
     const response = await axios.patch(`${endpoint}/${id}`, values, { timeout: 5000 });
 
     if (response.status === 200) {
-      return { success: "Cập nhật thông tin nhóm dịch vụ thành công!" };
+      return { success: "Cập nhật thông tin nhóm phòng thành công!" };
     } else {
       return { error: "Không thể cập nhật thông tin, vui lòng thử lại." };
     }

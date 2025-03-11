@@ -72,14 +72,14 @@ export const mapUserToUserInfoType = (response: any): UserInfoType | null => {
     certificate: userData.certificate || "",
     gender: userData.gender,
     status: userData.status,
-    position_id: BigInt(userData.position?.id || userData.position_id),
-    position_name: userData.position?.name || "",
+    position_id: BigInt(userData.positions?.id || userData.position_id),
+    position_name: userData.positions?.name || "",
     department_id: BigInt(userData.department?.id || userData.department_id),
-    department_name: userData.department?.name || "",
+    department_name: userData.departments?.name || "",
     room_ids: userData.rooms.map((room: any) => room.id),
     room_codes: userData.rooms.map((room: any) => room.code),
   };
-
+  console.log(userInfoType)
   return userInfoType;
 };
 export const mapUserToUserInfo = (response: any): UserInfo | null => {

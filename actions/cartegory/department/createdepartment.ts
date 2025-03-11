@@ -24,11 +24,18 @@ export  const create_department = async (values: z.infer<typeof CreateDepartment
       timeout: 5000, // Thêm thời gian timeout để đảm bảo yêu cầu không bị treo
     });
 
-    const existingDepartments = response.data.data;
-    if (existingDepartments.data.length > 0) {
-      return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." }; // Trả về lỗi nếu tên khoa đã tồn tại
-    }
-
+    const existingDepartments: DepartmentType[] =
+    response?.data?.data?.data || [];
+  
+  if (
+    existingDepartments.length > 0 &&
+    existingDepartments.some(
+      (department) =>
+        department?.name.trim().toLowerCase() === name.trim().toLowerCase()
+    )
+  ) {
+    return { error: "Tên khoa đã tồn tại, vui lòng chọn tên khác." };
+  }
     // 3. Tạo khoa mới
     const createEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments/create`;
     const responseCreate = await axios.post(createEndpoint, values, {
@@ -46,15 +53,6 @@ export  const create_department = async (values: z.infer<typeof CreateDepartment
     if (error.code === 'ECONNABORTED') {
       return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-
-    if (error.response) {
-      if (error.response.status === 409) {
-        return { error: "Tên khoa đã tồn tại, vui lòng thử tên khác." }; // Lỗi tên khoa đã tồn tại
-      } else if (error.response.status === 500) {
-        return { error: "Lỗi từ phía server, vui lòng thử lại sau." }; // Lỗi server
-      }
-    }
-
     console.error("API error:", error); // Log lỗi API để debug
     return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }

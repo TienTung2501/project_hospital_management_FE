@@ -23,7 +23,7 @@ import { RoomCatalogue } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Combobox } from '@/components/combobox';
 import axios from 'axios';
-import { create_room_catalogue, delete_room_catalogue, update_room_catalogue, update_status_room_catalogue } from '@/actions/cartegory/roomcatalouge/index';
+import { create_room_catalogue, delete_room_catalogue, update_room_catalogue, update_status_room_catalogue } from '@/actions/cartegory/roomcatalogue/index';
 import { ToastAction } from '@/components/ui/toast';
 
 

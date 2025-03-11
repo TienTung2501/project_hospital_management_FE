@@ -10,8 +10,8 @@ export const update_status_service_catalogue = async (id: bigint | string, newSt
     if (response.status !== 200 || !response.data) {
       return { error: "Không thể tìm thấy phòng hoặc dữ liệu không hợp lệ." };
     }
-
-    const serviceData = response.data.data;
+    
+    const serviceData = response.data.data.data;
     if (serviceData.status === newStatus) {
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
@@ -21,7 +21,6 @@ export const update_status_service_catalogue = async (id: bigint | string, newSt
       name:serviceData.name, // Giữ lại thông tin hiện tại
       status: newStatus
     };
-    
     const updateResponse = await axios.patch(updateEndpoint, payload, { timeout: 5000 });
 
     if (updateResponse.status === 200) {
@@ -31,23 +30,23 @@ export const update_status_service_catalogue = async (id: bigint | string, newSt
     }
 
   } catch (error: any) {
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
+    console.error("Lỗi API:", error); // Log toàn bộ lỗi để debug
 
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors).flat().join("; ");
-        return { error: errorMessages };
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error("Phản hồi từ server:", error.response.data); // Log dữ liệu phản hồi từ server
+        return {
+          error: `Lỗi API ${error.response.status}: ${error.response.data?.message || "Lỗi không xác định"}`
+        };
       }
 
-      if (serverError.message) {
-        return { error: serverError.message };
+      if (error.code === "ECONNABORTED") {
+        return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
       }
+
+      return { error: "Lỗi mạng hoặc API không phản hồi." };
     }
 
-    if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
-    }
-    console.error("API error:", error);
     return { error: "Có lỗi xảy ra khi kết nối với API." };
   }
 };

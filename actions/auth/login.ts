@@ -28,7 +28,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     const response = await axios.get(endpoint, {
       params: { keyword: email },
     });
-
+    console.log(response.data)
     // Kiểm tra dữ liệu từ API
     const user = mapUserToUserInfo(response);
     if (!user) {

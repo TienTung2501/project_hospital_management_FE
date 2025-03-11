@@ -3,6 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import {   ServiceSchema } from "@/schema";
+import { ServiceType } from "@/types";
 
 export const create_service = async (values: z.infer<typeof ServiceSchema>) => {
   // Kiểm tra dữ liệu từ phía frontend
@@ -17,8 +18,28 @@ export const create_service = async (values: z.infer<typeof ServiceSchema>) => {
       service_catalogue_id: Number(values.service_catalogue_id),
       room_catalogue_id: Number(values.room_catalogue_id),
     }
-    const createEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/services/create`;
-    const response = await axios.post(createEndpoint, valuesConvert, { timeout: 5000 });
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/services`;
+
+    const responseCheckDupdicate = await axios.get(endpoint, {
+      params: {
+        keyword: values.name, // Truy vấn theo tên chức danh
+      },
+      timeout: 5000, // Thêm thời gian timeout để đảm bảo yêu cầu không bị treo
+    });
+
+    const existingService: ServiceType[] =
+    responseCheckDupdicate?.data?.data?.data || [];
+    if (
+    existingService.length > 0 &&
+    existingService.some(
+      (service) =>
+        service?.name.trim().toLowerCase() === values.name.trim().toLowerCase()
+    )
+    ) {
+    return { error: "Dịch vụ đã tồn tại, vui lòng nhập nhóm dịch vụ khác." };
+    }
+
+    const response = await axios.post(`${endpoint}/create`, valuesConvert, { timeout: 5000 });
 
     if (response.status === 200) {
       return { success: "Tạo dịch vụ mới thành công!" };
@@ -27,31 +48,11 @@ export const create_service = async (values: z.infer<typeof ServiceSchema>) => {
     }
 
   } catch (error: any) {
-    // Kiểm tra lỗi từ phản hồi của server
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      // Xử lý lỗi chi tiết từ server
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors)
-          .flat()
-          .join("; ");
-        
-        return { error: errorMessages };
-      }
-
-      // Nếu có thông báo message tổng quát
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
-    // Xử lý các lỗi khác như timeout hoặc lỗi không xác định
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

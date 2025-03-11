@@ -153,6 +153,8 @@ const ServicePage = () => {
       // Chuẩn bị dữ liệu để cập nhật
       const newEditData = {
         ...editData,
+        price:Number(editData.price),
+        health_insurance_value:Number(editData.health_insurance_value),
         room_catalogue_id: BigInt(editData.room_catalogue_id),
         service_catalogue_id: BigInt(editData.service_catalogue_id),
         detail: jsonString,

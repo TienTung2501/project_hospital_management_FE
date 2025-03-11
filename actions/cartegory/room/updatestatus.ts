@@ -16,7 +16,7 @@ export const update_status_room = async (id: bigint | string, newStatus: number)
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
 
-    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds/${id}`;
+    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms/${id}`;
     const payload = {
       code:roomData.code, // Giữ lại thông tin hiện tại
       status:newStatus,

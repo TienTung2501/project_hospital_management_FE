@@ -85,14 +85,12 @@ const RoomPage = () => {
   const { reset: resetFormUpdate } = formUpdate;
 
   const handleSelecLimit = (value: number | null) => {
-    console.log("Selected value:", value)
     if (value) {
       setLimit(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
     }
   }
-  const handleSelectRecords = (value: number | null) => {
-    console.log("Selected value:", value)
+  const hand = (value: number | null) => {
     if (value) {
       setTotalRecords(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
@@ -108,8 +106,6 @@ const RoomPage = () => {
     try {
       // Bắt đầu quá trình tạo phòng
       const data = await create_room(values);
-      console.log("Response from create_room:", data); // Kiểm tra phản hồi từ create_room
-  
       if (data.error) {
         setError(data.error);
         toast({
@@ -132,9 +128,7 @@ const RoomPage = () => {
         setIsOpenDialogCreate(false);
         
         // Gọi lại danh sách phòng sau khi thêm thành công
-        console.log("Fetching updated room catalogues...");
         await fetchRooms();
-        console.log("Room catalogues fetched successfully");
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -290,14 +284,14 @@ const RoomPage = () => {
           keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
         },
       })
-      const { data } = response.data.data
+      const { data } = response.data.data;
       if (Array.isArray(data)) {
         const fetchedRooms: RoomType[] = data.map((item: any) => ({
           id: item.id,
           code: item.code,
-          department_name:item.department.name,
-          room_catalogue_code:item.room_catalogue.name,
-          description: item.room_catalogue.description,
+          department_name:item.departments.name,
+          room_catalogue_code:item.room_catalogues.name,
+          description: item.room_catalogues.description,
           beds_count: item.beds_count,
           status_bed:item.status_bed,
           status: item.status,
@@ -420,7 +414,8 @@ const RoomPage = () => {
         <div className="flex mt-5 justify-between">
         <Combobox<number>
           options={numberOptions}
-          onSelect={handleSelectRecords}
+          onSelect={handleSelecLimit}
+          defaultValue={limit} // No default selection for status
           placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
           />
 

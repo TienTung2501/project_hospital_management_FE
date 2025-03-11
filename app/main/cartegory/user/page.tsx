@@ -245,7 +245,7 @@ const UserInfor = () => {
           room_ids: item.rooms ? item.rooms.map((room: any) => room.id) : [], // Chuyển đổi danh sách phòng
           room_codes: item.rooms ? item.rooms.map((room: any) => room.code) : [], // Lấy danh sách mã phòng
         }));
-  
+        console.log(userLists);
         setUsers(userLists); // Cập nhật danh sách người dùng
         setTotalRecords(response.data.data.total); // Giả sử API trả về tổng số bản ghi
       } else {

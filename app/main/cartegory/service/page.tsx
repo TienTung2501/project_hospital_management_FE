@@ -261,7 +261,6 @@ const ServicePage = () => {
   };
 
   const onSubmitEdit = (formData: z.infer<typeof ServiceSchema>) => {
-    console.log(editData)
     if (!editData) return; // Ensure there is data to edit
     setError("");
     startTransition(()=>{
@@ -309,9 +308,9 @@ const ServicePage = () => {
       resetFormUpdate({
         name: itemToEdit.name,
         description: itemToEdit.description,
-        price: itemToEdit.price,
+        price: Number(itemToEdit.price),
         health_insurance_applied: itemToEdit.health_insurance_applied,
-        health_insurance_value: itemToEdit.health_insurance_value, 
+        health_insurance_value: Number(itemToEdit.health_insurance_value), 
         room_catalogue_id: BigInt(itemToEdit.room_catalogue_id),
         service_catalogue_id: BigInt(itemToEdit.service_catalogue_id),
       });

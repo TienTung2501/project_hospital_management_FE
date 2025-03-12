@@ -6,16 +6,16 @@ export const update_status_user = async (id: bigint | string, newStatus: number)
   try {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
     const response = await axios.get(endpoint, { timeout: 5000 });
-
+    console.log(response)
     if (response.status !== 200 || !response.data) {
       return { error: "Không thể tìm thấy người dùng hoặc dữ liệu không hợp lệ." };
     }
 
-    const user = response.data.data;
+    const user = response.data.data.data;
     if (user.status === newStatus) {
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
-
+    
     const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
     const payload = {
       name:user.name,
@@ -36,23 +36,11 @@ export const update_status_user = async (id: bigint | string, newStatus: number)
     }
 
   } catch (error: any) {
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors).flat().join("; ");
-        return { error: errorMessages };
-      }
-
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

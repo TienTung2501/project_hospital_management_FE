@@ -79,7 +79,6 @@ export const mapUserToUserInfoType = (response: any): UserInfoType | null => {
     room_ids: userData.rooms.map((room: any) => room.id),
     room_codes: userData.rooms.map((room: any) => room.code),
   };
-  console.log(userInfoType)
   return userInfoType;
 };
 export const mapUserToUserInfo = (response: any): UserInfo | null => {

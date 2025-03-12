@@ -183,9 +183,9 @@ const MedicationPage = () => {
       resetFormUpdate({
         name: itemToEdit.name,
         description: itemToEdit.description,
-        price: itemToEdit.price,
+        price: Number(itemToEdit.price),
         measure: itemToEdit.measure,
-        measure_count: itemToEdit.measure_count,
+        measure_count: Number(itemToEdit.measure_count),
         medication_catalogue_id: BigInt(itemToEdit.medication_catalogue_id),
         
       });
@@ -295,7 +295,7 @@ const MedicationPage = () => {
           id: item.id,
           name: item.name,
           description: item.description,
-          medication_catalogue_name:item.medication_catalogue.name,
+          medication_catalogue_name:item.medication_catalogues.name,
           price: item.price,
           status:item.status,
           measure:item.measure,

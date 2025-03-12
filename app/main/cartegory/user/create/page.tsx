@@ -285,9 +285,9 @@ const CreateUser = () => {
           .map((item: any) => ({
             id: item.id,
             code: item.code,
-            department_name: item.department.name,
-            room_catalogue_code: item.room_catalogue.keyword,
-            description: item.room_catalogue.description,
+            department_name: item.departments.name,
+            room_catalogue_code: item.room_catalogues.keyword,
+            description: item.room_catalogues.description,
             beds_count: item.beds_count,
             status_bed: item.status_bed,
             status: item.status,

@@ -70,30 +70,11 @@ export const update_service = async (id: bigint, values: z.infer<typeof ServiceS
     }
 
   } catch (error: any) {
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors).flat().join("; ");
-        return { error: errorMessages };
-      }
-
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-
-    if (error.response && error.response.status === 404) {
-      return { error: "Phòng không tồn tại." };
-    } else if (error.response && error.response.status === 500) {
-      return { error: "Lỗi từ phía server, vui lòng thử lại sau." };
-    }
-
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

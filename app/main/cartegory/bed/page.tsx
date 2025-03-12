@@ -118,9 +118,8 @@ const BedPage = () => {
         setIsOpenDialogCreate(false);
         
         // Gọi lại danh sách phòng sau khi thêm thành công
-        console.log("Fetching updated room catalogues...");
         await fetchBeds();
-        console.log("Room catalogues fetched successfully");
+       
       }
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -143,7 +142,7 @@ const BedPage = () => {
         {
           code:itemToEdit.code,
           room_id:BigInt(itemToEdit.room_id),
-          price:itemToEdit.price,
+          price:Number(itemToEdit.price),
         }
       )
       fetchRooms(itemToEdit.department_id, "NOITRU");
@@ -348,20 +347,19 @@ const BedPage = () => {
             },
         });
         const { data } = response.data.data;
-
         if (Array.isArray(data)) {
             const fetchedBeds: BedType[] = data.map((item: any) => ({
                 id: item.id,
                 code: item.code,
-                room_code: item.room.code,
-                department_id: item.room.department_id,
-                room_catalogue_id: item.room.room_catalogue_id,
-                room_id: item.room.id,
+                room_code: item.rooms.code,
+                department_id: item.rooms.department_id,
+                room_catalogue_id: item.rooms.room_catalogue_id,
+                room_id: item.rooms.id,
                 // Tạm thời để trống department_name và room_catalogue_name
                 department_name: "", 
                 room_catalogue_name: "", 
-                patient_id: item.patient?.id,
-                patient_name: item.patient?.name,
+                patient_id: item.patients?.id,
+                patient_name: item.patients?.name,
                 price: item.price,
                 status: item.status,
             }));
@@ -409,16 +407,17 @@ const fetchRooms = async (departmentId: bigint, keyword: string) => {
     });
 
     const { data } = response.data.data;
+    console.log(data)
     if (Array.isArray(data)) {
       // Lọc các phòng có room_catalogue.name là "NOTRU"
       const fetchedRooms: RoomType[] = data
-        .filter((item: any) => item.department_id===departmentId&&item.room_catalogue.keyword===keyword) // Chỉ lấy phòng có tên "NOTRU"
+        .filter((item: any) => item.department_id===departmentId&&item.room_catalogues.keyword===keyword) // Chỉ lấy phòng có tên "NOTRU"
         .map((item: any) => ({
           id: item.id,
           code: item.code,
-          department_name: item.department.name,
-          room_catalogue_code: item.room_catalogue.keyword,
-          description: item.room_catalogue.description,
+          department_name: item.departments.name,
+          room_catalogue_code: item.room_catalogues.keyword,
+          description: item.room_catalogues.description,
           beds_count: item.beds_count,
           status_bed: item.status_bed,
           status: item.status,
@@ -514,6 +513,7 @@ useEffect(() => {
           <div className='flex'>
             <Combobox<number>
               options={statusOptions}
+              defaultValue={status}
               onSelect={handleSelectStatus}
               placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
             />
@@ -651,13 +651,18 @@ useEffect(() => {
                       )}
                     />
                 <FormField control={formUpdate.control} name="price" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Giá giường</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" placeholder="Giá giường"/>
-                    </FormControl>
-                  </FormItem>
-                )} />
+                            <FormItem>
+                              <FormLabel>Giá dịch vụ</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  placeholder="Giá dịch vụ"
+                                  onChange={(e) => field.onChange(Number(e.target.value))}  // Chuyển giá trị thành number
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )} />
                 <DialogFooter>
                   <Button type="submit">Lưu</Button>
                 </DialogFooter>

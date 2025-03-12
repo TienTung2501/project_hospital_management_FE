@@ -3,6 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import {  MedicationSchema } from "@/schema";
+import { MedicationType } from "@/types";
 
 export const update_medication = async (id: bigint, values: z.infer<typeof MedicationSchema>) => {
   const validateFields = MedicationSchema.safeParse(values);
@@ -10,14 +11,57 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
     console.log(validateFields.error); // Xem chi tiết lỗi validation
     return { error: "Dữ liệu nhập không hợp lệ." }; // Kiểm tra validation đầu vào
   }
+  
   const valuesConvert={
     ...values,
+    name:values.name,
     medication_catalogue_id: Number(values.medication_catalogue_id),
+    price: Number(values.price),
+    measure: values.measure,
+    measure_count: Number(values.measure_count),
   }
-
   try {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications/${id}`;
-    const response = await axios.patch(endpoint, valuesConvert, { timeout: 5000 });
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications`;
+   
+    const existingMedicationResponse = await axios.get(`${endpoint}/${id}`);
+    const existingMedication:MedicationType = existingMedicationResponse.data.data.data;
+    if (
+      existingMedication.name === valuesConvert.name &&  
+      existingMedication.measure === valuesConvert.measure && 
+      Number(existingMedication.medication_catalogue_id )=== valuesConvert.medication_catalogue_id && 
+      Number(existingMedication.price) === valuesConvert.price && 
+      Number(existingMedication.measure_count) === Number(valuesConvert.measure_count) 
+      
+    ) {
+      return { error: "Dữ liệu không thay đổi, không cần cập nhật." }; // Không cần cập nhật nếu không có thay đổi
+    }
+    else{
+    // 3.kiểm tra xem có dữ liệu trùng không:
+    const responseCheck = await axios.get(endpoint, {
+      params: {
+        keyword: valuesConvert.name,
+        exclude_id: id, // Loại trừ khoa đang được chỉnh sửa
+      },
+      timeout: 5000, // Thêm thời gian timeout để ngăn chặn lỗi treo yêu cầu
+    });
+
+
+    const existingMedication: MedicationType[] =
+
+    responseCheck?.data?.data?.data || [];
+      
+      if (
+        existingMedication.length > 0 &&
+        existingMedication.some(
+          (medication) =>
+            medication?.name.trim().toLowerCase() === valuesConvert.name.trim().toLowerCase()
+        )
+      ) {
+        return { error: "Tên dịch vụ đã tồn tại, vui lòng chọn tên khác." };
+      }
+
+    }
+    const response = await axios.patch(`${endpoint}/${id}`, valuesConvert, { timeout: 5000 });
 
     if (response.status === 200) {
       return { success: "Cập nhật thông tin phòng thành công!" };
@@ -26,30 +70,11 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
     }
 
   } catch (error: any) {
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors).flat().join("; ");
-        return { error: errorMessages };
-      }
-
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-
-    if (error.response && error.response.status === 404) {
-      return { error: "Phòng không tồn tại." };
-    } else if (error.response && error.response.status === 500) {
-      return { error: "Lỗi từ phía server, vui lòng thử lại sau." };
-    }
-
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

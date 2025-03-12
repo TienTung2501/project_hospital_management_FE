@@ -11,8 +11,8 @@
         { "path": "cartegory/room_catalogue", "name": "Quản lý nhóm phòng" },
         { "path": "cartegory/room", "name": "Quản lý phòng" },
         { "path": "cartegory/bed", "name": "Quản lý giường bệnh" },
-        { "path": "cartegory/medical_catalogue", "name": "Quản lý nhóm dược" },
-        { "path": "cartegory/medical", "name": "Quản lý dược" },
+        { "path": "cartegory/medication_catalogue", "name": "Quản lý nhóm dược" },
+        { "path": "cartegory/medication", "name": "Quản lý dược" },
         { "path": "cartegory/service_catalogue", "name": "Quản lý nhóm dịch vụ" },
         { "path": "cartegory/service", "name": "Quản lý dịch vụ khám" }
       ] }

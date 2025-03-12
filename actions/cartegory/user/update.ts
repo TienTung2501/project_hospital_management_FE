@@ -3,6 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import { UpdateUserSchema } from "@/schema";
+import { UserInfoType } from "@/types";
 
 export const update_user = async (id:bigint|undefined,values: z.infer<typeof UpdateUserSchema>,selectedRooms: Number[]) => {
   // 1. Validate input from form
@@ -11,19 +12,38 @@ export const update_user = async (id:bigint|undefined,values: z.infer<typeof Upd
     console.error("Validation error:", validateFields.error); // Log validation errors
     return { error: "Dữ liệu nhập không hợp lệ." }; // Return error if validation fails
   }
-
-  console.log(selectedRooms);
+  const { name,email,  department_id, position_id,cccd,address,gender, ...otherFields } = validateFields.data;
+  
+  console.log(validateFields)
   try {
     // 2. Create new user with the provided details
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${id}`;
-    const response = await axios.get(endpoint, { timeout: 5000 });
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
+    const response = await axios.get(`${endpoint}/${id}`, { timeout: 5000 });
 
-    if (response.status !== 200 || !response.data) {
-      return { error: "Không thể tìm thấy người dùng hoặc dữ liệu không hợp lệ." };
-    }
+    const responseCheckDupdicate = await axios.get(`${endpoint}`, {
+      params: {
+        keyword: values.email, // Truy vấn theo tên chức danh
+        exclude_id: id, // Loại trừ khoa đang được chỉnh sửa
+      },
+      timeout: 5000, // Thêm thời gian timeout để đảm bảo yêu cầu không bị treo
+    });
+
+    const existingUser:UserInfoType[]=
+    responseCheckDupdicate?.data?.data?.data || [];
+      if (
+        existingUser.length > 0 &&
+        existingUser.some(
+          (user) =>
+            user?.email.trim().toLowerCase() === email.trim().toLowerCase()
+        )
+        ) {
+        return { error: "Người dùng có email đã tồn tại, vui lòng nhập email khác." };
+        }
+    
+
 
     const user = response.data.data;
-    console.log(user.password)
+ 
     const payload = { 
       name:values.name,
       cccd:values.cccd,
@@ -36,9 +56,8 @@ export const update_user = async (id:bigint|undefined,values: z.infer<typeof Upd
       room_ids: selectedRooms,                    // Example room IDs
     };
 
-    console.log(payload)
 
-    const responseCreate = await axios.patch(endpoint, payload, { timeout: 5000 });
+    const responseCreate = await axios.patch(`${endpoint}/${id}`, payload, { timeout: 5000 });
 
     if (responseCreate.status === 200) { // Check for the correct status code (201 for created)
       return { success: "Chỉnh sửa thông tin người dùng thành công!" }; // Success

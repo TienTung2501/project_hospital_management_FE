@@ -213,23 +213,15 @@ const NewPatient = () => {
         });
     
         const { data } = responseAll.data.data;
-        console.log(data)
-        if (Array.isArray(data)) {
-          data.forEach((item: any) => {
-            console.log("Room:", item.room_catalogue_id);
-            console.log("Equals:", item.room_catalogue_id === 7);
-            
-          });
-        }
         if (Array.isArray(data)) {
           const fetchedRooms: RoomType[] = data
-            .filter((item: any) => item.department.name === "Khoa khám bệnh" && item.room_catalogue_id === value&&item.users.length>0) // Lọc phòng theo department_id và keyword
+            .filter((item: any) => item.departments.name === "Khoa khám bệnh" && item.room_catalogue_id === value&&item.users.length>0) // Lọc phòng theo department_id và keyword
             .map((item: any) => ({
               id: item.id,
               code: item.code,
-              department_name: item.department.name,
-              room_catalogue_code: item.room_catalogue.keyword,
-              description: item.room_catalogue.description,
+              department_name: item.departments.name,
+              room_catalogue_code: item.room_catalogues.keyword,
+              description: item.room_catalogues.description,
               beds_count: item.beds_count,
               status_bed: item.status_bed,
               status: item.status,

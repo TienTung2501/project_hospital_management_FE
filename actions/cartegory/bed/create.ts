@@ -3,6 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import {  BedSchema } from "@/schema";
+import { BedType } from "@/types";
 
 export const create_bed = async (values: z.infer<typeof BedSchema>) => {
   // Kiểm tra dữ liệu từ phía frontend
@@ -17,8 +18,28 @@ export const create_bed = async (values: z.infer<typeof BedSchema>) => {
     room_id: Number(values.room_id),
   }
   try {
-    const createEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds/create`;
-    const response = await axios.post(createEndpoint, valuesConvert, { timeout: 5000 });
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds`;
+    const responseCheck = await axios.get(endpoint, {
+      params: {
+        keyword: valuesConvert.code, // Truy vấn theo Mã phòng
+      },
+      timeout: 5000, // Thêm thời gian timeout để đảm bảo yêu cầu không bị treo
+    });
+    const existingBeds: BedType[] =
+    responseCheck?.data?.data?.data || [];
+      
+      if (
+        existingBeds.length > 0 &&
+        existingBeds.some(
+          (bed) =>
+            bed?.code.trim().toLowerCase() === valuesConvert.code.trim().toLowerCase()&&
+          Number(bed?.room_id) === valuesConvert.room_id
+        )
+      ) {
+        return { error: "Mã phòng đã tồn tại, vui lòng chọn tên khác." };
+      }
+    
+      const response = await axios.post(`${endpoint}/create`, valuesConvert, { timeout: 5000 });
 
     if (response.status === 200) {
       return { success: "Tạo giường mới thành công!" };
@@ -27,31 +48,11 @@ export const create_bed = async (values: z.infer<typeof BedSchema>) => {
     }
 
   } catch (error: any) {
-    // Kiểm tra lỗi từ phản hồi của server
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      // Xử lý lỗi chi tiết từ server
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors)
-          .flat()
-          .join("; ");
-        
-        return { error: errorMessages };
-      }
-
-      // Nếu có thông báo message tổng quát
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
-    // Xử lý các lỗi khác như timeout hoặc lỗi không xác định
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

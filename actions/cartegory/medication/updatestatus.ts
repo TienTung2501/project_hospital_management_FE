@@ -1,5 +1,6 @@
 "use server";
 
+import { MedicationType } from "@/types";
 import axios from "axios";
 
 export const update_status_medication = async (id: bigint | string, newStatus: number) => {
@@ -11,21 +12,22 @@ export const update_status_medication = async (id: bigint | string, newStatus: n
       return { error: "Không thể tìm thấy dịch vụ hoặc dữ liệu không hợp lệ." };
     }
 
-    const service = response.data.data;
-    if (service.status === newStatus) {
+    const medication :MedicationType= response.data.data.data;
+    if (medication.status === newStatus) {
       return { error: "Trạng thái đã được cập nhật, không cần thay đổi." };
     }
 
-    const updateEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications/${id}`;
     const payload = {
-      name:service.name,
-      price:service.price,
-      measure:service.measure,
-      measure_count:service.measure_count,
+      ...medication,
+      medication_catalogue_id: Number(medication.medication_catalogue_id),
+      name:medication.name,
+      price:Number(medication.price),
+      measure:medication.measure,
+      measure_count:Number(medication.measure_count),
       status:newStatus,
     };
 
-    const updateResponse = await axios.patch(updateEndpoint, payload, { timeout: 5000 });
+    const updateResponse = await axios.patch(endpoint, payload, { timeout: 5000 });
 
     if (updateResponse.status === 200) {
       return { success: "Cập nhật trạng thái thành công!" };
@@ -33,24 +35,12 @@ export const update_status_medication = async (id: bigint | string, newStatus: n
       return { error: "Đã có lỗi khi cập nhật trạng thái, vui lòng thử lại." };
     }
 
-  } catch (error: any) {
-    if (error.response && error.response.data) {
-      const serverError = error.response.data;
-
-      if (serverError.errors) {
-        const errorMessages = Object.values(serverError.errors).flat().join("; ");
-        return { error: errorMessages };
-      }
-
-      if (serverError.message) {
-        return { error: serverError.message };
-      }
-    }
-
+  }catch (error: any) {
+    // 4. Xử lý lỗi chi tiết
     if (error.code === 'ECONNABORTED') {
-      return { error: "Yêu cầu bị timeout, vui lòng thử lại." };
+      return { error: "Yêu cầu bị timeout, vui lòng thử lại." }; // Lỗi timeout
     }
-    console.error("API error:", error);
-    return { error: "Có lỗi xảy ra khi kết nối với API." };
+    console.error("API error:", error); // Log lỗi API để debug
+    return { error: "Có lỗi xảy ra khi kết nối với API." }; // Lỗi chung
   }
 };

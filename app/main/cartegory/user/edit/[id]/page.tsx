@@ -108,7 +108,7 @@ const userEndpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`; /
 try {
   // Fetch user data
   const userResponse = await axios.get(userEndpoint);
-  const userData = userResponse.data.data; // Assuming the API returns user data
+  const userData = userResponse.data.data.data; // Assuming the API returns user data
   if (userData) {
     reset({
       name: userData.name,
@@ -118,8 +118,8 @@ try {
       address: userData.address,
       certificate: userData.certificate,
       gender: userData.gender,
-      department_id: userData.department_id, // Giá trị phải khớp với options
-      position_id: userData.position_id, // Giá trị phải khớp với options
+      department_id: BigInt(userData.department_id), // Giá trị phải khớp với options
+      position_id: BigInt(userData.position_id), // Giá trị phải khớp với options
     });
     setUser(userData); // Set user data correctly
   }
@@ -154,9 +154,9 @@ const fetchRooms = async (value: bigint) => {
         .map((item: any) => ({
           id: item.id,
           code: item.code,
-          department_name: item.department.name,
-          room_catalogue_code: item.room_catalogue.keyword,
-          description: item.room_catalogue.description,
+          department_name: item.departments.name,
+          room_catalogue_code: item.room_catalogues.keyword,
+          description: item.room_catalogues.description,
           beds_count: item.beds_count,
           status_bed: item.status_bed,
           status: item.status,

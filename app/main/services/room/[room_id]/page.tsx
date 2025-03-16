@@ -135,14 +135,14 @@ const MedicalRecordService = () => {
           const infoRoom: RoomType = {
             id: roomData.id,
             code: roomData.code,
-            description: roomData.room_catalogue?.description || "N/A", // Lấy mô tả từ room_catalogue
+            description: roomData.room_catalogues?.description || "N/A", // Lấy mô tả từ room_catalogue
             status: roomData.status,
             room_catalogue_id: roomData.room_catalogue_id,
             department_id: roomData.department_id,
             beds_count: roomData.beds_count,
             status_bed: roomData.status_bed,
-            department_name: roomData.department?.name || "N/A", // Lấy tên phòng ban từ department
-            room_catalogue_code: roomData.room_catalogue?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
+            department_name: roomData.departments?.name || "N/A", // Lấy tên phòng ban từ department
+            room_catalogue_code: roomData.room_catalogues?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
           };
   
           setInforRoom(infoRoom);
@@ -170,8 +170,8 @@ const MedicalRecordService = () => {
           limit:limit,
         },
       });
-
-      const data = response?.data?.data?.data || [];
+      console.log(response)
+      const data = response?.data?.data || [];
       if (!Array.isArray(data)) throw new Error("Invalid response format");
       // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
       const fetchedMedicalRecord: MedicalRecordRecordService[] = data
@@ -179,9 +179,9 @@ const MedicalRecordService = () => {
       .map((item: any) => ({
         id: item.id,
         patient_id: item.patient_id,
-        patient_name: item.patient.name,
-        patient_birthday: item.patient.birthday,
-        patient_phone: item.patient.phone,
+        patient_name: item.patients.name,
+        patient_birthday: item.patients.birthday,
+        patient_phone: item.patients.phone,
         user_id: item.user_id,
         room_id: item.room_id,
         visit_date: item.visit_date,
@@ -192,7 +192,7 @@ const MedicalRecordService = () => {
         inpatient_detail: item.inpatient_detail,
         status: item.status,
       }));
-    
+      console.log(fetchedMedicalRecord)
       setMedicalRecordServices(fetchedMedicalRecord);  // Cập nhật danh sách phòng phụ trách
     } catch (error) {
       console.error("Error fetching medical records:", error);

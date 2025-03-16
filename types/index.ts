@@ -314,7 +314,7 @@ export type MedicalRecordHistoryDetail={
   visit_date:string;
   diagnosis:string;
   notes:string;
-  apointment_date:string;
+  appointment_date:string;
   is_inpatient:number;
   inpatient_detail:string;
   services:ServiceDetailPatientResul[];

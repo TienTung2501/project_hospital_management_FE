@@ -30,9 +30,9 @@ const HomePage = () => {
       const fetchedRooms: RoomType[] = data.map((item: any) => ({
         id: item.id,
         code: item.code,
-        department_name: item.department?.name || "N/A",
-        room_catalogue_code: item.room_catalogue?.name || "N/A",
-        description: item.room_catalogue?.description || "",
+        department_name: item.departments?.name || "N/A",
+        room_catalogue_code: item.room_catalogues?.name || "N/A",
+        description: item.room_catalogues?.description || "",
         beds_count: item.beds_count,
         status_bed: item.status_bed,
         status: item.status,

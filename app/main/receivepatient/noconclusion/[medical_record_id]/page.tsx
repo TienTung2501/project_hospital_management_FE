@@ -52,6 +52,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DayPicker } from 'react-day-picker';
 import { cn } from '@/lib/utils';
+import { formatDateCustom } from '@/utils';
 
 export type ServicePatient={
   id:bigint;
@@ -178,18 +179,18 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
       const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
         id: data.id,
         patient_id: data.patient_id,
-        patient_name: data.patient.name,
-        patient_birthday: data.patient.birthday,
-        patient_phone: data.patient.phone,
-        patient_gender: data.patient.gender,
-        patient_address: data.patient.address,
-        patient_cccd_number: data.patient.cccd_number,
+        patient_name: data.patients.name,
+        patient_birthday: data.patients.birthday,
+        patient_phone: data.patients.phone,
+        patient_gender: data.patients.gender,
+        patient_address: data.patients.address,
+        patient_cccd_number: data.patients.cccd_number,
         user_id: data.user_id,
         room_id: data.room_id,
         visit_date: data.visit_date,
         diagnosis: data.diagnosis,
         notes: data.notes,
-        apointment_date: data.apointment_date,
+        apointment_date: data.appointment_date,
         is_inpatient: data.is_inpatient,
         inpatient_detail: data.inpatient_detail,
         status: data.status,
@@ -201,8 +202,8 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
           health_insurance_value: service.health_insurance_value,
           assigning_doctor_id: service.assigning_doctor_id,
           assigning_doctor_name: currentUser?.name,
-          pivot_id:service.pivot.id,
-          result_detail:service.pivot.result_details,
+          pivot_id:service.MedicalRecordService.id,
+          result_detail:service.MedicalRecordService.result_details,
         })) : [],
       };
   
@@ -273,13 +274,15 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
         (item: any) => item.medication_catalogue_id === value
       );
 
+      console.log("medical")
     console.log(medical)
+    
       if (Array.isArray(medical)) {
         const fetchedMedication: MedicationType[] = medical.map((item: any) => ({
           id: item.id,
           name: item.name,
           description: item.description,
-          medication_catalogue_name:item.medication_catalogue.name,
+          medication_catalogue_name:item.medication_catalogues.name,
           price: item.price,
           status:item.status,
           measure:item.measure,
@@ -541,7 +544,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
         medical_record: {
           medical_record_id: medical_record_id, // ID hồ sơ y tế
           data: {
-            apointment_date:apointment_date, // Ngày tái khám
+            appointment_date:apointment_date, // Ngày tái khám
             diagnosis:diagnosis, // Chẩn đoán
             notes:notes, // Ghi chú
           },
@@ -621,12 +624,12 @@ const handleSaveDedicalRecordPatient=async ()=>{
     const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item:any) => ({
       id: item.id,
       user_id: item.user_id,
-      user_name: item.user.name,
+      user_name: item.users.name,
       room_id: item.room_id,
       visit_date: item.visit_date,
       diagnosis: item.diagnosis,
       notes: item.notes,
-      apointment_date: item.apointment_date,
+      appointment_date: item.appointment_date,
       is_inpatient: item.is_inpatient,
       inpatient_detail: item.inpatient_detail,
       services: item.services.map((service:any) => ({
@@ -635,17 +638,17 @@ const handleSaveDedicalRecordPatient=async ()=>{
         description: service.description,
         health_insurance_applied: service.health_insurance_applied,
         health_insurance_value: service.health_insurance_value,
-        assigning_doctor_id: item.user.id,
-        assigning_doctor_name: item.user.name, // Assuming `currentUser` exists in scope
-        pivot_id: service.pivot.id,
-        result_detail: service.pivot.result_details,
+        assigning_doctor_id: item.users.id,
+        assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
+        pivot_id: service.MedicalRecordService.id,
+        result_detail: service.MedicalRecordService.result_details,
       })),
       medications: item.medications.map((medication:any) => ({
         id: medication.id,
         name: medication.name,
-        dosage: medication.pivot.dosage,
-        measure: medication.pivot.measure, // Removed incorrect `medication.measure.pivot.measure`
-        description: medication.pivot.description,
+        dosage: medication.MedicalRecordMedication.dosage,
+        measure: medication.MedicalRecordMedication.measure, // Removed incorrect `medication.measure.pivot.measure`
+        description: medication.MedicalRecordMedication.description,
       })),
     }));
     if (fetchedMedicalRecordHistoryDetail) {
@@ -678,7 +681,8 @@ const handleSaveDedicalRecordPatient=async ()=>{
                 <div className='grid grid-cols-3 gap-4 border-t'>
                   <div className="grid grid-cols-1 p-4 ">
                   <p><strong>Tên bệnh nhân:</strong> {medicalReacordDetail?.patient_name || "Không có"}</p>
-                    <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday || "Không có"}</p>
+
+                    <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday?formatDateCustom(medicalReacordDetail?.patient_birthday) : "Không có"}</p>
                     <p><strong>Giới tính:</strong> {medicalReacordDetail?.patient_gender === 1 ? "Nam" : medicalReacordDetail?.patient_gender === 2 ? "Nữ" : "Không có"}</p>
                     <p><strong>Điện thoại:</strong> {medicalReacordDetail?.patient_phone || "Không có"}</p>
                     <p><strong>Địa chỉ:</strong> {medicalReacordDetail?.patient_address || "Không có"}</p>
@@ -688,7 +692,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                   <div className="grid grid-cols-1 p-4 ">
                         <div> <strong>Thông tin chung</strong></div>
                         <div><strong>Bác sĩ khám:</strong> {currentUser?.name}</div>
-                        <div><strong>Ngày vào khám:</strong> {medicalReacordDetail?.visit_date ? format(new Date(medicalReacordDetail?.visit_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+                        <div><strong>Ngày vào khám:</strong> {medicalRecordHistoryDetailItem?.visit_date ? format(new Date(medicalRecordHistoryDetailItem?.visit_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
 
                        
                     </div>
@@ -1126,7 +1130,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                 <div className='grid grid-cols-3 gap-4 border-t'>
                   <div className="grid grid-cols-1 p-4 ">
                   <p><strong>Tên bệnh nhân:</strong> {medicalReacordDetail?.patient_name || "Không có"}</p>
-                    <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday?formatDateCustom(medicalReacordDetail?.patient_birthday) : "Không có"}</p>
                     <p><strong>Giới tính:</strong> {medicalReacordDetail?.patient_gender === 1 ? "Nam" : medicalReacordDetail?.patient_gender === 2 ? "Nữ" : "Không có"}</p>
                     <p><strong>Điện thoại:</strong> {medicalReacordDetail?.patient_phone || "Không có"}</p>
                     <p><strong>Địa chỉ:</strong> {medicalReacordDetail?.patient_address || "Không có"}</p>
@@ -1178,7 +1182,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                   <div className='grid grid-cols-3 gap-4 border-t'>
                     <div className="grid grid-cols-1 p-4 ">
                     <p><strong>Tên bệnh nhân:</strong> {medicalReacordDetail?.patient_name || "Không có"}</p>
-                      <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday || "Không có"}</p>
+                    <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday?formatDateCustom(medicalReacordDetail?.patient_birthday) : "Không có"}</p>
                       <p><strong>Giới tính:</strong> {medicalReacordDetail?.patient_gender === 1 ? "Nam" : medicalReacordDetail?.patient_gender === 2 ? "Nữ" : "Không có"}</p>
                       <p><strong>Điện thoại:</strong> {medicalReacordDetail?.patient_phone || "Không có"}</p>
                       <p><strong>Địa chỉ:</strong> {medicalReacordDetail?.patient_address || "Không có"}</p>
@@ -1187,8 +1191,8 @@ const handleSaveDedicalRecordPatient=async ()=>{
                       </div>
                     <div className="grid grid-cols-1 p-4 ">
                           <div> <strong>Thông tin chung</strong></div>
-                          <div><strong>Bác sĩ khám:</strong> {currentUser?.name}</div>
-                          <div><strong>Ngày vào khám:</strong> {medicalReacordDetail?.visit_date ? format(new Date(medicalReacordDetail?.visit_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+                          <div><strong>Bác sĩ khám:</strong> {medicalRecordHistoryDetailItem?.user_name}</div>
+                          <div><strong>Ngày vào khám:</strong> {medicalRecordHistoryDetailItem?.visit_date ?formatDateCustom(medicalRecordHistoryDetailItem?.visit_date)  : 'Ngày không xác định'}</div>
 
                         
                       </div>
@@ -1196,7 +1200,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                           <div> <strong>Bác sĩ nhận xét</strong></div>
                           <div><strong>Chẩn đoán: </strong> {medicalRecordHistoryDetailItem?.diagnosis||"Chưa chẩn đoán"}</div>
                           <div><strong>Ghi chú: </strong> {medicalRecordHistoryDetailItem?.notes||"Chưa có ghi chú"}</div>
-                          <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.apointment_date ? format(new Date(medicalRecordHistoryDetailItem?.apointment_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+                          <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.appointment_date ? formatDateCustom(medicalRecordHistoryDetailItem?.appointment_date) : 'Ngày không xác định'}</div>
                       </div>
                   </div>
                   

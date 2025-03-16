@@ -119,8 +119,8 @@ const ServiceForm = () => {
             department_id: roomData.department_id,
             beds_count: roomData.beds_count,
             status_bed: roomData.status_bed,
-            department_name: roomData.department?.name || "N/A", // Lấy tên phòng ban từ department
-            room_catalogue_code: roomData.room_catalogue?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
+            department_name: roomData.departments?.name || "N/A", // Lấy tên phòng ban từ department
+            room_catalogue_code: roomData.room_catalogues?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
           };
   
           setInforRoom(infoRoom);
@@ -145,8 +145,7 @@ const ServiceForm = () => {
           room_id:Number(currentUser?.room_ids[0])
         },
       });
-  
-      const data = response?.data?.data?.data || [];
+      const data = response?.data?.data || [];
       if (!Array.isArray(data)) {
         console.error("Dữ liệu không phải là một mảng:", data);
         return;
@@ -167,12 +166,12 @@ const ServiceForm = () => {
           return {
             id: item.id,
             patient_id: item.patient_id,
-            patient_name: item.patient.name,
-            patient_birthday: item.patient.birthday,
-            patient_phone: item.patient.phone,
-            patient_gender: item.patient.gender,
-            patient_address: item.patient.address,
-            patient_cccd_number: item.patient.cccd_number,
+            patient_name: item.patients.name,
+            patient_birthday: item.patients.birthday,
+            patient_phone: item.patients.phone,
+            patient_gender: item.patients.gender,
+            patient_address: item.patients.address,
+            patient_cccd_number: item.patients.cccd_number,
             user_id: item.user_id,
             room_id: item.room_id,
             visit_date: item.visit_date,
@@ -188,9 +187,9 @@ const ServiceForm = () => {
               detail: service.detail,
               description: service.description,
               service_description: service.description,
-              pivot: service.pivot ? {
-                id: service.pivot.id,
-                result_detail: service.pivot.resultDetail, // Lấy thông tin từ pivot
+              pivot: service.MedicalRecordService ? {
+                id: service.MedicalRecordService.id,
+                result_detail: service.MedicalRecordService.resultDetail, // Lấy thông tin từ pivot
               } : null
             })) : [], // Nếu không có dịch vụ, trả về mảng rỗng
           };
@@ -199,7 +198,6 @@ const ServiceForm = () => {
       if (fetchedMedicalRecord.length === 0) {
         console.warn("Không có bản ghi y tế hợp lệ với dịch vụ");
       }
-  
       // Giả sử bạn chỉ muốn lấy bản ghi đầu tiên (nếu có)
       if (fetchedMedicalRecord.length > 0) {
         const servicePivots: ServicePivot[] = fetchedMedicalRecord[0].services;
@@ -274,11 +272,13 @@ useEffect(() => {
         result_details: JSON.stringify(updatedDetail), // Cập nhật 'result_details'
       };
     });
+    console.log("resultServiceDetail");
+    console.log(resultServiceDetail);
     // Gọi API để gửi payload
     try {
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecordService/update`;
       const response = await axios.post(endpoint, resultServiceDetail);
-  
+      console.log(response)
       if (response.status === 200) {
         toast({
             variant:"success",

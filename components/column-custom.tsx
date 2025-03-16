@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { FaEdit, FaEye, FaTrash } from "react-icons/fa";
+import { formatDateCustom } from "@/utils";
 
 // Enum for column types
 enum ColumnType {
@@ -76,7 +77,7 @@ const renderCellContent = (
     case ColumnType.Date:
       return (
         <div>
-          {new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(value))}
+          {value?formatDateCustom(value):"No Date"}
         </div>
       );
 

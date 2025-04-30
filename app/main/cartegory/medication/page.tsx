@@ -43,8 +43,8 @@ const columnHeaderMap: { [key: string]: string } = {
   medication_catalogue_name:"Nhóm dược",
   price: "Giá tiền",
   status:"Tình trạng",
-  measure: "Đơn vị tính",
-  measure_count:"Số lượng",
+  unit: "Đơn vị tính",
+  measure_count:"Số lượng theo đơn vị",
 };
 
 
@@ -184,7 +184,7 @@ const MedicationPage = () => {
         name: itemToEdit.name,
         description: itemToEdit.description,
         price: Number(itemToEdit.price),
-        measure: itemToEdit.measure,
+        unit: itemToEdit.unit,
         measure_count: Number(itemToEdit.measure_count),
         medication_catalogue_id: BigInt(itemToEdit.medication_catalogue_id),
         
@@ -298,7 +298,7 @@ const MedicationPage = () => {
           medication_catalogue_name:item.medication_catalogues.name,
           price: item.price,
           status:item.status,
-          measure:item.measure,
+          unit:item.unit,
           measure_count:item.measure_count,
           medication_catalogue_id:item.medication_catalogue_id,
         }));
@@ -396,8 +396,11 @@ const MedicationPage = () => {
             />
           </div>
           <div className="flex items-center space-x-2 bg-white">
-            <Input type="text" placeholder="Tìm kiếm" />
-            <Button type="submit">Lọc</Button>
+            <Input type="text" placeholder="Tìm kiếm" 
+                value={keyword} // Đặt giá trị từ state keyword
+                onChange={(e) => setKeyword(e.target.value)}
+                />
+             <Button  onClick={() => fetchMedications()}>Lọc</Button>
           </div>
           <Dialog open={isOpenDialogCreate} onOpenChange={setIsOpenDialogCreate}>
           <DialogTrigger asChild>
@@ -456,7 +459,7 @@ const MedicationPage = () => {
                 </FormItem>
               )} />
 
-              <FormField control={formCreate.control} name="measure" render={({ field }) => (
+              <FormField control={formCreate.control} name="unit" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Đơn vị đo lường</FormLabel>
                   <FormControl>
@@ -550,7 +553,7 @@ const MedicationPage = () => {
                 </FormItem>
               )} />
 
-              <FormField control={formUpdate.control} name="measure" render={({ field }) => (
+              <FormField control={formUpdate.control} name="unit" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Đơn vị đo lường</FormLabel>
                   <FormControl>

@@ -332,6 +332,7 @@ const fetchServices = async () => {
         name: item.name,
         description: item.description,
         price: item.price,
+        unit: item.unit,
         status:item.status,
         detail:item.detail,
         health_insurance_applied:item.health_insurance_applied,
@@ -374,7 +375,8 @@ const fetchRooms = async () => {
         department_name:item.departments.name,
         room_catalogue_code:item.room_catalogues.name,
         description: item.room_catalogues.description,
-        beds_count: item.beds_count,
+        occupied_beds: item.occupied_beds,
+        beds_count: item.total_beds,
         status_bed:item.status_bed,
         status: item.status,
         department_id: item.department_id,
@@ -500,7 +502,7 @@ const fetchMedications = async (value:Number) => {
         medication_catalogue_name:item.medication_catalogues.name,
         price: item.price,
         status:item.status,
-        measure:item.measure,
+        unit:item.unit,
         measure_count:item.measure_count,
         medication_catalogue_id:item.medication_catalogue_id,
       }));
@@ -652,7 +654,7 @@ setIsEditing(true); // Cho phép chỉnh sửa lại
 setIsSaveDisabled(true); // Khóa nút Lưu hồ sơ
 };
 const onSubmitDiagnose=(data: z.infer<typeof MedicalRecordUpdateDiagnose>)=>{
-setIsEditing(false); // Không cho chỉnh sửa input nữa
+      setIsEditing(false); // Không cho chỉnh sửa input nữa
       setIsSaveDisabled(false); // Bật nút Lưu hồ sơ
 }
 // Hàm xử lý submit
@@ -696,6 +698,7 @@ const notes=formUpdateDiagnose.getValues('notes');
     const payload = {
       medical_record: {
         medical_record_id: patient_receive_id, // ID hồ sơ y tế
+        status:1,
         data: {
           appointment_date:appointment_date, // Ngày tái khám
           diagnosis:diagnosis, // Chẩn đoán
@@ -782,23 +785,23 @@ try {
     appointment_date: item.appointment_date,
     is_inpatient: item.is_inpatient,
     inpatient_detail: item.inpatient_detail,
-    services: item.services.map((service:any) => ({
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      health_insurance_applied: service.health_insurance_applied,
-      health_insurance_value: service.health_insurance_value,
+    services: item.medical_record_service.map((item:any) => ({
+      id: item.service_id,
+      name: item.service_name,
+      description: item.services.description,
+      health_insurance_applied: item.services.health_insurance_applied,
+      health_insurance_value: item.services.health_insurance_value,
       assigning_doctor_id: item.users.id,
       assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
-      pivot_id: service.MedicalRecordService.id,
-      result_detail: service.MedicalRecordService.result_details,
+      pivot_id: item.id,
+      result_detail: item.result_details,
     })),
-    medications: item.medications.map((medication:any) => ({
-      id: medication.id,
-      name: medication.name,
-      dosage: medication.MedicalRecordMedication.dosage,
-      measure: medication.MedicalRecordMedication.measure, // Removed incorrect `medication.measure.pivot.measure`
-      description: medication.MedicalRecordMedication.description,
+    medications: item.medical_record_medication.map((item:any) => ({
+      id: item.medications.id,
+      name: item.name,
+      dosage: item.dosage,
+      measure: item.measure, // Removed incorrect `medication.measure.pivot.measure`
+      description: item.description,
     })),
   }));
   if (fetchedMedicalRecordHistoryDetail) {

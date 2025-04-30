@@ -51,6 +51,7 @@ const columnPartientNotExaminedHeaderMap: { [key: string]: string } = {
   patient_name: "Bệnh nhân",
   user_id: "Bác sĩ",
   visit_date: "Ngày khám",
+  status_no_examined:"Trạng thái khám",
   // Add more mappings as needed
 };
 
@@ -58,6 +59,7 @@ const columnPartientNotConclusionHeaderMap: { [key: string]: string } = {
   patient_name: "Bệnh nhân",
   gender: "Giới tính",
   visit_date: "Ngày khám",
+  status_no_conclusion:"Tình trạng bệnh nhân"
   // Add more mappings as needed
 };
 const numberOptions = [
@@ -161,7 +163,6 @@ const AdminPage = () => {
         });
     
         const data = response?.data?.data?.data; // Lấy mảng dữ liệu
-        console.log(data)
         if (Array.isArray(data)) {
           // Thay `room_id` bằng giá trị ID bạn muốn tìm
           const roomData = data.find((item) => Number(item.id) === Number(room_id)); // Tìm phòng có `id` phù hợp
@@ -175,7 +176,8 @@ const AdminPage = () => {
               status: roomData.status,
               room_catalogue_id: roomData.room_catalogue_id,
               department_id: roomData.department_id,
-              beds_count: roomData.beds_count,
+              beds_count: roomData.total_beds,
+              occupied_beds:roomData.occupied_beds,
               status_bed: roomData.status_bed,
               department_name: roomData.departments?.name || "N/A", // Lấy tên phòng ban từ department
               room_catalogue_code: roomData.room_catalogues?.name || "N/A", // Lấy tên mã phòng từ room_catalogue
@@ -203,7 +205,8 @@ const AdminPage = () => {
       try {
         const responsePatientNotExamined = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`, {
           params: {
-            status: 0, // Lọc status = 0 ngay tại API (nếu API hỗ trợ)
+            // status: 0, // Lọc status = 0 ngay tại API (nếu API hỗ trợ)
+            keyword,
             user_id, // Lọc theo user_id
             room_id,  // Lọc theo room_id
             limit:1000,
@@ -212,11 +215,21 @@ const AdminPage = () => {
 
         const data1 = responsePatientNotExamined?.data?.data?.data || [];
         if (!Array.isArray(data1)) throw new Error("Invalid response format");
+        console.log("data examination")
         console.log(data1)
         // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
-        const fetchedPatientNotExamined: MedicalRecord[] = data1
-          .filter((item: any) => item.notes === null) // Lọc những item có notes khác null
-          .map((item: any) => ({
+        const fetchedPatientNotExamined: MedicalRecord[] = data1.map((item: any) => {
+          const service_names = item.medical_record_service.map((s: any) => s.service_name);
+          const hasDiagnosis = item.diagnosis;
+          const hasService = service_names.length > 0;
+        
+          const status_no_examined = hasDiagnosis
+            ? hasService
+              ? "Khám và chỉ định dịch vụ xong"
+              : "Khám xong và không cần xét nghiệm"
+            : "Chưa khám";
+        
+          return {
             id: item.id,
             patient_name: item.patients.name,
             patient_id: item.patient_id,
@@ -229,9 +242,11 @@ const AdminPage = () => {
             is_inpatient: item.is_inpatient,
             inpatient_detail: item.inpatient_detail,
             status: item.status,
-            service_ids: item.services.map((service: any) => service.id),
-            service_names: item.services.map((service: any) => service.name),
-          }));
+            service_ids: item.medical_record_service.map((s: any) => s.service_id),
+            service_names: service_names,
+            status_no_examined // thêm mới
+          };
+        });        
         const responsePatientNotConclusion = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/waitDiagnosis`, {
           params: {
             room_id, // Lọc theo user_id
@@ -239,26 +254,42 @@ const AdminPage = () => {
           },
         });
         const data = responsePatientNotConclusion?.data?.data || [];
+        
         console.log("data notconclusion")
         console.log(data)
         if (!Array.isArray(data)) throw new Error("Invalid response format");
         // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
-        const fetchedPatientNotConclusion: MedicalRecord[] = data.map((item: any) => ({
-          id: item.id,
-          patient_name: item.patients.name,
-          patient_id: item.patient_id,
-          user_id: item.user_id,
-          room_id: item.room_id,
-          visit_date: item.visit_date,
-          diagnosis: item.diagnosis,
-          notes: item.notes,
-          apointment_date: item.apointment_date,
-          is_inpatient: item.is_inpatient,
-          inpatient_detail: item.inpatient_detail,
-          status: item.status,
-          service_ids: item.services.map((service: any) => service.id),
-          service_names: item.services.map((service: any) => service.name),
-        }));
+        const fetchedPatientNotConclusion: MedicalRecord[] = data.map((item: any) => {
+          const diagnosis = item.diagnosis?.trim();
+          let status_no_conclusion = "Chưa chuẩn đoán";
+        
+          if (diagnosis) {
+            if (item.is_inpatient === 1) {
+              status_no_conclusion = "Đã chuẩn đoán và đã nhập viện điều trị";
+            } else {
+              status_no_conclusion = "Đã chuẩn đoán";
+            }
+          }
+        
+          return {
+            id: item.id,
+            patient_name: item.patients.name,
+            patient_id: item.patient_id,
+            user_id: item.user_id,
+            room_id: item.room_id,
+            visit_date: item.visit_date,
+            diagnosis: item.diagnosis,
+            notes: item.notes,
+            apointment_date: item.apointment_date,
+            is_inpatient: item.is_inpatient,
+            inpatient_detail: item.inpatient_detail,
+            status: item.status,
+            service_ids: item.medical_record_service.map((item: any) => item.service_id),
+            service_names: item.medical_record_service.map((item: any) => item.service_name),
+            status_no_conclusion, // Thêm dòng này
+          };
+        });
+        
         setPatientNotExamined(fetchedPatientNotExamined);  // Cập nhật danh sách phòng phụ trách
         setPatientNotConclusion(fetchedPatientNotConclusion);  // Cập nhật danh sách phòng phụ trách
       } catch (error) {
@@ -270,15 +301,16 @@ const AdminPage = () => {
     useEffect(() => {
       if (user_id && room_id) {
         fetchRooms();
-        fetchMedicalRecords();
       }
     }, []);  // Khi user_id hoặc room_id thay đổi, gọi lại API
   
-  
-    if (loading) {
-      return <div>Loading...</div>;
-    }
-   
+    useEffect(() => {
+        fetchMedicalRecords();
+      }, [limit, pageIndex,status]);
+      if (loading) {
+        return <div>Loading...</div>;
+      }
+    
     const columnPatientNotExamined = patientNotExamined.length > 0 ? createColumns(patientNotExamined,undefined, undefined, undefined,columnPartientNotExaminedHeaderMap,{view:false,edit: false, delete: false},undefined,buttonColumnConfig ) : [];
     const columnPatientNotConclusion = patientNotConclusion.length > 0 ? createColumns(patientNotConclusion,undefined, undefined, undefined,columnPartientNotConclusionHeaderMap,{view:false,edit: false, delete: false},undefined,buttonColumnConfig2 ) : [];
    // const columnMedicalRecords = medicalRecords.length > 0 ? createColumns(medicalRecords,handleView, handleEdit, handleDelete, columnPartientCurrentlyHeaderMap,{view: true, edit: false, delete: false},switchConfig ) : [];
@@ -329,8 +361,11 @@ const AdminPage = () => {
                     />
                     </div>
                     <div className="flex items-center space-x-2 bg-white">
-                      <Input type="text" placeholder="Tìm kiếm" />
-                      <Button type="submit">Lọc</Button>
+                       <Input type="text" placeholder="Tìm kiếm" 
+                        value={keyword} // Đặt giá trị từ state keyword
+                        onChange={(e) => setKeyword(e.target.value)}
+                        />
+                        <Button  onClick={() => fetchMedicalRecords()}>Lọc</Button>
                     </div>
                     <Button className='ml-5' onClick={handleClick}>+ Thêm mới</Button>
                  
@@ -390,8 +425,11 @@ const AdminPage = () => {
                     />
                     </div>
                     <div className="flex items-center space-x-2 bg-white">
-                      <Input type="text" placeholder="Tìm kiếm" />
-                      <Button type="submit">Lọc</Button>
+                       <Input type="text" placeholder="Tìm kiếm" 
+                          value={keyword} // Đặt giá trị từ state keyword
+                          onChange={(e) => setKeyword(e.target.value)}
+                          />
+                          <Button  onClick={() => fetchMedicalRecords()}>Lọc</Button>
                     </div>
               </div>
               </div>

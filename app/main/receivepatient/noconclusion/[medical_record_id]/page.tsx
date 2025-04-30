@@ -175,44 +175,48 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
   
 
     
-      const data = response?.data?.data || [];  // Kiểm tra response đúng cách
-      const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
-        id: data.id,
-        patient_id: data.patient_id,
-        patient_name: data.patients.name,
-        patient_birthday: data.patients.birthday,
-        patient_phone: data.patients.phone,
-        patient_gender: data.patients.gender,
-        patient_address: data.patients.address,
-        patient_cccd_number: data.patients.cccd_number,
-        user_id: data.user_id,
-        room_id: data.room_id,
-        visit_date: data.visit_date,
-        diagnosis: data.diagnosis,
-        notes: data.notes,
-        apointment_date: data.appointment_date,
-        is_inpatient: data.is_inpatient,
-        inpatient_detail: data.inpatient_detail,
-        status: data.status,
-        services: Array.isArray(data.services) ? data.services.map((service: any) => ({
-          id: service.id,
-          name: service.name,
-          description: service.description,
-          health_insurance_applied: service.health_insurance_applied,
-          health_insurance_value: service.health_insurance_value,
-          assigning_doctor_id: service.assigning_doctor_id,
-          assigning_doctor_name: currentUser?.name,
-          pivot_id:service.MedicalRecordService.id,
-          result_detail:service.MedicalRecordService.result_details,
-        })) : [],
-      };
-  
-      if (fetchedMedicalRecordDetail) {
-        const serviceDetailPatients: ServiceDetailPatientResul[] = fetchedMedicalRecordDetail.services;
-        fetchMedicalRecordHistoryDetail(fetchedMedicalRecordDetail.patient_id);
-        setMedicalRecordDetail(fetchedMedicalRecordDetail);
-        setServiceDetailPatients(serviceDetailPatients);
+      const dataList = response?.data?.data || [];  // Kiểm tra response đúng cách
+      const data = dataList[0]; // Lấy phần tử đầu tiên
+      if(data && data.patients){
+        const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
+          id: data.id,
+          patient_id: data.patient_id,
+          patient_name: data.patients.name,
+          patient_birthday: data.patients.birthday,
+          patient_phone: data.patients.phone,
+          patient_gender: data.patients.gender,
+          patient_address: data.patients.address,
+          patient_cccd_number: data.patients.cccd_number,
+          user_id: data.user_id,
+          room_id: data.room_id,
+          visit_date: data.visit_date,
+          diagnosis: data.diagnosis,
+          notes: data.notes,
+          apointment_date: data.appointment_date,
+          is_inpatient: data.is_inpatient,
+          inpatient_detail: data.inpatient_detail,
+          status: data.status,
+          services: data.medical_record_service.map((item:any) => ({
+              id: item.service_id,
+              name: item.service_name,
+              description: item.services.description,
+              health_insurance_applied: item.services.health_insurance_applied,
+              health_insurance_value: item.services.health_insurance_value,
+              assigning_doctor_id: item.users.id,
+              assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
+              pivot_id: item.id,
+              result_detail: item.result_details,
+            })) 
+        };
+    
+        if (fetchedMedicalRecordDetail) {
+          const serviceDetailPatients: ServiceDetailPatientResul[] = fetchedMedicalRecordDetail.services;
+          fetchMedicalRecordHistoryDetail(fetchedMedicalRecordDetail.patient_id);
+          setMedicalRecordDetail(fetchedMedicalRecordDetail);
+          setServiceDetailPatients(serviceDetailPatients);
+        }
       }
+    
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu bệnh án:", error);
     } finally {
@@ -285,7 +289,7 @@ const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút L
           medication_catalogue_name:item.medication_catalogues.name,
           price: item.price,
           status:item.status,
-          measure:item.measure,
+          unit:item.unit,
           measure_count:item.measure_count,
           medication_catalogue_id:item.medication_catalogue_id,
         }));

@@ -75,6 +75,7 @@ export interface LinkBaseRoleType {
     status: number; // Trạng thái hoạt động (1-đang hoạt động, 0-bị dừng)
     room_catalogue_id: bigint; // Tham chiếu đến bảng room_catalogues
     department_id: bigint; // Tham chiếu đến bảng departments
+    occupied_beds: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
     beds_count: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
     status_bed:number;
     department_name:string;
@@ -99,6 +100,7 @@ export interface LinkBaseRoleType {
     room_catalogue_name:string;
     department_name:string;
     price: number; // Giá giường
+    unit: string; // Đơn vị tính
 
   };
 
@@ -171,7 +173,7 @@ export type MedicationType = {
   medication_catalogue_id: number;      // Khóa ngoại tham chiếu đến nhóm dược
   status:number;
   price: number;                      // Giá của dược phẩm
-  measure: string;                    // Đơn vị đo lường (ví dụ: viên, túi, ...)
+  unit: string;                    // Đơn vị đo lường (ví dụ: viên, túi, ...)
   measure_count: number;               // Số lượng tính theo đơn vị
   description?: string;               // Mô tả dược phẩm
   medication_catalogue_name:string;
@@ -182,6 +184,7 @@ export type ServiceType = {
   name: string;                   // Tên dịch vụ
   description?: string;           // Mô tả về dịch vụ (tuỳ chọn)
   price: number;                  // Phí dịch vụ
+  unit: string;                  // Phí dịch vụ
   status: number;                  // Trạng thái: 0 (dừng hoạt động) hoặc 1 (đang hoạt động)
   detail?: string;                // Thông tin chi tiết về dịch vụ (tuỳ chọn)
   health_insurance_applied?: number; // Có áp dụng giảm phí cho bệnh nhân có bảo hiểm y tế không (tuỳ chọn, mặc định là 0)
@@ -210,14 +213,43 @@ export type MedicalRecord = {
   visit_date?:string|undefined;
   diagnosis?:string|undefined;
   notes?:string|undefined;
+  result_details?:String[]|undefined;
   apointment_date?:string|undefined;
   is_inpatient:string|undefined;
   inpatient_detail:string|undefined;
   status:number|undefined;
   patient_name:string;
   service_ids: BigInt[];
-  service_names:String[];
+  service_names:string[];
+  service_room_ids?:BigInt[];
+  status_no_exmamined?:string;
+  status_no_conclusion?:string;
 };
+export type MedicalRecordNewpatient = {
+  id:bigint;
+  patient_id:bigint;
+  user_id:bigint;
+  room_id:bigint;
+  visit_date?:string|undefined;
+  diagnosis_newpatient?:string|undefined;
+  notes?:string|undefined;
+  apointment_date?:string|undefined;
+  is_inpatient_newpatient:string|undefined;
+  inpatient_detail:string|undefined;
+  status_newpatient:number|undefined;
+  patient_name:string;
+  service_newpatient:Service_Newpatient[];
+  room_code: string; // Mã phòng (unique)
+  room_catalogue_code: string; // liên
+  department_name:string;
+};
+export type Service_Newpatient={
+  service_name:string;
+  service_room:string;
+  service_room_catalogue_code:string;
+  service_department_name:string;
+  had_result_details:number;
+}
 export type MedicalRecordRecordService = {
   id:bigint;
   patient_id:bigint;
@@ -232,7 +264,8 @@ export type MedicalRecordRecordService = {
   apointment_date?:string|undefined;
   is_inpatient:string|undefined;
   inpatient_detail:string|undefined;
-  status:number|undefined;
+  payment_status?:number|undefined;
+  service_status?:number|undefined;
 };
 export type MedicalRecordRecordServicePivot = {
   id:bigint;

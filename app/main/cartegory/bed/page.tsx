@@ -38,6 +38,7 @@ const columnHeaderMap: { [key: string]: string } = {
   room_code:"Phòng",
   patient_name: "Tên bệnh nhân",
   price:"Giá giường",
+  unit:"Đơn vị tính",
   status:"Trạng thái hoạt động"
 };
 
@@ -78,7 +79,6 @@ const BedPage = () => {
   const { reset: resetFormUpdate } = formUpdate;
 
   const handleSelecLimit = (value: number | null) => {
-    console.log("Selected value:", value)
     if (value) {
       setLimit(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit
@@ -94,7 +94,6 @@ const BedPage = () => {
     try {
       // Bắt đầu quá trình tạo phòng
       const data = await create_bed(values);
-      console.log("Response from create_room:", data); // Kiểm tra phản hồi từ create_room
   
       if (data.error) {
         setError(data.error);
@@ -346,7 +345,7 @@ const BedPage = () => {
                 keyword: keyword.trim() !== "" ? keyword : undefined // Thêm từ khóa tìm kiếm vào tham số API
             },
         });
-        const { data } = response.data.data;
+        const { data } = response.data.data||[];
         if (Array.isArray(data)) {
             const fetchedBeds: BedType[] = data.map((item: any) => ({
                 id: item.id,
@@ -361,6 +360,7 @@ const BedPage = () => {
                 patient_id: item.patients?.id,
                 patient_name: item.patients?.name,
                 price: item.price,
+                unit: item.unit,
                 status: item.status,
             }));
             setItems(fetchedBeds); // Cập nhật danh sách giường
@@ -407,7 +407,6 @@ const fetchRooms = async (departmentId: bigint, keyword: string) => {
     });
 
     const { data } = response.data.data;
-    console.log(data)
     if (Array.isArray(data)) {
       // Lọc các phòng có room_catalogue.name là "NOTRU"
       const fetchedRooms: RoomType[] = data
@@ -418,7 +417,8 @@ const fetchRooms = async (departmentId: bigint, keyword: string) => {
           department_name: item.departments.name,
           room_catalogue_code: item.room_catalogues.keyword,
           description: item.room_catalogues.description,
-          beds_count: item.beds_count,
+          occupied_beds: item.occupied_beds,
+          beds_count: item.total_beds,
           status_bed: item.status_bed,
           status: item.status,
           department_id: item.department_id,
@@ -443,14 +443,12 @@ const fetchRooms = async (departmentId: bigint, keyword: string) => {
     
     if(value!==null){
       if(isOpenDialogCreate){
-        console.log(value)
         formCreate.setValue('room_id', BigInt(value)); // Update the form value directly
       }
       else if(isOpenDialogUpdate){
         formUpdate.setValue('room_id', BigInt(value));
       }
     }
-    // console.log(value)
   };
   const handleSelectDepartment = async (departmentId: bigint | null) => {
     if (departmentId === null) return;
@@ -583,7 +581,12 @@ useEffect(() => {
                     <FormLabel>Giá giường</FormLabel>
                     <FormControl>
                       {/* <Input {...field} type="number" placeholder="Giá giường" /> */}
-                      <Input {...field} type="number" placeholder="Giá giường"/>
+                      <Input 
+                       {...field}
+                       type="number"
+                       placeholder="Giá giường"
+                       onChange={(e) => field.onChange(Number(e.target.value))}  // Chuyển giá trị thành number
+                      />
                     </FormControl>
                   </FormItem>
                 )} />
@@ -652,12 +655,12 @@ useEffect(() => {
                     />
                 <FormField control={formUpdate.control} name="price" render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Giá dịch vụ</FormLabel>
+                              <FormLabel>Giá giường</FormLabel>
                               <FormControl>
                                 <Input
                                   {...field}
                                   type="number"
-                                  placeholder="Giá dịch vụ"
+                                  placeholder="Giá giường"
                                   onChange={(e) => field.onChange(Number(e.target.value))}  // Chuyển giá trị thành number
                                 />
                               </FormControl>
@@ -686,7 +689,6 @@ useEffect(() => {
               pageIndex={pageIndex}
               pageSize={limit}
               onPageChange={(newPageIndex) => {
-              console.log("pageindex:", newPageIndex)
               setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
               }}
               />

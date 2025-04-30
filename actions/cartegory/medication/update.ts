@@ -17,7 +17,7 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
     name:values.name,
     medication_catalogue_id: Number(values.medication_catalogue_id),
     price: Number(values.price),
-    measure: values.measure,
+    unit: values.unit,
     measure_count: Number(values.measure_count),
   }
   try {
@@ -27,7 +27,7 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
     const existingMedication:MedicationType = existingMedicationResponse.data.data.data;
     if (
       existingMedication.name === valuesConvert.name &&  
-      existingMedication.measure === valuesConvert.measure && 
+      existingMedication.unit === valuesConvert.unit && 
       Number(existingMedication.medication_catalogue_id )=== valuesConvert.medication_catalogue_id && 
       Number(existingMedication.price) === valuesConvert.price && 
       Number(existingMedication.measure_count) === Number(valuesConvert.measure_count) 
@@ -49,7 +49,6 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
     const existingMedication: MedicationType[] =
 
     responseCheck?.data?.data?.data || [];
-      
       if (
         existingMedication.length > 0 &&
         existingMedication.some(
@@ -61,6 +60,7 @@ export const update_medication = async (id: bigint, values: z.infer<typeof Medic
       }
 
     }
+
     const response = await axios.patch(`${endpoint}/${id}`, valuesConvert, { timeout: 5000 });
 
     if (response.status === 200) {

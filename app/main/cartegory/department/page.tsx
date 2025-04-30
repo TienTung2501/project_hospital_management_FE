@@ -90,7 +90,6 @@ const Department = () => {
   const [loading, setLoading] = useState(true);
   const [isPending,startTransition]=useTransition();
   const handleSelecLimit = (value: number | null) => {
-    console.log("Selected value:", value)
     if (value) {
       setLimit(value);
       setPageIndex(1); // Reset về trang 1 khi thay đổi limit

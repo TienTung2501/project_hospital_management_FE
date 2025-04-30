@@ -198,7 +198,7 @@ export const MedicationSchema = z.object({
   name: z.string().min(1,"Tên dược phẩm không được để trống"),
   medication_catalogue_id: z.bigint().min(BigInt(1), "ID nhóm dược phẩm không hợp lệ"),
   price: z.number().min(0, "Giá thuốc không được âm"),
-  measure: z.string().min(1,"Đơn vị không được để trống"),
+  unit: z.string().min(1,"Đơn vị không được để trống"),
   measure_count: z.number().min(1, "Số lượng phải lớn hơn 0"),
   description: z.string().optional(),
 });

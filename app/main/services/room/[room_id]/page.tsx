@@ -55,6 +55,7 @@ const columnHeaderMap: { [key: string]: string } = {
   gender: "Giới tính",
   birthday_date: "Năm sinh",
   phone: "Điện thoại",
+  service_status:"Tình trạng thực hiện",
 };
 
 const numberOptions = [
@@ -163,35 +164,55 @@ const MedicalRecordService = () => {
   };
   const fetchMedicalRecordService = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/list`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/list`, { 
         params: {
-          keyword:keyword,
-          room_id,  // Lọc theo room_id
-          limit:limit,
+          keyword,
+          room_id, // room cần lọc
+          limit,
         },
       });
-      console.log(response)
+    
       const data = response?.data?.data || [];
+      console.log(response)
       if (!Array.isArray(data)) throw new Error("Invalid response format");
-      // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
+      
       const fetchedMedicalRecord: MedicalRecordRecordService[] = data
-      .filter((item: any) => item.services && item.services.length > 0) // Lọc những mục có services.length > 0
-      .map((item: any) => ({
-        id: item.id,
-        patient_id: item.patient_id,
-        patient_name: item.patients.name,
-        patient_birthday: item.patients.birthday,
-        patient_phone: item.patients.phone,
-        user_id: item.user_id,
-        room_id: item.room_id,
-        visit_date: item.visit_date,
-        diagnosis: item.diagnosis,
-        notes: item.notes,
-        apointment_date: item.apointment_date,
-        is_inpatient: item.is_inpatient,
-        inpatient_detail: item.inpatient_detail,
-        status: item.status,
-      }));
+        .map((item: any) => {
+          const services = item.medical_record_service || [];
+      
+          // Lọc các service có room_id khớp với room cần kiểm tra
+          const roomServices = services.filter((s: any) => BigInt(s.room_id) === BigInt(room_id));
+          console.log("roomServices",roomServices)
+          // Nếu không có service nào thuộc room này thì loại bỏ
+          if (roomServices.length === 0) return null;
+      
+          // Nếu tất cả các service thuộc room này đều có payment_status = 1
+          const allPaid = roomServices.every((s: any) => s.payment_status === 1);
+          if (!allPaid) return null;
+      
+          // Xác định service_status theo result_details
+          const service_status = roomServices.every((s: any) => s.result_details !== null)
+            ? 'Hoàn thành'
+            : 'Đang chờ';
+      
+          return {
+            id: item.id,
+            patient_id: item.patient_id,
+            patient_name: item.patients.name,
+            patient_birthday: item.patients.birthday,
+            patient_phone: item.patients.phone,
+            user_id: item.user_id,
+            room_id: item.room_id,
+            visit_date: item.visit_date,
+            diagnosis: item.diagnosis,
+            notes: item.notes,
+            apointment_date: item.apointment_date,
+            is_inpatient: item.is_inpatient,
+            inpatient_detail: item.inpatient_detail,
+            service_status,
+          };
+        })
+        .filter(Boolean);      
       console.log(fetchedMedicalRecord)
       setMedicalRecordServices(fetchedMedicalRecord);  // Cập nhật danh sách phòng phụ trách
     } catch (error) {

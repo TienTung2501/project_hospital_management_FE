@@ -22,7 +22,7 @@ export const update_status_medication = async (id: bigint | string, newStatus: n
       medication_catalogue_id: Number(medication.medication_catalogue_id),
       name:medication.name,
       price:Number(medication.price),
-      measure:medication.measure,
+      unit:medication.unit,
       measure_count:Number(medication.measure_count),
       status:newStatus,
     };

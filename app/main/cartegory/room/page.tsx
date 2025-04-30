@@ -40,6 +40,7 @@ const columnHeaderMap: { [key: string]: string } = {
   status_bed:"Tình trạng giường",
   room_catalogue_code: "Nhóm phòng",
   beds_count: "Số giường",
+  occupied_beds: "Giường sử dụng",
   status:"Trạng thái hoạt động"
 };
 const RoomPage = () => {
@@ -292,7 +293,8 @@ const RoomPage = () => {
           department_name:item.departments.name,
           room_catalogue_code:item.room_catalogues.name,
           description: item.room_catalogues.description,
-          beds_count: item.beds_count,
+          occupied_beds: item.occupied_beds,
+          beds_count: item.total_beds,
           status_bed:item.status_bed,
           status: item.status,
           department_id: item.department_id,

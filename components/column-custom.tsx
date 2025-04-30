@@ -15,6 +15,8 @@ enum ColumnType {
   Date = "date",
   Gender = "gender",
   Status = "examination_status",
+  StatusNewPatient="status_newpatient",
+  IsInpatientNewPatient="is_inpatient_newpatient",
   StatusBed = "status_bed",
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
@@ -43,14 +45,47 @@ const getHeaderLabel = (key: string, columnHeaderMap: { [key: string]: string })
 const renderCellContent = (
   value: any,
   columnType: ColumnType,
-  onStatusChange?: (newValue: number) => void
+  onStatusChange?: (newValue: number) => void,
+  rowData?: DataType // thêm rowData
 ) => {
   switch (columnType) {
     case ColumnType.Text:
       if (Array.isArray(value)) {
-        return <div>{value.join(", ")}</div>; // Định dạng mảng với dấu phẩy
+        // Kiểm tra nếu cột là "service_newpatient" (cột dịch vụ khám)
+        if (rowData?.service_newpatient) {
+          if (value.length > 0) {
+            return (
+              <div className="flex flex-col gap-2">
+                {value.map((service: any, index: number) => (
+                <div
+                key={index}
+                className="grid items-center px-2 py-2 rounded border bg-gray-100 w-full text-center gap-2"
+                style={{
+                  gridTemplateColumns: '200px 150px 150px 100px' // Cố định chiều rộng từng cột
+                }}
+              >
+                <span className="font-semibold text-base text-left truncate">{service.service_name}</span>
+                <span className="text-sm text-gray-600 truncate">Phòng: {service.service_room}</span>
+                <span className="text-sm text-gray-600 truncate">{service.service_department_name}</span>
+                <span className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                  Kết quả:{service.had_result_details ? "✅" : "❌"}
+                </span>
+              </div>
+              
+               
+                
+                ))}
+              </div>
+            );
+          } else if (value.length === 0 && rowData.diagnosis_newpatient !== "Chưa có kết quả") {
+            return <div>Bệnh nhân đã khám xong. Không cần xét nghiệm</div>;
+          } else {
+            return <div>Đang đợi chỉ định dịch vụ</div>;
+          }
+        }
       }
-      return <div>{value}</div>;
+      return <div>{value || "Không có dữ liệu"}</div>; // Kiểm tra nếu value rỗng thì hiển thị "Không có dữ liệu"
+    
 
     case ColumnType.Currency:
       return (
@@ -96,13 +131,28 @@ const renderCellContent = (
       return <div>{value === 1 ? "Có" : "Không"}</div>;
     case ColumnType.StatusBed:
       return <div>{value === 1 ? "Đã đầy" : "Chưa đầy"}</div>;
-
+    
+    case ColumnType.IsInpatientNewPatient:
+      if (value === 1) {
+        return <div>Nhập viện điều trị</div>;
+      } else {
+        return <div>Điều trị ngoại trú</div>;
+      }
+      
+    case ColumnType.StatusNewPatient:
+      return (() => {
+        const status = rowData?.status_newpatient;
+        const diagnosis = rowData?.diagnosis;
+        
+        if (status === 0) return "Đợi khám lâm sàng";
+        if (status === 1 && (!diagnosis)) return "Đang thực hiện các xét nghiệm";
+        if (diagnosis) return "Đã thực hiện khám ngoại trú xong";
+      })();
+      
     default:
       return <div>{value}</div>;
   }
 };
-
-
 
 const createColumns = <T extends DataType>(
   data: T[],
@@ -146,7 +196,15 @@ const createColumns = <T extends DataType>(
     return [];
   }
 
-  const keys = Object.keys(data[0]).filter((key) => !key.includes("id") && !key.includes("detail") && !key.includes("level"));
+  // Lọc các key từ columnHeaderMap theo thứ tự, và giữ lại nếu key tồn tại trong data[0] và không chứa "id", "detail", "level"
+const keys = Object.keys(columnHeaderMap).filter(
+  (key) =>
+    key in data[0] &&
+    !key.includes("id") &&
+    !key.includes("detail") &&
+    !key.includes("level")
+);
+
 
   keys.forEach((key) => {
     // Kiểm tra nếu key không tồn tại trong columnHeaderMap thì không thêm cột
@@ -157,6 +215,9 @@ const createColumns = <T extends DataType>(
     let columnType: ColumnType = ColumnType.Text;
 
     if (key === "room_codes") {
+      columnType = ColumnType.Text; // Đảm bảo sử dụng kiểu Text để xử lý trong renderCellContent
+    }
+    if (key === "service_names_newpatient") {
       columnType = ColumnType.Text; // Đảm bảo sử dụng kiểu Text để xử lý trong renderCellContent
     }
 
@@ -181,6 +242,11 @@ const createColumns = <T extends DataType>(
       columnType = ColumnType.health_insurance_applied;
     } else if (key === "status_bed") {
       columnType = ColumnType.StatusBed;
+    }else if (key === "status_newpatient") {
+      columnType = ColumnType.StatusNewPatient;
+    }
+    else if (key === "is_inpatient_newpatient") {
+      columnType = ColumnType.IsInpatientNewPatient;
     }
 
     columns.push({
@@ -190,7 +256,8 @@ const createColumns = <T extends DataType>(
         renderCellContent(
           row.getValue(key),
           columnType,
-          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined
+          switchColumn ? (newValue) => switchColumn.onStatusChange(row.original.id, newValue ? 1 : 0) : undefined,
+          row.original // truyền rowData vào renderCellContent
         ),
     });
   });

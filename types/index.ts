@@ -266,6 +266,7 @@ export type MedicalRecordRecordService = {
   inpatient_detail:string|undefined;
   payment_status?:number|undefined;
   service_status?:number|undefined;
+  result_details?:  string|undefined;
 };
 export type MedicalRecordRecordServicePivot = {
   id:bigint;

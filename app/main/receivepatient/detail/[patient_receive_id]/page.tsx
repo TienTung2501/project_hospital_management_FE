@@ -53,7 +53,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { format } from 'date-fns';
+import ServiceInvoicePrint, { ServiceInvoicePrintHandle } from '@/components/ServiceInvoicePrint';
 
+import { useRef } from 'react';
 export type ServicePatient={
   id:bigint;
   service_name:string;
@@ -85,7 +87,7 @@ const columnHeaderMapDetailResultService={
 }
 const columnHeaderMapMedicationDetail={
   name:"Tên thuốc",
-  dosage:"Liều lượng",
+  dosage:"Số lượng kê",
   measure:"Đơn vị",
   description: "Hướng dẫn dùng",
 }
@@ -123,14 +125,15 @@ const PatientReceive = () => {
   const [deleteItem, setDeleteItem] = useState<ServicePatient >();
   const [isAssignService,setIsAssignService]=useState(false);
   const [isConclusion,setIsConclusion]=useState(false);
+  const [isOpenInvoiceDialog, setIsOpenInvoiceDialog] = useState(false);
 
-  
   const [serviceCatalogues,setServiceCatalogues] =useState<ServiceCatalogue []>([]);
  
   const [services,setServices]   =useState<ServiceType [] >([]);
 
   const [rooms,setRooms]  =useState<RoomType[] >([]);
 
+const printRef = useRef<ServiceInvoicePrintHandle>(null);
 
 const [filteredServices, setFilteredServices] = useState<ServiceType[]>([]);
 const [filteredRooms, setFilteredRooms] = useState<RoomType[]>([]);
@@ -238,22 +241,150 @@ const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState(false);
       prev.filter((service) => !(service.id===id))
     );
   };
+  const fetchRooms = async () => {
+    setLoading(true) // Bắt đầu trạng thái loading
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
+    try {
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: limit, // Số bản ghi trên mỗi trang
+          page: pageIndex, // Trang hiện tại
+          status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+          keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+        },
+      })
+      const { data } = response.data.data
+      if (Array.isArray(data)) {
+        const fetchedRooms: RoomType[] = data.map((item: any) => ({
+          id: item.id,
+          code: item.code,
+          department_name:item.departments.name,
+          room_catalogue_code:item.room_catalogues.name,
+          description: item.room_catalogues.description,
+          occupied_beds: item.occupied_beds,
+          beds_count: item.total_beds,
+          status_bed:item.status_bed,
+          status: item.status,
+          department_id: item.department_id,
+          room_catalogue_id: item.room_catalogue_id,
+          
+        }));
+        setRooms(fetchedRooms) // Cập nhật danh sách phòng ban
+        setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+      } else {
+        throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+      }
+    } catch (err) {
+      setError('Error fetching RoomCatalogues') // Xử lý lỗi
+      console.error('Error fetching RoomCatalogues:', err)
+    } finally {
+      setLoading(false) // Kết thúc trạng thái loading
+    }
+  };
   
+  const fetchServiceCatalogues = async () => {
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/serviceCatalogues`;
+      
+      try {
+          const response = await axios.get(endpoint);
+          const totalRecords = response.data.data.total;
+  
+          // Gọi API để lấy tất cả các bản ghi
+          const responseAll = await axios.get(endpoint, { params: { limit: totalRecords } });
+          const { data } = responseAll.data.data;
+          console.log(data)
+          if (Array.isArray(data)) {
+              const serviceCatalogueList: ServiceCatalogue[] = data
+                  .filter((item: any) => item.status === 1)
+                  .map((item: any) => ({
+                      id: BigInt(item.id), // Chuyển id thành bigint
+                      name: item.name,
+                      description: item.description,
+                      status: item.status,
+                  }));
+              setServiceCatalogues(serviceCatalogueList);
+          } else {
+              console.warn("Data is not an array:", data);
+          }
+      } catch (err) {
+          console.error("Error fetching service catalogues:", err);
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Could not load service catalogues.",
+          });
+      }
+  };
+  const fetchServices = async () => {
+    setLoading(true) // Bắt đầu trạng thái loading
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/services`;
+    try {
+      const response = await axios.get(endpoint, {
+        params: {
+          limit: 1000, // Số bản ghi trên mỗi trang
+        },
+      })
+      const { data } = response.data.data
+      if (Array.isArray(data)) {
+        const fetchedServices: ServiceType[] = data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          unit: item.unit,
+          status:item.status,
+          detail:item.detail,
+          health_insurance_applied:item.health_insurance_applied,
+          health_insurance_value:item.health_insurance_value,
+          service_catalogue_id: item.service_catalogue_id,
+          room_catalogue_id: item.room_catalogue_id,
+          // department_name:item.department.name,
+          // room_catalogue_code:item.room_catalogue.name,
+          
+        }));
+        setServices(fetchedServices) // Cập nhật danh sách phòng ban
+      } else {
+        throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+      }
+    } catch (err) {
+      setError('Error fetching RoomCatalogues') // Xử lý lỗi
+      console.error('Error fetching RoomCatalogues:', err)
+    } finally {
+      setLoading(false) // Kết thúc trạng thái loading
+    }
+  };
+  useEffect(() => {
+    if (rooms.length > 0 && services.length > 0 && serviceCatalogues.length > 0) {
+      fetMedicalRecord();
+    }
+  }, [rooms, services, serviceCatalogues]);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchRooms();
+      await fetchServiceCatalogues();
+      await fetchServices();
+    };
+  
+    fetchData();
+  }, []);
 
-const fetMedicatalRecord= async () => {
+const fetMedicalRecord= async () => {
   const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`;
   
   try {
       // Gọi API để lấy tất cả các bản ghi
       const responseAll = await axios.get(endpoint, { params: { limit: 1000 } });
       const { data } = responseAll.data.data;
-
+      console.log("data",data);
       if (Array.isArray(data)) {
         const medicalRecords: any = data
           .filter(
             (item: any) =>
-              item.status === 0 && BigInt(item.id) === BigInt(Number(patient_receive_id)) // So sánh id chính xác
+              // item.status === 0 && BigInt(item.id) === BigInt(Number(patient_receive_id)) // So sánh id chính xác
+              BigInt(item.id) === BigInt(Number(patient_receive_id)) // So sánh id chính xác
           )
+          
           const firstRecord = medicalRecords[0]; // Kiểm tra bản ghi đầu tiên
           const patient: Patient | undefined = firstRecord?.patients
             ? {
@@ -283,128 +414,7 @@ const fetMedicatalRecord= async () => {
       });
   }
 };
-const fetchServiceCatalogues = async () => {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/serviceCatalogues`;
-    
-    try {
-        const response = await axios.get(endpoint);
-        const totalRecords = response.data.data.total;
-
-        // Gọi API để lấy tất cả các bản ghi
-        const responseAll = await axios.get(endpoint, { params: { limit: totalRecords } });
-        const { data } = responseAll.data.data;
-        console.log(data)
-        if (Array.isArray(data)) {
-            const serviceCatalogueList: ServiceCatalogue[] = data
-                .filter((item: any) => item.status === 1)
-                .map((item: any) => ({
-                    id: BigInt(item.id), // Chuyển id thành bigint
-                    name: item.name,
-                    description: item.description,
-                    status: item.status,
-                }));
-            setServiceCatalogues(serviceCatalogueList);
-        } else {
-            console.warn("Data is not an array:", data);
-        }
-    } catch (err) {
-        console.error("Error fetching service catalogues:", err);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not load service catalogues.",
-        });
-    }
-};
-const fetchServices = async () => {
-  setLoading(true) // Bắt đầu trạng thái loading
-  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/services`;
-  try {
-    const response = await axios.get(endpoint, {
-      params: {
-        limit: 1000, // Số bản ghi trên mỗi trang
-      },
-    })
-    const { data } = response.data.data
-    if (Array.isArray(data)) {
-      const fetchedServices: ServiceType[] = data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        unit: item.unit,
-        status:item.status,
-        detail:item.detail,
-        health_insurance_applied:item.health_insurance_applied,
-        health_insurance_value:item.health_insurance_value,
-        service_catalogue_id: item.service_catalogue_id,
-        room_catalogue_id: item.room_catalogue_id,
-        // department_name:item.department.name,
-        // room_catalogue_code:item.room_catalogue.name,
-        
-      }));
-      setServices(fetchedServices) // Cập nhật danh sách phòng ban
-    } else {
-      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
-    }
-  } catch (err) {
-    setError('Error fetching RoomCatalogues') // Xử lý lỗi
-    console.error('Error fetching RoomCatalogues:', err)
-  } finally {
-    setLoading(false) // Kết thúc trạng thái loading
-  }
-};
-
-const fetchRooms = async () => {
-  setLoading(true) // Bắt đầu trạng thái loading
-  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
-  try {
-    const response = await axios.get(endpoint, {
-      params: {
-        limit: limit, // Số bản ghi trên mỗi trang
-        page: pageIndex, // Trang hiện tại
-        status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
-        keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
-      },
-    })
-    const { data } = response.data.data
-    if (Array.isArray(data)) {
-      const fetchedRooms: RoomType[] = data.map((item: any) => ({
-        id: item.id,
-        code: item.code,
-        department_name:item.departments.name,
-        room_catalogue_code:item.room_catalogues.name,
-        description: item.room_catalogues.description,
-        occupied_beds: item.occupied_beds,
-        beds_count: item.total_beds,
-        status_bed:item.status_bed,
-        status: item.status,
-        department_id: item.department_id,
-        room_catalogue_id: item.room_catalogue_id,
-        
-      }));
-  
-      setRooms(fetchedRooms) // Cập nhật danh sách phòng ban
-      setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
-    } else {
-      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
-    }
-  } catch (err) {
-    setError('Error fetching RoomCatalogues') // Xử lý lỗi
-    console.error('Error fetching RoomCatalogues:', err)
-  } finally {
-    setLoading(false) // Kết thúc trạng thái loading
-  }
-};
-
-useEffect(() => {
-  fetMedicatalRecord();
-  fetchServiceCatalogues();
-  fetchServices();
-  fetchRooms();
-}, []); // Chỉ chạy một lần khi component được mount
-
-  const handleSelectServiceCatalogue = (value: bigint | null) => {
+const handleSelectServiceCatalogue = (value: bigint | null) => {
     if(value!==null){
 
     form.setValue('service_catalogue_id', BigInt(value)); // Update the form value directly
@@ -437,6 +447,15 @@ const handleSelectRoom=(value: bigint | null)=>{
     form.setValue('room_id', BigInt(value)); // Update the form value directly
   }
 }
+
+const handleClickPrint = () => {
+  if (servicePatients.length === 0) {
+    alert("Vui lòng thêm dịch vụ cho bệnh nhân");
+  } else {
+    setIsOpenInvoiceDialog(true); // Mở dialog thay vì in ngay
+  }
+};
+
 const columnServicePatient = servicePatients.length > 0 ? createColumns(servicePatients,undefined, undefined, handleDelete,columnServicePartientNotHeaderMap,{view:false,edit: false, delete: true},undefined) : [];
 // chuan doan, ghi chu va lich su kham
 const [medicationCatalogues, setMedicationCatalogues] = useState<MedicationCatalogue[]>([]);
@@ -774,33 +793,34 @@ try {
   const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/${id}/history`;
   const response = await axios.get(endpoint);
   const data = response?.data?.data ;  // Kiểm tra response đúng cách
-  const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item:any) => ({
-    id: item.id,
-    user_id: item.user_id,
-    user_name: item.users.name,
-    room_id: item.room_id,
-    visit_date: item.visit_date,
-    diagnosis: item.diagnosis,
-    notes: item.notes,
-    appointment_date: item.appointment_date,
-    is_inpatient: item.is_inpatient,
-    inpatient_detail: item.inpatient_detail,
-    services: item.medical_record_service.map((item:any) => ({
-      id: item.service_id,
+  console.log("history",data)
+  const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item1:any) => ({
+    id: item1.id,
+    user_id: item1.user_id,
+    user_name: item1.users.name,
+    room_id: item1.room_id,
+    visit_date: item1.visit_date,
+    diagnosis: item1.diagnosis,
+    notes: item1.notes,
+    appointment_date: item1.appointment_date,
+    is_inpatient: item1.is_inpatient,
+    inpatient_detail: item1.inpatient_detail,
+    services: item1.medical_record_service.map((item:any) => ({
+      id: item.services?.id ?? null,
       name: item.service_name,
       description: item.services.description,
       health_insurance_applied: item.services.health_insurance_applied,
       health_insurance_value: item.services.health_insurance_value,
-      assigning_doctor_id: item.users.id,
-      assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
+      assigning_doctor_id: item1.users.id,
+      assigning_doctor_name: item1.users.name, // Assuming `currentUser` exists in scope
       pivot_id: item.id,
       result_detail: item.result_details,
     })),
-    medications: item.medical_record_medication.map((item:any) => ({
-      id: item.medications.id,
+    medications: item1.medical_record_medication.map((item:any) => ({
+      id: item.medications?.id ?? null,
       name: item.name,
       dosage: item.dosage,
-      measure: item.measure, // Removed incorrect `medication.measure.pivot.measure`
+      measure: item.unit, // Removed incorrect `medication.measure.pivot.measure`
       description: item.description,
     })),
   }));
@@ -877,16 +897,16 @@ try {
                               <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
                               <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
                               <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
-                              <p><strong>Chỉ định của bác sĩ:</strong> 
+                              <p><strong>Chỉ định:</strong> 
                               <Button variant="link"    
                                 onClick={()=>{
                                   setIsAssignService(true)
                                   setIsConclusion(false)
-                                  }}> Cận lâm sàng</Button> /
+                                  }}>Cận lâm sàng</Button> /
                               <Button variant="link"    onClick={()=>{
                                   setIsConclusion(true)
                                   setIsAssignService(false)
-                                  }}> Nhận xét</Button></p>
+                                  }}>Nhận xét</Button></p>
                               <div className='grid grid-cols-2 gap-4 mt-5 w-fit'>
 
                                 
@@ -990,6 +1010,48 @@ try {
                                         
 
                                       }}>Lưu dịch vụ</Button>
+                                      <Button
+                                        className="m-5"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={handleClickPrint}
+                                      >
+                                        In hóa đơn chỉ dịch vụ
+                                      </Button>
+
+
+                                            <Dialog open={isOpenInvoiceDialog} onOpenChange={setIsOpenInvoiceDialog}>
+                                                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                                                  <DialogHeader>
+                                                    <DialogTitle>Hóa đơn dịch vụ</DialogTitle>
+                                                  </DialogHeader>
+
+                                                  {/* Gắn ref tại đây */}
+                                                  <ServiceInvoicePrint
+                                                    ref={printRef}
+                                                    patient={patient}
+                                                    servicePatients={servicePatients}
+                                                  />
+
+                                                  <div className="flex justify-end gap-2 mt-4">
+                                                    <Button
+                                                      variant="outline"
+                                                      onClick={() => setIsOpenInvoiceDialog(false)}
+                                                    >
+                                                      Đóng
+                                                    </Button>
+                                                    <Button
+                                                      onClick={() => {
+                                                        printRef.current?.handlePrint();
+                                                        setIsOpenInvoiceDialog(false);
+                                                      }}
+                                                    >
+                                                      In hóa đơn
+                                                    </Button>
+                                                  </div>
+                                                </DialogContent>
+                                              </Dialog>
+
                                       <Button  className='m-5' size="sm" variant="outline" 
                                       
                                       onClick={() => {
@@ -1244,7 +1306,7 @@ try {
                                                       name="dosage"
                                                       render={({ field }) => (
                                                         <FormItem>
-                                                          <FormLabel>Liều lượng</FormLabel>
+                                                          <FormLabel>Số lượng kê</FormLabel>
                                                           <FormControl>
                                                             <Input
                                                               {...field}

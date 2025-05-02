@@ -21,6 +21,7 @@ enum ColumnType {
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
   health_insurance_applied = "health_insurance_applied",
+  is_inpatient="is_inpatient",
 }
 
 // Interface for data type
@@ -139,6 +140,13 @@ const renderCellContent = (
         return <div>Điều trị ngoại trú</div>;
       }
       
+    case ColumnType.is_inpatient:
+      if (value === 1) {
+        return <div>Nhập viện điều trị</div>;
+      } else {
+        return <div>Điều trị ngoại trú</div>;
+      }
+      
     case ColumnType.StatusNewPatient:
       return (() => {
         const status = rowData?.status_newpatient;
@@ -247,6 +255,9 @@ const keys = Object.keys(columnHeaderMap).filter(
     }
     else if (key === "is_inpatient_newpatient") {
       columnType = ColumnType.IsInpatientNewPatient;
+    }
+    else if (key === "is_inpatient") {
+      columnType = ColumnType.is_inpatient;
     }
 
     columns.push({

@@ -21,6 +21,8 @@ enum ColumnType {
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
   health_insurance_applied = "health_insurance_applied",
+  status_treatment_session = "status_treatment_session",
+  payment_status_treatment_session = "payment_status_treatment_session",
   is_inpatient="is_inpatient",
 }
 
@@ -146,6 +148,18 @@ const renderCellContent = (
       } else {
         return <div>Điều trị ngoại trú</div>;
       }
+    case ColumnType.payment_status_treatment_session:
+      if (value === 1) {
+        return <div>Đã thanh toán</div>;
+      } else {
+        return <div>Chưa thanh toán</div>;
+      }
+    case ColumnType.status_treatment_session:
+      if (value === 1) {
+        return <div>Đã kết thúc</div>;
+      } else {
+        return <div>Đang điều trị</div>;
+      }
       
     case ColumnType.StatusNewPatient:
       return (() => {
@@ -258,6 +272,12 @@ const keys = Object.keys(columnHeaderMap).filter(
     }
     else if (key === "is_inpatient") {
       columnType = ColumnType.is_inpatient;
+    }
+    else if (key === "payment_status_treatment_session") {
+      columnType = ColumnType.payment_status_treatment_session;
+    }
+    else if (key === "status_treatment_session") {
+      columnType = ColumnType.status_treatment_session;
     }
 
     columns.push({

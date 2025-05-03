@@ -335,6 +335,7 @@ export type ServiceDetailPatientResul={
 
 export type MedicationDetail ={
   id:bigint;
+  pivot_id:bigint;
   name:string;
   dosage:number;
   measure:string;
@@ -431,16 +432,69 @@ export type ServiceResultDetail={
   room:string;
   result_details:string;
 }
-export type TreatmentSession={
-  id: bigint,
-  department: string,
-  room: string,
-  bed: string,
-  treatingDoctor: string,
-  start_date: Date,
-  end_date: Date,
-  reasonForTreatment: string,
-  treatmentStatus: string,
-  notes: string,
+
+
+// Advance Payment
+export type AdvancePayment= {
+  id: number;
+  treatment_session_id: number;
+  amount: string;
+  payment_date: string;
 }
 
+// Daily Health
+export type DailyHealth= {
+  id: number;
+  treatment_session_id: number;
+  check_date: string;
+  temperature: number;
+  blood_pressure: string;
+  heart_rate: number;
+  notes: string;
+}
+
+// Medical Order
+// export type MedicalOrder= {
+//   id: number;
+//   treatment_session_id: number;
+//   detail: string; // JSON string: {type: 'services'|'medications', pivot_ids: number[]}
+//   notes: string;
+//   date: string;
+// }
+
+export type MedicalOrder = {
+  id: BigInt;
+  treatment_session_id: BigInt;
+  typeEng: 'services' | 'medications';
+  typeSub?: string;
+  pivot_ids: BigInt[];
+  notes: string;
+  date: string;
+};
+
+// Treatment Session
+export type TreatmentSession= {
+  id: BigInt;
+  medical_record_id: BigInt;
+  bed_id: BigInt;
+  bed_code:string;
+  room_id:BigInt;
+  room_code:string;
+  department_id:BigInt;
+  department_name:string;
+  user_id:BigInt;
+  user_name:string;
+  start_date: string;
+  end_date: string;
+  diagnosis: string;
+  notes: string;
+  conclusion_of_treatment: string;
+  status_treatment_session: number;
+  current_cost: string;
+  total_advance_payment: string;
+  refunded_amount: string;
+  payment_status_treatment_session:number;
+  medical_orders: MedicalOrder[];
+  daily_healths: DailyHealth[];
+  advance_payments: AdvancePayment[];
+}

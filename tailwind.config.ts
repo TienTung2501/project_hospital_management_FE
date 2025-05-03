@@ -10,10 +10,10 @@ const config: Config = {
   theme: {
   	extend: {
   		colors: {
-			color_60:'#F5F5F5',
-			color_30:'#ECECEC',
-			color_10:'#126449',
-			color_text:'#485B5C',
+  			color_60: '#F5F5F5',
+  			color_30: '#ECECEC',
+  			color_10: '#126449',
+  			color_text: '#485B5C',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -45,14 +45,14 @@ const config: Config = {
   				foreground: 'hsl(var(--destructive-foreground))'
   			},
   			border: 'hsl(var(--border))',
-			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
-			},
-			borderWidth: {
-				'1': '1px', // Custom border width 1px
-			},
+  			borderRadius: {
+  				lg: 'var(--radius)',
+  				md: 'calc(var(--radius) - 2px)',
+  				sm: 'calc(var(--radius) - 4px)'
+  			},
+  			borderWidth: {
+  				'1': '1px'
+  			},
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
   			chart: {
@@ -68,18 +68,43 @@ const config: Config = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-		fontSize:{// gọi ra text-@
-			'header':'2.25rem',//36px
-			'sub':'1.25rem',//20px
-			'paragraph':'1rem',//16px
-		},
-		fontWeight:{//gọi ra font-@
-			light:'300',
-			regular:'400',
-			medium:'500',
-			semibold:'600',
-		},
-		sans: ['var(--font-poppins)', 'sans-serif'],  // Sử dụng Poppins cho font sans
+  		fontSize: {
+  			header: '2.25rem',
+  			sub: '1.25rem',
+  			paragraph: '1rem'
+  		},
+  		fontWeight: {
+  			light: '300',
+  			regular: '400',
+  			medium: '500',
+  			semibold: '600'
+  		},
+  		sans: [
+  			'var(--font-poppins)',
+  			'sans-serif'
+  		],
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

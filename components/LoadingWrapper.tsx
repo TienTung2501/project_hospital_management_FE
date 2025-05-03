@@ -12,3 +12,5 @@ const LoadingWrapper = ({ loading, children }: { loading: boolean; children: Rea
   return <>{children}</>;
 };
 export default LoadingWrapper;
+const [servicePatientNotInTreatmentSessions,setServicePatientNotInTreatmentSessions]=useState<ServicePatient[]>([]);
+const [servicePatientTreatmentSessions,setServicePatientTreatmentSessions]=useState<ServicePatient[]>([]);

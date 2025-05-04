@@ -2,7 +2,7 @@
 export const description =
   "An orders dashboard with a sidebar navigation. The sidebar has icon navigation. The content area has a breadcrumb and search in the header. The main area has a list of recent orders with a filter and export button. The main area also has a detailed view of a single order with order details, shipping information, billing information, customer information, and payment information."
 
-import React, { useEffect, useState, useTransition } from 'react'
+import React, { useEffect, useMemo, useState, useTransition } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -31,7 +31,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Combobox } from '@/components/combobox'
-import { DailyHealth, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServicePivot, ServiceType, UserInfoType } from '@/types';
+import { DailyHealth, MedicalOrder, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServicePivot, ServiceType, TreatmentSession, UserInfoType } from '@/types';
 import { useParams, useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
@@ -53,6 +53,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DayPicker } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { formatDateCustom } from '@/utils';
+import LoadingWrapper from '@/components/LoadingWrapper';
 
 export type ServicePatient={
   id:bigint;
@@ -62,6 +63,40 @@ export type ServicePatient={
   price:number;
   service_id:bigint;
   room_id:bigint;
+}
+const columnServicePartientNotHeaderMap={
+  service_name:"Tên dịch vụ",
+  department_name:"Tên khoa",
+  room_code:"Phòng",
+  price: "giá",
+}
+const columnTreatmentSessionHeaderMap={
+  user_name:"Bác sĩ điều trị",
+  department_name:"Khoa điều trị",
+  room_code:"Phòng",
+  bed_code: "Mã giường",
+  start_date: "Ngày bắt đầu",
+  end_date: "Ngày kết thúc",
+  diagnosis: "Chuẩn đoán ban đầu",
+  notes: "Ghi trú",
+  conclusion_of_treatment: "Kết luận sau điều trị",
+  current_cost:"Tiền viện phí",
+  total_advance_payment: "Tiền tạm ứng",
+  refunded_amount: "Tiền hoàn lại",
+  payment_status_treatment_session: "Trạng thái thanh toán",
+  status_treatment_session:"Trạng thái điều trị",
+}
+const columnTreatmentSessionDetailDailyHealthListHeaderMap={
+  check_date: "Ngày theo dõi",
+  temperature: "Nhiệt độ cơ thể",
+  blood_pressure: "Huyết áp",
+  heart_rate: "Nhịp tim",
+  notes: "Ghi chú",
+}
+const columnTreatmentSessionDetailMedicalOrderListHeaderMap={
+  typeSub:"Loại chỉ thị",
+  date:"Ngày tạo",
+  notes:"Ghi chú của bác sĩ",
 }
 const columnHeaderMap={
   name:"Tên dịch vụ",
@@ -112,8 +147,6 @@ const PatientDetail = () => {
   const [totalRecords, setTotalRecords] = useState(1);
   const [pageIndex, setPageIndex] = useState(1);
 
-
-  
     const [loading, setLoading] = useState(false);
 
     const [details, setDetails] = useState<{ [key: string]: any }>({});
@@ -124,6 +157,7 @@ const PatientDetail = () => {
   
     const [medicalReacordDetail, setMedicalRecordDetail]=useState<MedicalRecordRecordServiceDetail>();
     const [serviceDetailPatients,setServiceDetailPatients]=useState<ServiceDetailPatientResul[]>([]);
+    const [serviceDetailPatientHistorys,setServiceDetailPatientHistorys]=useState<ServiceDetailPatientResul[]>([]);
     const [seletedService,setSeletedService]=useState<ServiceDetailPatientResul>();
     const [detailResultSelectedService,setDetailResultSelectedService]=useState<DetailResultService[]>([])
     const [inforRoom, setInforRoom]=useState<RoomType>();
@@ -155,7 +189,6 @@ const PatientDetail = () => {
       resolver:zodResolver(CreateMedication),
     });
     const handleSelecLimit = (value: number | null) => {
-      console.log("Selected value:", value)
       if (value) {
         setLimit(value);
         setPageIndex(1); // Reset về trang 1 khi thay đổi limit
@@ -172,10 +205,23 @@ const PatientDetail = () => {
             id: Number(medical_record_id),
           },
         });
-    
-
         const data = response?.data?.data || [];  // Kiểm tra response đúng cách
         if(data && data.patients){
+          const lastRecord = data; // Kiểm tra bản ghi đầu tiên
+          const patient: Patient | undefined = lastRecord?.patients
+            ? {
+                id: BigInt(lastRecord.patients.id),
+                name: lastRecord.patients.name || "",
+                birthday: lastRecord.patients.birthday || "",
+                address: lastRecord.patients.address || "",
+                phone: lastRecord.patients.phone || undefined,
+                cccd_number: lastRecord.patients.cccd_number || "",
+                health_insurance_code: lastRecord.patients.health_insurance_code || undefined,
+                guardian_phone: lastRecord.patients.guardian_phone || undefined,
+                gender: lastRecord.patients.gender,
+              }
+            : undefined;
+            setPatient(patient);
           const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
             id: data.id,
             patient_id: data.patient_id,
@@ -206,8 +252,10 @@ const PatientDetail = () => {
                 result_detail: item.result_details,
               })) 
           };
-      
           if (fetchedMedicalRecordDetail) {
+            if(fetchedMedicalRecordDetail.diagnosis){
+              setIsSeeHistory(true);
+            }
             const serviceDetailPatients: ServiceDetailPatientResul[] = fetchedMedicalRecordDetail.services;
             fetchMedicalRecordHistoryDetail(fetchedMedicalRecordDetail.patient_id);
             setMedicalRecordDetail(fetchedMedicalRecordDetail);
@@ -276,9 +324,6 @@ const PatientDetail = () => {
           (item: any) => item.medication_catalogue_id === value
         );
 
-        console.log("medical")
-      console.log(medical)
-      
         if (Array.isArray(medical)) {
           const fetchedMedication: MedicationType[] = medical.map((item: any) => ({
             id: item.id,
@@ -291,7 +336,6 @@ const PatientDetail = () => {
             measure_count:item.measure_count,
             medication_catalogue_id:item.medication_catalogue_id,
           }));
-          console.log(fetchedMedication)
           setMedications(fetchedMedication) // Cập nhật danh sách phòng ban
         } else {
           throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
@@ -491,6 +535,32 @@ const buttonColumnConfig = {
   },
   content: 'Xem',
 };
+const buttonColumnConfigServiceDetailPatientHistorys = {
+  id: 'customButton',
+  header: 'Chi tiết kết quả',
+  onClickConfig: (id: string | bigint) => {
+    const item = serviceDetailPatientHistorys.find((pati) => pati.id === id);
+
+    if (item?.result_detail) {
+      const detailResultService = JSON.parse(item.result_detail).map(
+        (result: DetailResultService) => ({
+          id: result.keyword,
+          keyword: result.keyword,
+          name: result.name,
+          reference_range: result.reference_range,
+          value: result.value.toString(),
+          unit: result.unit,
+        })
+      );
+      setSeletedService(item);
+      setDetailResultSelectedService(detailResultService);
+      setIsOpenDialogServiceDetailResult(true)
+    } else {
+      console.error('Không tìm thấy hoặc result_detail không hợp lệ.');
+    }
+  },
+  content: 'Xem',
+};
 
 // convert medicalcatalogue 
 // Khi click vào nút "Sửa thông tin"
@@ -586,40 +656,144 @@ const handleSaveDedicalRecordPatient=async ()=>{
     }  
 }
   //const columnServicePatient = servicePatients.length > 0 ? createColumns(servicePatients,undefined, undefined, handleDelete,columnServicePartientNotHeaderMap,{view:false,edit: false, delete: true},undefined) : [];
-  const columnServiceDetails = serviceDetailPatients.length > 0 ? createColumns(serviceDetailPatients,undefined, undefined, undefined,columnHeaderMap,{view:false,edit: false, delete: false},undefined,buttonColumnConfig ) : [];
-  const columnServiceDetailsResult = detailResultSelectedService.length > 0 ? createColumns(detailResultSelectedService,undefined, undefined, undefined,columnHeaderMapDetailResultService,{view:false,edit: false, delete: false} ) : [];
-  const columnMedicationDetail = medicationDetails.length > 0 ? createColumns(medicationDetails,undefined, undefined, handleDelete,columnHeaderMapMedicationDetail,{view:false,edit: false, delete: true} ) : [];
-  const columnMedicationDetailHistory = medicationDetails.length > 0 ? createColumns(medicationDetails,undefined, undefined, undefined,columnHeaderMapMedicationDetail,{view:false,edit: false, delete: false} ) : [];
+  const [patient,setPatient]=useState<Patient>();   
+  const [isSeeHistory,setIsSeeHistory]=useState(false);   
+  const [treatmentSessionList, setTreatmentSessionList] = useState<TreatmentSession[]>();
+  const [treatmentSessionDetail, setTreatmentSessionDetail] = useState<TreatmentSession>();
+  const [treatmentSessionDetailMedicalOrderList, setTreatmentSessionDetailMedicalOrderList] = useState<MedicalOrder[]>();
+  const [treatmentSessionDetailMedicalOrderDetail, setTreatmentSessionDetailMedicalOrderDetail] = useState<MedicalOrder>();
+  const [treatmentSessionDetailMedicalDailyHealthList, setTreatmentSessionDetailDailyHealthList] = useState<DailyHealth[]>();
+  
+  const [isOpenDialogMedicalRecordHistoryTreatmentSessionDetail, setIsOpenDialogMedicalRecordHistoryTreatmentSessionDetail] = useState(false);  
+  const [isOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService, setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService] = useState(false);  
+  const [isOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedicaTion, setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedication] = useState(false);  
+  
+  const [servicePatientNotInTreatmentSessions,setServicePatientNotInTreatmentSessions]=useState<ServiceDetailPatientResul[]>([]);
+  const [servicePatientTreatmentSessions,setServicePatientTreatmentSessions]=useState<ServiceDetailPatientResul[]>([]);
+  const [medicationPatientNotInTreatmentSessions,setMedicationPatientNotInTreatmentSessions]=useState<MedicationDetail[]>([]);
+  const [medicationPatientTreatmentSessions,setMedicationPatientTreatmentSessions]=useState<MedicationDetail[]>([]);
+
   const buttonColumnConfigHistoryDetail = {
     id: 'buttonColumnConfigHistoryDetail',
     header: 'Chi tiết hồ sơ',
     onClickConfig: (id: string | bigint) => {
-      const item :MedicalRecordHistoryDetail|any= medicalRecordHistoryDetails.find((me) => me.id === id);
-      if(item){
-        const serviceDetailPatients: ServiceDetailPatientResul[] = item.services;
-        const medicationDetails : MedicationDetail[]=item.medications;
-        setMedicationDetails(medicationDetails)
-        setServiceDetailPatients(serviceDetailPatients);
-
-        setIsOpenDialogMedicalRecordHistory(true);
-        setMedicalRecordHistoryDetailItem(item)
+      const item: MedicalRecordHistoryDetail | undefined = medicalRecordHistoryDetails.find(
+        (me) => BigInt(me.id) === BigInt(id)
+      );
+  
+      if (!item) {
+        console.error('Không tìm thấy hồ sơ bệnh án với id:', id);
+        return;
       }
-       else {
-        console.error('Không tìm thấy hoặc result_detail không hợp lệ.');
+  
+      const serviceDetailPatients: ServiceDetailPatientResul[] = item.services;
+      const medicationDetails: MedicationDetail[] = item.medications;
+      const treatmentSessions: TreatmentSession[] = item.treatment_sessions;
+  
+      // Thu thập toàn bộ pivot_ids từ medical_orders trong treatmentSessions
+      const allServicePivotIdsInOrders = new Set<bigint>();
+      const allMedicationPivotIdsInOrders = new Set<bigint>();
+  
+      for (const session of treatmentSessions) {
+        for (const order of session.medical_orders || []) {
+          if (order.typeEng === 'services') {
+            order.pivot_ids.forEach((id) => allServicePivotIdsInOrders.add(BigInt(id)));
+          } else if (order.typeEng === 'medications') {
+            order.pivot_ids.forEach((id) => allMedicationPivotIdsInOrders.add(BigInt(id)));
+          }
+        }
       }
+      // Lọc các services và medications chưa được đưa vào bất kỳ medical_order nào
+      const servicePatientNotInTreatmentSessions = serviceDetailPatients.filter((s) => {
+        const pivotId = s.pivot_id;
+        if (pivotId === undefined) return false; // Nếu pivot_id là undefined, bỏ qua phần tử này.
+        return !allServicePivotIdsInOrders.has(BigInt(pivotId));
+      });
+      
+      const medicationPatientNotInTreatmentSessions = medicationDetails.filter((m) => {
+        const pivotId = m.pivot_id;
+        if (pivotId === undefined) return false; // Nếu pivot_id là undefined, bỏ qua phần tử này.
+        return !allMedicationPivotIdsInOrders.has(BigInt(pivotId));
+      });
+      
+      // Cập nhật state
+      setServiceDetailPatientHistorys(serviceDetailPatients);
+      setMedicationDetails(medicationDetails);
+      setServicePatientNotInTreatmentSessions(servicePatientNotInTreatmentSessions);
+      setMedicationPatientNotInTreatmentSessions(medicationPatientNotInTreatmentSessions);
+      setTreatmentSessionList(treatmentSessions);
+      setMedicalRecordHistoryDetailItem(item);
+      setIsOpenDialogMedicalRecordHistory(true);
     },
     content: 'Xem',
   };
+    const buttonColumnConfigTreatmentSessionDetail = {
+      id: 'buttonColumnConfigHistoryDetailTreatmentSession',
+      header: 'Chi tiết đợt điều trị',
+      onClickConfig: (id: string | bigint) => {
+        const item :TreatmentSession|any= treatmentSessionList?.find((me) => BigInt(me.id) === BigInt(id));
+        if(item){
+          const medical_orders: MedicalOrder[] = item.medical_orders;
+          const daily_healths : DailyHealth[]=item.daily_healths;
+          setTreatmentSessionDetailMedicalOrderList(medical_orders)
+          setTreatmentSessionDetailDailyHealthList(daily_healths)
+          setTreatmentSessionDetail(item)
+          setIsOpenDialogMedicalRecordHistoryTreatmentSessionDetail(true);
+        }
+        else {
+          console.error('Không tìm thấy hoặc result_detail không hợp lệ.');
+        }
+      },
+      content: 'Xem',
+    };
+    const buttonColumnConfigTreatmentSessionDetailMedicalOrderDetail = {
+      id: 'buttonColumnConfigTreatmentSessionDetailMedicalOrderDetail',
+      header: 'Chi tiết chỉ thị của bác sĩ',
+      onClickConfig: (id: string | bigint) => {
+       
+        const item: MedicalOrder | undefined = treatmentSessionDetailMedicalOrderList?.find(
+          (me) => BigInt(me.id) === BigInt(id)
+        );
+        
+        if (!item) {
+          console.error('Không tìm thấy chỉ thị bác sĩ với id:', id);
+          return;
+        }
+        if (item.typeEng === 'services') {
+          const service_treatment_sessions: ServiceDetailPatientResul[] = serviceDetailPatientHistorys.filter((s) =>
+            item.pivot_ids.some((pivotId) => BigInt(pivotId) === BigInt(s.pivot_id))
+          );
+          setServicePatientTreatmentSessions(service_treatment_sessions);
+          setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService(true);
+        } else if (item.typeEng === 'medications') {
+          const medication_treatment_sessions: MedicationDetail[] = medicationDetails.filter((m) => {
+            // Kiểm tra xem pivot_id có hợp lệ không và chuyển đổi nó thành BigInt nếu đúng kiểu
+            const pivotId = m?.pivot_id;
+            if (pivotId && (typeof pivotId === 'string' || typeof pivotId === 'number')) {
+              return item.pivot_ids?.some((id) => BigInt(id) === BigInt(pivotId));
+            }
+            return false;
+          });
+          
+          
+          setMedicationPatientTreatmentSessions(medication_treatment_sessions);
+          setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedication(true);
+        } else {
+          console.error('Loại chỉ thị không hợp lệ:', item.typeEng);
+        }
+      },
+      content: 'Xem',
+    };
   // history: enpoint: http://localhost:8000/api/patients/history/{id}
   const [medicalRecordHistoryDetails, setMedicalRecordHistoryDetails] = useState<MedicalRecordHistoryDetail[]>([]);
   const [medicalRecordHistoryDetailItem, setMedicalRecordHistoryDetailItem] = useState<MedicalRecordHistoryDetail>();
-  const columnMedicalHistoryDetail = medicalRecordHistoryDetails.length > 0 ? createColumns(medicalRecordHistoryDetails,undefined, undefined, undefined,columnHeaderMapMedicalRecordHistoryDetail,{view:false,edit: false, delete: false},undefined,buttonColumnConfigHistoryDetail ) : [];
  
+  
+
   const fetchMedicalRecordHistoryDetail = async (id: bigint) => {
   try {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/history/${id}`;
+    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/${id}/history`;
     const response = await axios.get(endpoint);
-    console.log("response",response)
     const data = response?.data?.data ;  // Kiểm tra response đúng cách
     const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item1:any) => ({
          id: item1.id,
@@ -709,7 +883,6 @@ const handleSaveDedicalRecordPatient=async ()=>{
          })) ?? [],
        }));
     if (fetchedMedicalRecordHistoryDetail) {
-      console.log("fetchedMedicalRecordHistoryDetail",fetchedMedicalRecordHistoryDetail)
       setMedicalRecordHistoryDetails(fetchedMedicalRecordHistoryDetail);
     }
   } catch (error) {
@@ -718,6 +891,139 @@ const handleSaveDedicalRecordPatient=async ()=>{
     setLoading(false);
   }
 };
+
+// create column
+
+const columnServiceDetails = useMemo(() => {
+  return serviceDetailPatients.length > 0
+    ? createColumns(
+      serviceDetailPatients,
+        undefined,
+        undefined,
+        undefined,
+        columnHeaderMap,
+        { view: false, edit: false, delete: false },
+        undefined,
+        buttonColumnConfig
+      )
+    : [];
+}, [serviceDetailPatients, columnHeaderMap, buttonColumnConfig]);
+const columnServiceDetailHistorys = useMemo(() => {
+  return serviceDetailPatientHistorys.length > 0
+    ? createColumns(
+      serviceDetailPatientHistorys,
+        undefined,
+        undefined,
+        undefined,
+        columnHeaderMap,
+        { view: false, edit: false, delete: false },
+        undefined,
+        buttonColumnConfig
+      )
+    : [];
+}, [serviceDetailPatientHistorys, columnHeaderMap, buttonColumnConfigServiceDetailPatientHistorys]);
+
+// Columns cho kết quả dịch vụ đã chọn 
+const columnServiceDetailsResult = useMemo(() => {
+  return detailResultSelectedService.length > 0
+    ? createColumns(
+        detailResultSelectedService,
+        undefined,
+        undefined,
+        undefined,
+        columnHeaderMapDetailResultService,
+        { view: false, edit: false, delete: false }
+      )
+    : [];
+}, [detailResultSelectedService, columnHeaderMapDetailResultService]);
+
+// Columns cho đơn thuốc hiện tại 
+const columnMedicationDetail = useMemo(() => {
+  return medicationDetails.length > 0
+    ? createColumns(
+        medicationDetails,
+        undefined,
+        undefined,
+        handleDelete,
+        columnHeaderMapMedicationDetail,
+        { view: false, edit: false, delete: true }
+      )
+    : [];
+}, [medicationDetails, columnHeaderMapMedicationDetail, handleDelete]);
+
+// Columns cho đơn thuốc trong lịch sử
+const columnMedicationDetailHistory = useMemo(() => {
+  return medicationPatientNotInTreatmentSessions.length > 0
+    ? createColumns(
+      medicationPatientNotInTreatmentSessions,
+        undefined,
+        undefined,
+        undefined,
+        columnHeaderMapMedicationDetail,
+        { view: false, edit: false, delete: false }
+      )
+    : [];
+}, [medicationDetails, columnHeaderMapMedicationDetail]);
+
+// Columns cho lịch sử khám bệnh
+const columnMedicalHistoryDetail = useMemo(() => {
+  return medicalRecordHistoryDetails.length > 0
+    ? createColumns(
+        medicalRecordHistoryDetails,
+        undefined,
+        undefined,
+        undefined,
+        columnHeaderMapMedicalRecordHistoryDetail,
+        { view: false, edit: false, delete: false },
+        undefined,
+        buttonColumnConfigHistoryDetail
+      )
+    : [];
+}, [medicalRecordHistoryDetails, columnHeaderMapMedicalRecordHistoryDetail, buttonColumnConfigHistoryDetail]);
+const columnTreatmentSession = useMemo(() => {
+  // Kiểm tra sự tồn tại của treatmentSessionList trước khi truy cập vào .length
+  return treatmentSessionList && treatmentSessionList.length > 0
+    ? createColumns(
+        treatmentSessionList,
+        undefined,
+        undefined,
+        undefined,
+        columnTreatmentSessionHeaderMap,
+        { view: false, edit: false, delete: false },
+        undefined,
+        buttonColumnConfigTreatmentSessionDetail
+      )
+    : [];
+}, [treatmentSessionList, columnTreatmentSessionHeaderMap, buttonColumnConfigTreatmentSessionDetail]);
+
+
+const columnMedicalOrder = useMemo(() => {
+  return treatmentSessionDetailMedicalOrderList&&treatmentSessionDetailMedicalOrderList?.length > 0
+    ? createColumns(
+      treatmentSessionDetailMedicalOrderList,
+        undefined,
+        undefined,
+        undefined,
+        columnTreatmentSessionDetailMedicalOrderListHeaderMap,
+        { view: false, edit: false, delete: false },
+        undefined,
+        buttonColumnConfigTreatmentSessionDetailMedicalOrderDetail
+      )
+    : [];
+}, [treatmentSessionDetailMedicalOrderList, columnTreatmentSessionDetailMedicalOrderListHeaderMap, buttonColumnConfigTreatmentSessionDetailMedicalOrderDetail]);
+const columnDailyHealth = useMemo(() => {
+  return treatmentSessionDetailMedicalDailyHealthList&&treatmentSessionDetailMedicalDailyHealthList?.length > 0
+    ? createColumns(
+      treatmentSessionDetailMedicalDailyHealthList,
+        undefined,
+        undefined,
+        undefined,
+        columnTreatmentSessionDetailDailyHealthListHeaderMap,
+        { view: false, edit: false, delete: false },
+        undefined,
+      )
+    : [];
+}, [treatmentSessionDetailMedicalDailyHealthList, columnTreatmentSessionDetailDailyHealthListHeaderMap]);
   return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
         <div
@@ -750,7 +1056,7 @@ const handleSaveDedicalRecordPatient=async ()=>{
                   <div className="grid grid-cols-1 p-4 ">
                         <div> <strong>Thông tin chung</strong></div>
                         <div><strong>Bác sĩ khám:</strong> {currentUser?.name}</div>
-                        <div><strong>Ngày vào khám:</strong> {medicalRecordHistoryDetailItem?.visit_date ? format(new Date(medicalRecordHistoryDetailItem?.visit_date), 'yyyy-MM-dd') : 'Ngày không xác định'}</div>
+                        <div><strong>Ngày vào khám:</strong> {medicalReacordDetail?.visit_date ? formatDateCustom(medicalReacordDetail?.visit_date) : 'Ngày không xác định'}</div>
 
                        
                     </div>
@@ -762,437 +1068,446 @@ const handleSaveDedicalRecordPatient=async ()=>{
                 </div>
                  
               </CardHeader >
-             
-               <CardContent className="space-y-2">
-              <div>
-                <div className="flex flex-col gap-1 border-b pb-5">
-                <div className="mb-6 border-b">
-                  <h3 className="text-lg font-bold">Dịch Vụ Đã Thực Hiện</h3>
-               
-              </div>  
-                <div className='flex mt-5 justify-between'>
-              
-                  <Combobox<number>
-                  options={numberOptions}
-                  onSelect={handleSelecLimit}
-                  placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                  />
-        
-
-                <div className="flex items-center space-x-5">
-                      <div className='flex'>
+              {isSeeHistory ? (
+                    <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-800 border border-blue-200 rounded-md text-sm mb-4 mx-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                    </svg>
+                    <span>Đã kết luận cho bệnh nhân. Bạn có thể xem tiền sử bệnh án của bệnh nhân.</span>
+                  </div>
+                  
+                  ) : (
+                    <CardContent className="space-y-2">
+                    <div>
+                      <div className="flex flex-col gap-1 border-b pb-5">
+                      <div className="mb-6 border-b">
+                        <h3 className="text-lg font-bold">Dịch Vụ Đã Thực Hiện</h3>
                      
-                      </div>
-                      <div className="flex items-center space-x-2 bg-white">
-                        <Input type="text" placeholder="Tìm kiếm" 
-                          value={keyword} // Đặt giá trị từ state keyword
-                          onChange={(e) => setKeyword(e.target.value)}
+                    </div>  
+                      <div className='flex mt-5 justify-between'>
+                    
+                        <Combobox<number>
+                        options={numberOptions}
+                        onSelect={handleSelecLimit}
+                        placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
                         />
-                        <Button type="submit" onClick={() => fetchMedicalRecordDetail()}>Lọc</Button>
+              
+      
+                      <div className="flex items-center space-x-5">
+                            <div className='flex'>
+                           
+                            </div>
+                            <div className="flex items-center space-x-2 bg-white">
+                              <Input type="text" placeholder="Tìm kiếm" 
+                                value={keyword} // Đặt giá trị từ state keyword
+                                onChange={(e) => setKeyword(e.target.value)}
+                              />
+                              <Button type="submit" onClick={() => fetchMedicalRecordDetail()}>Lọc</Button>
+                            </div>
                       </div>
-                </div>
-                </div>
-                </div>
-                <div className='flex item-center justify-center'>
-
+                      </div>
+                      </div>
+                      <div className='flex item-center justify-center'>
+      
+                          {loading ? (
+                          <p className='flex item-center justify-center'>Loading...</p>
+                          ) : (
+      
+                          <DataTable
+                          data={serviceDetailPatients}
+                          columns={columnServiceDetails}
+                          totalRecords={totalRecords}
+                          pageIndex={pageIndex}
+                          pageSize={limit}
+                          onPageChange={(newPageIndex) => {
+                          setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
+                          }}
+                          />
+                          )}
+      
+      
+                          </div>
+                    </div>
+                    <Dialog open={isOpenDialogServiceDetailResult} onOpenChange={setIsOpenDialogServiceDetailResult} 
+                   >
+                    
+                  
+                  <DialogContent className="w-[1200px] max-w-full overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle> Kết quả {seletedService?.name}</DialogTitle>
+                    <DialogDescription>Thông tin chi tiết {seletedService?.description}</DialogDescription>
+                  </DialogHeader>
+                  <div className='flex item-center justify-center w-full'>
+      
                     {loading ? (
                     <p className='flex item-center justify-center'>Loading...</p>
                     ) : (
-
+      
                     <DataTable
-                    data={serviceDetailPatients}
-                    columns={columnServiceDetails}
+                    data={detailResultSelectedService}
+                    columns={columnServiceDetailsResult}
                     totalRecords={totalRecords}
                     pageIndex={pageIndex}
                     pageSize={limit}
                     onPageChange={(newPageIndex) => {
-                    console.log("pageindex:", newPageIndex)
                     setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
                     }}
                     />
                     )}
-
-
+      
+      
                     </div>
-              </div>
-              <Dialog open={isOpenDialogServiceDetailResult} onOpenChange={setIsOpenDialogServiceDetailResult} 
-             >
-              
-            
-            <DialogContent className="w-[1200px] max-w-full overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle> Kết quả {seletedService?.name}</DialogTitle>
-              <DialogDescription>Thông tin chi tiết {seletedService?.description}</DialogDescription>
-            </DialogHeader>
-            <div className='flex item-center justify-center w-full'>
-
-              {loading ? (
-              <p className='flex item-center justify-center'>Loading...</p>
-              ) : (
-
-              <DataTable
-              data={detailResultSelectedService}
-              columns={columnServiceDetailsResult}
-              totalRecords={totalRecords}
-              pageIndex={pageIndex}
-              pageSize={limit}
-              onPageChange={(newPageIndex) => {
-              setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-              }}
-              />
-              )}
-
-
-              </div>
-       
-
-            <DialogFooter>
-            </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-              </CardContent>
-          </Card>  
-          <div className='grid grid-cols-3 gap-5'>
-            <Card className='col-span-1'>
-          <CardHeader className='pb-4 border-b mb-4'>
-                <CardTitle>Nhận xét của bác sĩ</CardTitle>
-                <CardDescription>
-                  Nhận xét, Chẩn đoán bệnh tình
-                </CardDescription>
-              </CardHeader >
              
-               <CardContent className="space-y-2">
-              <Form {...formUpdateDiagnose}>
-              <form onSubmit={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}>
-                  <div className="mb-6 border-b max-w-[600px]">
-                      <h3 className="text-lg font-bold mb-4">Nhận xét của bác sĩ</h3>
-                     <FormField
-                        control={formUpdateDiagnose.control}
-                        name="diagnosis"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Chẩn đoán</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                placeholder="Nhập Chẩn đoán"
-                                disabled={!isEditing} // Khóa khi không chỉnh sửa
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                     <FormField
-                        control={formUpdateDiagnose.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ghi chú</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                placeholder="Uống đủ nước, ăn nhiều rau, thường xuyên tiếp xúc với ánh nắng"
-                                disabled={!isEditing} // Khóa khi không chỉnh sửa
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                    <FormField
-                      control={formUpdateDiagnose.control}
-                      name="apointment_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-sm font-medium text-gray-700">Ngày tái khám</FormLabel>
-                          <FormControl>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  disabled={!isEditing}
-                                  variant="outline"
-                                  className={cn(
-                                    "flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                                    !field.value && "text-gray-400"
+      
+                  <DialogFooter>
+                  </DialogFooter>
+                  </DialogContent>
+                    </Dialog>
+                    <div className='grid grid-cols-3 gap-5'>
+                      <Card className='col-span-1'>
+                    <CardHeader className='pb-4 border-b mb-4'>
+                          <CardTitle>Nhận xét của bác sĩ</CardTitle>
+                          <CardDescription>
+                            Nhận xét, Chẩn đoán bệnh tình
+                          </CardDescription>
+                        </CardHeader >
+                      
+                        <CardContent className="space-y-2">
+                        <Form {...formUpdateDiagnose}>
+                        <form onSubmit={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}>
+                            <div className="mb-6 border-b max-w-[600px]">
+                                <h3 className="text-lg font-bold mb-4">Nhận xét của bác sĩ</h3>
+                              <FormField
+                                  control={formUpdateDiagnose.control}
+                                  name="diagnosis"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Chẩn đoán</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          {...field}
+                                          placeholder="Nhập Chẩn đoán"
+                                          disabled={!isEditing} // Khóa khi không chỉnh sửa
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
                                   )}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <CalendarIcon className="h-4 w-4 text-gray-500" />
-                                    <span>
-                                      {field.value
-                                        ? format(new Date(field.value), "dd/MM/yyyy")
-                                        : "Chọn ngày"}
-                                    </span>
-                                  </div>
-                                  <ChevronDownIcon className="h-4 w-4 text-gray-500" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="z-50 w-[320px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
-                              <DayPicker
-                                  mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
-                                  onSelect={(date) =>
-                                    field.onChange(date ? date.getTime() : undefined)
-                                  }
-                                  captionLayout="dropdown"
-                                  fromYear={1900}
-                                  toYear={new Date().getFullYear() + 10}
-                                  disabled={{
-                                    before: new Date(), // Chặn ngày trước hôm nay
-                                  }}
-                                  className="custom-daypicker"
                                 />
-                                              </PopoverContent>
-                            </Popover>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                  </div> 
-                  
-                </form>
-
-            </Form>
-
-            <Button variant="outline" className='mr-5'  onClick={() => setPrescriptionVisible(!isPrescriptionVisible)}> Kê thuốc</Button>
-            <Button variant="outline" className='mr-5'  disabled={!isEditing} onClick={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}> Lưu thông tin</Button>
-            <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleEditInformation}> Sửa thông tin</Button>
-            <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">Nhập viện</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Thông tin nhập viện</DialogTitle>
-                  <DialogDescription>
-                    
-                  </DialogDescription>
-                </DialogHeader>
-                <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Lỗi</AlertTitle>
-              <AlertDescription>
-              Hệ thống chưa cập nhật tính năng, vui lòng trở lại sau.
-              </AlertDescription>
-            </Alert>
-              </DialogContent>
-            </Dialog>
-
-   
-            </CardContent>
-            </Card> 
-            {isPrescriptionVisible && (                               
-            <Card className='mb-5 pt-5 col-span-2'>
-              <CardContent>
-                <Dialog open={isOpenAddMedication} onOpenChange={setIsOpenAddMedication}
-              >
-              <Form {...formCreateMedication}>
-                <form onSubmit={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>
-                    <DialogContent className="sm:max-w-[600px]">
-                    <DialogTrigger asChild>
-                  </DialogTrigger>
-                      <DialogHeader>
-                        <DialogTitle>Kê đơn thuốc</DialogTitle>
-                      </DialogHeader>
-                        <div className="grid gap-3">
-                          <div className="grid grid-cols-2 gap-4">
-   
-  
-                        <FormItem className="flex flex-col">
-                          <FormLabel className="mr-2">Nhóm dược</FormLabel>
-                          <FormControl className="flex-grow">
-                            <Combobox<number>
-                             options={
-                              medicationCatalogues.map(medicationCatalogue => ({
-                                value: Number(medicationCatalogue.id),
-                                label: `${"|---".repeat(medicationCatalogue.level)}${medicationCatalogue.name}`,
-                              }))}
-                            placeholder="Chọn nhóm dược cha"
-                            onSelect={handleSelectMedicationCatalogue}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-    
-                            <FormField 
-                              control={formCreateMedication.control}
-                              name="name"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                  <FormLabel className="mr-2">Dược</FormLabel>
-                                  <FormControl className="flex-grow">
-                                    <Combobox<bigint>
-                                      options={medications.map(me => ({
-                                        value: me.id,
-                                        label: me.name,
-                                      }))}
-                                        placeholder="Chọn được"
-                                        onSelect={handleSelectMedication}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                                control={formCreateMedication.control}
-                                name="dosage"
+                              <FormField
+                                  control={formUpdateDiagnose.control}
+                                  name="notes"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Ghi chú</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          {...field}
+                                          placeholder="Uống đủ nước, ăn nhiều rau, thường xuyên tiếp xúc với ánh nắng"
+                                          disabled={!isEditing} // Khóa khi không chỉnh sửa
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+      
+                              <FormField
+                                control={formUpdateDiagnose.control}
+                                name="apointment_date"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Liều lượng</FormLabel>
+                                    <FormLabel className="text-sm font-medium text-gray-700">Ngày tái khám</FormLabel>
                                     <FormControl>
-                                      <Input
-                                        {...field}
-                                      
-                                        placeholder="Example: 80"
-                                        type="number"
-                                        onChange={(e) => {
-                                          // Chuyển giá trị từ chuỗi thành number trước khi lưu vào state của form
-                                          const newValue = e.target.value ? parseFloat(e.target.value) : undefined;
-                                          field.onChange(newValue);
-                                        }}
-                                      />
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            disabled={!isEditing}
+                                            variant="outline"
+                                            className={cn(
+                                              "flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                                              !field.value && "text-gray-400"
+                                            )}
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <CalendarIcon className="h-4 w-4 text-gray-500" />
+                                              <span>
+                                                {field.value
+                                                  ? format(new Date(field.value), "dd/MM/yyyy")
+                                                  : "Chọn ngày"}
+                                              </span>
+                                            </div>
+                                            <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="z-50 w-[320px] rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
+                                        <DayPicker
+                                            mode="single"
+                                            selected={field.value ? new Date(field.value) : undefined}
+                                            onSelect={(date) =>
+                                              field.onChange(date ? date.getTime() : undefined)
+                                            }
+                                            captionLayout="dropdown"
+                                            fromYear={1900}
+                                            toYear={new Date().getFullYear() + 10}
+                                            disabled={{
+                                              before: new Date(), // Chặn ngày trước hôm nay
+                                            }}
+                                            className="custom-daypicker"
+                                          />
+                                                        </PopoverContent>
+                                      </Popover>
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )}
-                                />
-                            <FormField
-                              control={formCreateMedication.control}
-                              name="measure"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Đơn vị</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                
-                                      placeholder="Example:viên"
-                                      type="text"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
                               />
+      
+                            </div> 
+                            
+                          </form>
+      
+                      </Form>
+      
+                      <Button variant="outline" className='mr-5'  onClick={() => setPrescriptionVisible(!isPrescriptionVisible)}> Kê thuốc</Button>
+                      <Button variant="outline" className='mr-5'  disabled={!isEditing} onClick={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}> Lưu thông tin</Button>
+                      <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleEditInformation}> Sửa thông tin</Button>
+                      <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline">Nhập viện</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Thông tin nhập viện</DialogTitle>
+                            <DialogDescription>
+                              
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Lỗi</AlertTitle>
+                        <AlertDescription>
+                        Hệ thống chưa cập nhật tính năng, vui lòng trở lại sau.
+                        </AlertDescription>
+                      </Alert>
+                        </DialogContent>
+                      </Dialog>
+      
+            
+                      </CardContent>
+                      </Card> 
+                      {isPrescriptionVisible && (                               
+                      <Card className='mb-5 pt-5 col-span-2'>
+                        <CardContent>
+                          <Dialog open={isOpenAddMedication} onOpenChange={setIsOpenAddMedication}
+                        >
+                        <Form {...formCreateMedication}>
+                          <form onSubmit={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>
+                              <DialogContent className="sm:max-w-[600px]">
+                              <DialogTrigger asChild>
+                            </DialogTrigger>
+                                <DialogHeader>
+                                  <DialogTitle>Kê đơn thuốc</DialogTitle>
+                                </DialogHeader>
+                                  <div className="grid gap-3">
+                                    <div className="grid grid-cols-2 gap-4">
+            
+            
+                                  <FormItem className="flex flex-col">
+                                    <FormLabel className="mr-2">Nhóm dược</FormLabel>
+                                    <FormControl className="flex-grow">
+                                      <Combobox<number>
+                                      options={
+                                        medicationCatalogues.map(medicationCatalogue => ({
+                                          value: Number(medicationCatalogue.id),
+                                          label: `${"|---".repeat(medicationCatalogue.level)}${medicationCatalogue.name}`,
+                                        }))}
+                                      placeholder="Chọn nhóm dược cha"
+                                      onSelect={handleSelectMedicationCatalogue}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+              
+                                      <FormField 
+                                        control={formCreateMedication.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                          <FormItem className="flex flex-col">
+                                            <FormLabel className="mr-2">Dược</FormLabel>
+                                            <FormControl className="flex-grow">
+                                              <Combobox<bigint>
+                                                options={medications.map(me => ({
+                                                  value: me.id,
+                                                  label: me.name,
+                                                }))}
+                                                  placeholder="Chọn được"
+                                                  onSelect={handleSelectMedication}
+                                              />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                      <FormField
+                                          control={formCreateMedication.control}
+                                          name="dosage"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Liều lượng</FormLabel>
+                                              <FormControl>
+                                                <Input
+                                                  {...field}
+                                                
+                                                  placeholder="Example: 80"
+                                                  type="number"
+                                                  onChange={(e) => {
+                                                    // Chuyển giá trị từ chuỗi thành number trước khi lưu vào state của form
+                                                    const newValue = e.target.value ? parseFloat(e.target.value) : undefined;
+                                                    field.onChange(newValue);
+                                                  }}
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                          />
+                                      <FormField
+                                        control={formCreateMedication.control}
+                                        name="measure"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel>Đơn vị</FormLabel>
+                                            <FormControl>
+                                              <Input
+                                                {...field}
+                          
+                                                placeholder="Example:viên"
+                                                type="text"
+                                              />
+                                            </FormControl>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                        />
+                                    </div>
+                                    <FormField
+                                      control={formCreateMedication.control}
+                                      name="description"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Ghi chú</FormLabel>
+                                          <FormControl>
+                                            <Textarea
+                                              {...field}
+                                              placeholder="Example: Uống sau ăn, 2 viên 1 lần"                               />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <Button type='submit' onClick={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>Lưu thuốc</Button>
+                                  </div>           
+                              </DialogContent>
+                            </form>
+                        </Form>
+                          </Dialog>
+                        
+                          <Card className='mb-5 mt-5'>
+                          <CardHeader className='pb-4 border-b mb-4'>
+                            <CardTitle>Chi tiết đơn thuốc của bệnh nhân</CardTitle>
+                            <CardDescription>
+                              Thông tin đơn thuốc bác sĩ đã kê
+                            </CardDescription>
+                          </CardHeader >
+                        
+                          <CardContent className="space-y-2">
+                          <div className="flex flex-col gap-1 border-b pb-5">
+                                <div className="mb-6 border-b">
+                                  <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+                                </div>
+                              </div>
+                              <div className='flex mt-5 justify-between'>
+                        
+                            <Combobox<number>
+                            options={numberOptions}
+                            onSelect={handleSelecLimit}
+                            placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
+                            />
+                  
+      
+                          <div className="flex items-center space-x-5">
+                                <div className='flex'>
+                              
+                                </div>
+                                <div className="flex items-center space-x-2 bg-white">
+                                  <Input type="text" placeholder="Tìm kiếm" 
+                                    value={keyword} // Đặt giá trị từ state keyword
+                                    onChange={(e) => setKeyword(e.target.value)}
+                                  />
+                                  <Button type="submit">Lọc</Button>
+                                  <Button variant="outline" onClick={()=>{setIsOpenAddMedication(true)}}>Thêm thuốc</Button>
+                                </div>
                           </div>
-                          <FormField
-                            control={formCreateMedication.control}
-                            name="description"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Ghi chú</FormLabel>
-                                <FormControl>
-                                  <Textarea
-                                    {...field}
-                                    placeholder="Example: Uống sau ăn, 2 viên 1 lần"                               />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button type='submit' onClick={formCreateMedication.handleSubmit(onSubmitCreateMedication)}>Lưu thuốc</Button>
-                        </div>           
-                    </DialogContent>
-                  </form>
-              </Form>
-                </Dialog>
-              
-                <Card className='mb-5 mt-5'>
-                <CardHeader className='pb-4 border-b mb-4'>
-                  <CardTitle>Chi tiết đơn thuốc của bệnh nhân</CardTitle>
-                  <CardDescription>
-                    Thông tin đơn thuốc bác sĩ đã kê
-                  </CardDescription>
-                </CardHeader >
-              
-                <CardContent className="space-y-2">
-                <div className="flex flex-col gap-1 border-b pb-5">
-                      <div className="mb-6 border-b">
-                        <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
-                      </div>
-                    </div>
-                    <div className='flex mt-5 justify-between'>
-              
-                  <Combobox<number>
-                  options={numberOptions}
-                  onSelect={handleSelecLimit}
-                  placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                  />
-        
+                          </div>
+                              <div>
+                                <DataTable
+                                  data={medicationDetails}
+                                  columns={columnMedicationDetail}
+                                  totalRecords={totalRecords}
+                                  pageIndex={pageIndex}
+                                  pageSize={limit}
+                                  onPageChange={(newPageIndex) => {
+                                    setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
+                                  }}
+                                />
+                              </div>
+      
+                          </CardContent>
+                        </Card> 
+                          </CardContent>
+                          <AlertDialog open={!!deleteMedicationDetail} onOpenChange={() => setDeleteMedicationDetail(undefined)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Hành động này không thể hoàn tác. Bạn đang xóa thuốc:{" "}
+                  <strong>{deleteMedicationDetail?.name}</strong>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteMedicationDetail(undefined)}>Hủy</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+      
+                      </Card>
+                          )}
+                  </div>
+                    </CardContent>
+                  )}
 
-                <div className="flex items-center space-x-5">
-                      <div className='flex'>
-                     
-                      </div>
-                      <div className="flex items-center space-x-2 bg-white">
-                        <Input type="text" placeholder="Tìm kiếm" 
-                          value={keyword} // Đặt giá trị từ state keyword
-                          onChange={(e) => setKeyword(e.target.value)}
-                        />
-                        <Button type="submit">Lọc</Button>
-                        <Button variant="outline" onClick={()=>{setIsOpenAddMedication(true)}}>Thêm thuốc</Button>
-                      </div>
-                </div>
-                </div>
-                    <div>
-                      <DataTable
-                        data={medicationDetails}
-                        columns={columnMedicationDetail}
-                        totalRecords={totalRecords}
-                        pageIndex={pageIndex}
-                        pageSize={limit}
-                        onPageChange={(newPageIndex) => {
-                          console.log("pageindex:", newPageIndex);
-                          setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
-                        }}
-                      />
-                    </div>
-
-                </CardContent>
-              </Card> 
-                </CardContent>
-                <AlertDialog open={!!deleteMedicationDetail} onOpenChange={() => setDeleteMedicationDetail(undefined)}>
-  <AlertDialogContent>
-    <AlertDialogHeader>
-      <AlertDialogTitle>Bạn có chắc chắn muốn xóa không?</AlertDialogTitle>
-      <AlertDialogDescription>
-        Hành động này không thể hoàn tác. Bạn đang xóa thuốc:{" "}
-        <strong>{deleteMedicationDetail?.name}</strong>
-      </AlertDialogDescription>
-    </AlertDialogHeader>
-    <AlertDialogFooter>
-      <AlertDialogCancel onClick={() => setDeleteMedicationDetail(undefined)}>Hủy</AlertDialogCancel>
-      <AlertDialogAction onClick={confirmDelete}>Xác nhận</AlertDialogAction>
-    </AlertDialogFooter>
-  </AlertDialogContent>
-</AlertDialog>
-
-            </Card>
-                )}
-         </div>
+          </Card>  
           </TabsContent>
           <TabsContent value="HistoryMedicalRecordDetail">
           <Card className='mb-5 mt-5'>
               <CardHeader className='pb-4 border-b mb-4'>
                 <CardTitle>Tiền sử khám bệnh của bệnh nhân</CardTitle>
                 <CardDescription>
-                  Thông tin lịch sử khám bệnh
+                  Thông tin lịch sử khám bệnh: {medicalRecordHistoryDetails.length>0?"Lịch sử đã khám":"Lần đầu khám"}
                 </CardDescription>
                 <div className='grid grid-cols-3 gap-4 border-t'>
                   <div className="grid grid-cols-1 p-4 ">
-                  <p><strong>Tên bệnh nhân:</strong> {medicalReacordDetail?.patient_name || "Không có"}</p>
-                  <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday?formatDateCustom(medicalReacordDetail?.patient_birthday) : "Không có"}</p>
-                    <p><strong>Giới tính:</strong> {medicalReacordDetail?.patient_gender === 1 ? "Nam" : medicalReacordDetail?.patient_gender === 2 ? "Nữ" : "Không có"}</p>
-                    <p><strong>Điện thoại:</strong> {medicalReacordDetail?.patient_phone || "Không có"}</p>
-                    <p><strong>Địa chỉ:</strong> {medicalReacordDetail?.patient_address || "Không có"}</p>
-                    <p><strong>Số CCCD:</strong> {medicalReacordDetail?.patient_cccd_number || "Không có"}</p>
+                  <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {patient?.birthday? formatDateCustom(patient.birthday): "Không có"}</p>
+                  <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                  <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                  <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                  <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                  <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                  <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
 
                     </div>
                 </div>
@@ -1204,29 +1519,22 @@ const handleSaveDedicalRecordPatient=async ()=>{
                 <CardDescription>
                   Thông tin khám bệnh của bệnh nhân
                 </CardDescription>
-              {loading ? (
-              <p className='flex item-center justify-center'>Loading...</p>
-              ) : (
-                
-              <DataTable
-              data={medicalRecordHistoryDetails}
-              columns={columnMedicalHistoryDetail}
-              totalRecords={totalRecords}
-              pageIndex={pageIndex}
-              pageSize={limit}
-              onPageChange={(newPageIndex) => {
-              setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-              }}
-              />
-              )}
-
-
+                <div className="flex item-center justify-center w-full">
+                    <LoadingWrapper loading={loading}>
+                      <DataTable
+                        data={medicalRecordHistoryDetails}
+                        columns={columnMedicalHistoryDetail}
+                        totalRecords={totalRecords}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={setPageIndex}
+                      />
+                    </LoadingWrapper>
+                  </div>
               </div>
               </CardContent>
               <Dialog open={isOpenDialogMedicalRecordHistory} onOpenChange={setIsOpenDialogMedicalRecordHistory}>
-              
-            
-              <DialogContent className="w-[1200px] max-w-full max-h-[900px] overflow-y-auto">
+            <DialogContent className="w-[1200px] max-w-full max-h-[700px] overflow-y-auto">
             <DialogHeader>
               <DialogTitle> Thông tin chi tiết đợt khám</DialogTitle>
               <DialogDescription>Thông tin chi tiết các dịch vụ sử dụng, kết quả, đơn thuốc được kê</DialogDescription>
@@ -1239,18 +1547,20 @@ const handleSaveDedicalRecordPatient=async ()=>{
                   </CardDescription>
                   <div className='grid grid-cols-3 gap-4 border-t'>
                     <div className="grid grid-cols-1 p-4 ">
-                    <p><strong>Tên bệnh nhân:</strong> {medicalReacordDetail?.patient_name || "Không có"}</p>
-                    <p><strong>Ngày sinh:</strong> {medicalReacordDetail?.patient_birthday?formatDateCustom(medicalReacordDetail?.patient_birthday) : "Không có"}</p>
-                      <p><strong>Giới tính:</strong> {medicalReacordDetail?.patient_gender === 1 ? "Nam" : medicalReacordDetail?.patient_gender === 2 ? "Nữ" : "Không có"}</p>
-                      <p><strong>Điện thoại:</strong> {medicalReacordDetail?.patient_phone || "Không có"}</p>
-                      <p><strong>Địa chỉ:</strong> {medicalReacordDetail?.patient_address || "Không có"}</p>
-                      <p><strong>Số CCCD:</strong> {medicalReacordDetail?.patient_cccd_number || "Không có"}</p>
+                    <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {patient?.birthday? formatDateCustom(patient.birthday): "Không có"}</p>
+                  <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                  <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                  <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                  <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                  <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                  <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
 
                       </div>
                     <div className="grid grid-cols-1 p-4 ">
                           <div> <strong>Thông tin chung</strong></div>
                           <div><strong>Bác sĩ khám:</strong> {medicalRecordHistoryDetailItem?.user_name}</div>
-                          <div><strong>Ngày vào khám:</strong> {medicalRecordHistoryDetailItem?.visit_date ?formatDateCustom(medicalRecordHistoryDetailItem?.visit_date)  : 'Ngày không xác định'}</div>
+                          <div><strong>Ngày vào khám:</strong> {medicalRecordHistoryDetailItem?.visit_date ? formatDateCustom(medicalRecordHistoryDetailItem?.visit_date) : 'Ngày không xác định'}</div>
 
                         
                       </div>
@@ -1258,42 +1568,37 @@ const handleSaveDedicalRecordPatient=async ()=>{
                           <div> <strong>Bác sĩ nhận xét</strong></div>
                           <div><strong>Chẩn đoán: </strong> {medicalRecordHistoryDetailItem?.diagnosis||"Chưa chẩn đoán"}</div>
                           <div><strong>Ghi chú: </strong> {medicalRecordHistoryDetailItem?.notes||"Chưa có ghi chú"}</div>
-                          <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.appointment_date ? formatDateCustom(medicalRecordHistoryDetailItem?.appointment_date) : 'Ngày không xác định'}</div>
+                          <div><strong>Ngày hẹn tái khám: </strong> {medicalRecordHistoryDetailItem?.appointment_date ? formatDateCustom( medicalRecordHistoryDetailItem?.visit_date) : 'Ngày không xác định'}</div>
                       </div>
                   </div>
                   
                 </CardHeader >
               
                 <CardContent className="space-y-2">
-                <div>
+                {
+                  serviceDetailPatientHistorys?.length > 0 && 
+                  <div>
                   <div className="flex flex-col gap-1 border-b pb-5">
                   <div className="mb-6 border-b">
                     <h3 className="text-lg font-bold">Dịch Vụ Đã Thực Hiện</h3>
                 
                 </div>  
                   </div>
-                  <div className='flex item-center justify-center'>
-
-                      {loading ? (
-                      <p className='flex item-center justify-center'>Loading...</p>
-                      ) : (
-
+                  <div className="flex item-center justify-center w-full">
+                    <LoadingWrapper loading={loading}>
                       <DataTable
-                      data={serviceDetailPatients}
-                      columns={columnServiceDetails}
-                      totalRecords={totalRecords}
-                      pageIndex={pageIndex}
-                      pageSize={limit}
-                      onPageChange={(newPageIndex) => {
-                      console.log("pageindex:", newPageIndex)
-                      setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                      }}
+                        data={servicePatientNotInTreatmentSessions}
+                        columns={columnServiceDetailHistorys}
+                        totalRecords={totalRecords}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={setPageIndex}
                       />
-                      )}
-
-
-                      </div>
+                    </LoadingWrapper>
+                  </div>
                 </div>
+                }
+              
                 <Dialog open={isOpenDialogServiceDetailResult} onOpenChange={setIsOpenDialogServiceDetailResult} 
               >
                 
@@ -1303,26 +1608,19 @@ const handleSaveDedicalRecordPatient=async ()=>{
                 <DialogTitle> Kết quả {seletedService?.name}</DialogTitle>
                 <DialogDescription>Thông tin chi tiết {seletedService?.description}</DialogDescription>
               </DialogHeader>
-              <div className='flex item-center justify-center w-full'>
-
-                {loading ? (
-                <p className='flex item-center justify-center'>Loading...</p>
-                ) : (
-
-                <DataTable
-                data={detailResultSelectedService}
-                columns={columnServiceDetailsResult}
-                totalRecords={totalRecords}
-                pageIndex={pageIndex}
-                pageSize={limit}
-                onPageChange={(newPageIndex) => {
-                setPageIndex(newPageIndex) // Cập nhật pageIndex với giá trị mới
-                }}
-                />
-                )}
-
-
+                <div className="flex item-center justify-center w-full">
+                  <LoadingWrapper loading={loading}>
+                    <DataTable
+                      data={detailResultSelectedService}
+                      columns={columnServiceDetailsResult}
+                      totalRecords={totalRecords}
+                      pageIndex={pageIndex}
+                      pageSize={limit}
+                      onPageChange={setPageIndex}
+                    />
+                  </LoadingWrapper>
                 </div>
+
         
 
               <DialogFooter>
@@ -1331,46 +1629,229 @@ const handleSaveDedicalRecordPatient=async ()=>{
               </Dialog>
 
                 </CardContent>
-              </Card> 
-              <Card className='mb-5 mt-5'>
+              </Card>
+              {
+                medicationDetails?.length > 0 && 
+                <Card className='mb-5 mt-5'>
+                  <CardHeader className='pb-4 border-b mb-4'>
+                    <CardTitle>Chi tiết đơn thuốc ủa bệnh nhân</CardTitle>
+                    <CardDescription>
+                      Thông tin đơn thuốc bác sĩ đã kê
+                    </CardDescription>
+                  </CardHeader >
+                
+                  <CardContent className="space-y-2">
+                  <div className="flex flex-col gap-1 border-b pb-5">
+                        <div className="mb-6 border-b">
+                          <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
+                        </div>
+                      </div>
+                      <div className="flex item-center justify-center w-full">
+                        <LoadingWrapper loading={loading}>
+                          <DataTable
+                            data={medicationPatientNotInTreatmentSessions}
+                            columns={columnMedicationDetailHistory}
+                            totalRecords={totalRecords}
+                            pageIndex={pageIndex}
+                            pageSize={limit}
+                            onPageChange={setPageIndex}
+                          />
+                        </LoadingWrapper>
+                      </div>
+                  </CardContent>
+                </Card> 
+
+              }
+              {treatmentSessionList&&treatmentSessionList?.length > 0 &&
+                <Card className='mb-5 mt-5 overflow-x-auto w-full'>
                 <CardHeader className='pb-4 border-b mb-4'>
-                  <CardTitle>Chi tiết đơn thuốc ủa bệnh nhân</CardTitle>
+                  <CardTitle>Thông tin điều trị của bệnh nhân</CardTitle>
                   <CardDescription>
-                    Thông tin đơn thuốc bác sĩ đã kê
+                    Chi tiết thông tin điều trị
                   </CardDescription>
                 </CardHeader >
-              
-                <CardContent className="space-y-2">
-                <div className="flex flex-col gap-1 border-b pb-5">
-                      <div className="mb-6 border-b">
-                        <h3 className="text-lg font-bold">Đơn Thuốc Ngoại Trú</h3>
-                      </div>
+              <CardContent className="space-y-2">
+                    <div className="flex item-center justify-center w-full">
+                      <LoadingWrapper loading={loading}>
+                        <DataTable
+                          data={treatmentSessionList}
+                          columns={columnTreatmentSession}
+                          totalRecords={totalRecords}
+                          pageIndex={pageIndex}
+                          pageSize={limit}
+                          onPageChange={setPageIndex}
+                        />
+                      </LoadingWrapper>
                     </div>
-                    
-                    <div>
+                <Dialog open={isOpenDialogMedicalRecordHistoryTreatmentSessionDetail} onOpenChange={setIsOpenDialogMedicalRecordHistoryTreatmentSessionDetail} 
+              >
+                
+              
+              <DialogContent className="w-[1200px] max-w-full max-h-[700px] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle> Thông tin đợt điều trị</DialogTitle>
+                <DialogDescription>Thông tin chi tiết đợt điều trị</DialogDescription>
+                <div className='grid grid-cols-3 gap-4 border-t'>
+                    <div className="grid grid-cols-1 p-4 ">
+                    <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                  <p><strong>Ngày sinh:</strong> {patient?.birthday? formatDateCustom(patient.birthday): "Không có"}</p>
+                  <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                  <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                  <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                  <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                  <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                  <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+
+                      </div>
+                    <div className="grid grid-cols-1 p-4 ">
+                          <div> <strong>Thông tin chung</strong></div>
+                          <div><strong>Bác sĩ phụ trách:</strong> {treatmentSessionDetail?.user_name}</div>
+                          <div><strong>Khoa điều trị:</strong> {treatmentSessionDetail?.department_name}</div>
+                          <div><strong>Phòng điều trị:</strong> {treatmentSessionDetail?.room_code}</div>
+                          <div><strong>Giường:</strong> {treatmentSessionDetail?.bed_code}</div>
+                          <div><strong>Ngày bắt đầu:</strong> {treatmentSessionDetail?.start_date ? formatDateCustom(treatmentSessionDetail?.start_date) : 'Ngày không xác định'}</div>
+                          <div><strong>Ngày kết thúc:</strong> {treatmentSessionDetail?.end_date ? formatDateCustom(treatmentSessionDetail?.end_date) : 'Ngày không xác định'}</div>
+                          <div><strong>Viện phí:</strong> {treatmentSessionDetail?.current_cost?? 'Chưa có'} <strong>VND</strong></div>
+                          <div><strong>Viện phí tạm ứng:</strong> {treatmentSessionDetail?.total_advance_payment?? 'Chưa có'} <strong>VND</strong></div>
+                          <div><strong>Tiền hoàn lại:</strong> {treatmentSessionDetail?.refunded_amount?? 'Chưa có'} <strong>VND</strong></div>
+                          <div><strong>Trạng thái thanh toán:</strong> {treatmentSessionDetail?.payment_status_treatment_session===1?"Đã thanh toán": 'Chưa thanh toán'}</div>
+                          <div><strong>Trạng thái điều trị:</strong> {treatmentSessionDetail?.status_treatment_session===1?"Đã kết thúc": 'Đang điều trị'}</div>
+
+                        
+                      </div>
+                      <div className="grid grid-cols-1 p-4">
+                          <div> <strong>Bác sĩ nhận xét</strong></div>
+                          <div><strong>Chẩn đoán: </strong> {treatmentSessionDetail?.diagnosis||"Chưa chẩn đoán"}</div>
+                          <div><strong>Ghi chú: </strong> {treatmentSessionDetail?.notes||"Chưa ghi chú"}</div>
+                          <div><strong>Kết luận sau điều trị: </strong> {treatmentSessionDetail?.conclusion_of_treatment||"Chưa kết luận"}</div>
+                      </div>
+                </div>
+
+                
+              </DialogHeader>
+              <Card className='mb-5 mt-5'>
+                  <CardHeader className='pb-4 border-b mb-4'>
+                    <CardTitle>Chỉ định của bác sĩ</CardTitle>
+                    <CardDescription>
+                      Thông tin chi tiết về các chỉ định của bác sĩ các dịch vụ hoặc đơn thuốc được chỉ định.
+                    </CardDescription>
+                  </CardHeader >
+                
+                  <CardContent className="space-y-2">
+                  <div className="flex flex-col gap-1 border-b pb-5">
+                        <div className="mb-6 border-b">
+                          <h3 className="text-lg font-bold">Thông tin chỉ định của bác sĩ</h3>
+                        </div>
+                      </div>
+                      <div className="flex item-center justify-center w-full">
+                        <LoadingWrapper loading={loading}>
+                          <DataTable
+                            data={treatmentSessionDetailMedicalOrderList ?? []}
+                            columns={columnMedicalOrder}
+                            totalRecords={totalRecords}
+                            pageIndex={pageIndex}
+                            pageSize={limit}
+                            onPageChange={setPageIndex}
+                          />
+                        </LoadingWrapper>
+                      </div>
+                  </CardContent>
+                </Card> 
+              <Card className='mb-5 mt-5'>
+                  <CardHeader className='pb-4 border-b mb-4'>
+                    <CardTitle>Kết quả theo dõi hằng ngày</CardTitle>
+                    <CardDescription>
+                      Chi tiết các chỉ số sức khỏe theo dõi bệnh nhân hằng ngày bao gồm các chỉ số về huyết áp, nhịp tim, nhiệt độ, theo dõi sau phẫu thuật....
+                    </CardDescription>
+                  </CardHeader >
+                
+                  <CardContent className="space-y-2">
+                  <div className="flex flex-col gap-1 border-b pb-5">
+                        <div className="mb-6 border-b">
+                          <h3 className="text-lg font-bold">Thông tin chi tiết về chỉ số sức khỏe</h3>
+                        </div>
+                      </div>
+                      <div className="flex item-center justify-center w-full">
+                        <LoadingWrapper loading={loading}>
+                        <DataTable 
+                          data={treatmentSessionDetailMedicalDailyHealthList ?? []} // Nếu là undefined, sẽ dùng mảng rỗng
+                          columns={columnDailyHealth}
+                          totalRecords={totalRecords}
+                          pageIndex={pageIndex}
+                          pageSize={limit}
+                          onPageChange={setPageIndex}
+                        />
+                        </LoadingWrapper>
+                      </div>
+                  </CardContent>
+              </Card> 
+              <DialogFooter>
+              </DialogFooter>
+              </DialogContent>
+              </Dialog>
+              </CardContent>
+              </Card>
+              }
+
+                <Dialog open={isOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService} onOpenChange={setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService} 
+              >
+                
+              
+              <DialogContent className="w-[1200px] max-w-full overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle> Dịch Vụ Đã Thực Hiện</DialogTitle>
+                <DialogDescription>Các dịch vụ đã được chỉ định</DialogDescription>
+              </DialogHeader>
+              <div className="flex item-center justify-center w-full">
+                    <LoadingWrapper loading={loading}>
                       <DataTable
-                        data={medicationDetails}
+                        data={servicePatientTreatmentSessions}
+                        columns={columnServiceDetailHistorys}
+                        totalRecords={totalRecords}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={setPageIndex}
+                      />
+                    </LoadingWrapper>
+              </div>
+
+        
+
+              <DialogFooter>
+              </DialogFooter>
+              </DialogContent>
+              </Dialog>
+                <Dialog open={isOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedicaTion} onOpenChange={setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedication} 
+              >
+                
+              
+              <DialogContent className="w-[1200px] max-w-full overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle> Đơn thuốc đã được chỉ định</DialogTitle>
+                <DialogDescription>Chi tiết đơn thuốc được chỉ định</DialogDescription>
+              </DialogHeader>
+              <div className="flex item-center justify-center w-full">
+                    <LoadingWrapper loading={loading}>
+                      <DataTable
+                        data={medicationPatientTreatmentSessions}
                         columns={columnMedicationDetailHistory}
                         totalRecords={totalRecords}
                         pageIndex={pageIndex}
                         pageSize={limit}
-                        onPageChange={(newPageIndex) => {
-                          console.log("pageindex:", newPageIndex);
-                          setPageIndex(newPageIndex); // Cập nhật pageIndex với giá trị mới
-                        }}
+                        onPageChange={setPageIndex}
                       />
-                    </div>
+                    </LoadingWrapper>
+              </div>
 
-                </CardContent>
-              </Card> 
-              
+        
 
-            <DialogFooter>
-            </DialogFooter>
+              <DialogFooter>
+              </DialogFooter>
+              </DialogContent>
+              </Dialog>
             </DialogContent>
               </Dialog>
-          </Card>  
-          
+          </Card>
           </TabsContent> 
 
         </Tabs>

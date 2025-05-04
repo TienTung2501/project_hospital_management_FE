@@ -219,9 +219,9 @@ export type MedicalRecord = {
   inpatient_detail:string|undefined;
   status:number|undefined;
   patient_name:string;
-  service_ids: BigInt[];
+  service_ids: bigint[];
   service_names:string[];
-  service_room_ids?:BigInt[];
+  service_room_ids?:bigint[];
   status_no_exmamined?:string;
   status_no_conclusion?:string;
 };
@@ -335,7 +335,7 @@ export type ServiceDetailPatientResul={
 
 export type MedicationDetail ={
   id:bigint;
-  pivot_id:bigint;
+  pivot_id?:bigint;
   name:string;
   dosage:number;
   measure:string;
@@ -354,6 +354,7 @@ export type MedicalRecordHistoryDetail={
   inpatient_detail:string;
   services:ServiceDetailPatientResul[];
   medications:MedicationDetail[];
+  treatment_sessions:TreatmentSession[];
 }
 // đối với việc tiếp nhận: có 2 trường hợp
 // TH1: đến khám mới-> thêm thông tin( thông tin cá nhân, tình trạng sức khỏe( kiểm tra sơ bộ chỉ số cơ thể) chỉ định xong rồi sẽ thêm 1 hồ sơ bệnh nhân-> hiển thị bệnh nhân với tình trạng đang khám)-> xem hồ sơ thì thấy các dịch vũ được chỉ định và trạng thái thanh toán, trạng thái xét nghiệm, sau đó đưa ra kết quả
@@ -371,16 +372,7 @@ export type PatientCurrently = {
   // examination_status:number|null;// thêm trường trạng thái khám? đã khám, chưa khám đang khám.
 };
 
-export type DailyHealth = {
-  id: bigint;
-  treament_session_id: bigint; // Tham chiếu đến treament_sessions.id
-  check_date?: Date|null; // Thời gian kiểm tra
-  temperature?: number|null; // Nhiệt độ cơ thể, default là 37
-  blood_pressure?: string|null; // Huyết áp (vd: 120/80)
-  heart_rate?: number|null; // Nhịp tim (số nhịp mỗi phút)
-  blood_sugar?: number|null; // Đường huyết (mmol/L)
-  note?: string|null; // Các triệu chứng hoặc ghi chú bổ sung
-};
+
 export type PatientPaymentInfo = {
   id:bigint;
   patientName: string;            // Tên bệnh nhân
@@ -436,16 +428,16 @@ export type ServiceResultDetail={
 
 // Advance Payment
 export type AdvancePayment= {
-  id: number;
-  treatment_session_id: number;
+  id: bigint;
+  treatment_session_id: bigint;
   amount: string;
   payment_date: string;
 }
 
 // Daily Health
 export type DailyHealth= {
-  id: number;
-  treatment_session_id: number;
+  id: bigint;
+  treatment_session_id: bigint;
   check_date: string;
   temperature: number;
   blood_pressure: string;
@@ -463,26 +455,26 @@ export type DailyHealth= {
 // }
 
 export type MedicalOrder = {
-  id: BigInt;
-  treatment_session_id: BigInt;
+  id: bigint;
+  treatment_session_id: bigint;
   typeEng: 'services' | 'medications';
   typeSub?: string;
-  pivot_ids: BigInt[];
+  pivot_ids: bigint[];
   notes: string;
   date: string;
 };
 
 // Treatment Session
 export type TreatmentSession= {
-  id: BigInt;
-  medical_record_id: BigInt;
-  bed_id: BigInt;
+  id: bigint;
+  medical_record_id: bigint;
+  bed_id: bigint;
   bed_code:string;
-  room_id:BigInt;
+  room_id:bigint;
   room_code:string;
-  department_id:BigInt;
+  department_id:bigint;
   department_name:string;
-  user_id:BigInt;
+  user_id:bigint;
   user_name:string;
   start_date: string;
   end_date: string;

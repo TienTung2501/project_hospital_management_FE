@@ -38,7 +38,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { formatDate } from "@/utils"; // hoặc path đúng của bạn
-import { DailyHealth, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServiceType, UserInfoType } from '@/types';
+import { DailyHealth, MedicalOrder, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServiceType, TreatmentSession, UserInfoType } from '@/types';
 import { useParams, useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
@@ -761,7 +761,7 @@ const PatientReceive = () => {
   const buttonColumnConfigHistoryDetail = {
     id: 'buttonColumnConfigHistoryDetail',
     header: 'Chi tiết hồ sơ',
-    onClickConfig: (id: string | number | bigint) => {
+    onClickConfig: (id: string | bigint) => {
       const item: MedicalRecordHistoryDetail | undefined = medicalRecordHistoryDetails.find(
         (me) => BigInt(me.id) === BigInt(id)
       );
@@ -789,13 +789,18 @@ const PatientReceive = () => {
         }
       }
       // Lọc các services và medications chưa được đưa vào bất kỳ medical_order nào
-      const servicePatientNotInTreatmentSessions = serviceDetailPatients.filter(
-        (s) => !allServicePivotIdsInOrders.has(BigInt(s.pivot_id))
-      );
-  
-      const medicationPatientNotInTreatmentSessions = medicationDetails.filter(
-        (m) => !allMedicationPivotIdsInOrders.has(BigInt(m.pivot_id))
-      );
+      const servicePatientNotInTreatmentSessions = serviceDetailPatients.filter((s) => {
+        const pivotId = s.pivot_id;
+        if (pivotId === undefined) return false; // Nếu pivot_id là undefined, bỏ qua phần tử này.
+        return !allServicePivotIdsInOrders.has(BigInt(pivotId));
+      });
+      
+      const medicationPatientNotInTreatmentSessions = medicationDetails.filter((m) => {
+        const pivotId = m.pivot_id;
+        if (pivotId === undefined) return false; // Nếu pivot_id là undefined, bỏ qua phần tử này.
+        return !allMedicationPivotIdsInOrders.has(BigInt(pivotId));
+      });
+      
       // Cập nhật state
       setServiceDetailPatients(serviceDetailPatients);
       setMedicationDetails(medicationDetails);
@@ -812,7 +817,7 @@ const PatientReceive = () => {
     id: 'buttonColumnConfigHistoryDetailTreatmentSession',
     header: 'Chi tiết đợt điều trị',
     onClickConfig: (id: string | bigint) => {
-      const item :TreatmentSession|any= treatmentSessionList.find((me) => me.id === id);
+      const item :TreatmentSession|any= treatmentSessionList?.find((me) => BigInt(me.id) === BigInt(id));
       if(item){
         const medical_orders: MedicalOrder[] = item.medical_orders;
         const daily_healths : DailyHealth[]=item.daily_healths;
@@ -833,7 +838,7 @@ const PatientReceive = () => {
     header: 'Chi tiết chỉ thị của bác sĩ',
     onClickConfig: (id: string | bigint) => {
      
-      const item: MedicalOrder | undefined = treatmentSessionDetailMedicalOrderList.find(
+      const item: MedicalOrder | undefined = treatmentSessionDetailMedicalOrderList?.find(
         (me) => BigInt(me.id) === BigInt(id)
       );
       
@@ -848,9 +853,15 @@ const PatientReceive = () => {
         setServicePatientTreatmentSessions(service_treatment_sessions);
         setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderService(true);
       } else if (item.typeEng === 'medications') {
-        const medication_treatment_sessions: MedicationDetail[] = medicationDetails.filter((m) =>
-          item.pivot_ids.some((pivotId) => BigInt(pivotId) === BigInt(m.pivot_id))
-        );
+        const medication_treatment_sessions: MedicationDetail[] = medicationDetails.filter((m) => {
+          // Kiểm tra xem pivot_id có hợp lệ không và chuyển đổi nó thành BigInt nếu đúng kiểu
+          const pivotId = m?.pivot_id;
+          if (pivotId && (typeof pivotId === 'string' || typeof pivotId === 'number')) {
+            return item.pivot_ids?.some((id) => BigInt(id) === BigInt(pivotId));
+          }
+          return false;
+        });
+        
         
         setMedicationPatientTreatmentSessions(medication_treatment_sessions);
         setIsOpenDialogMedicalRecordHistoryTreatmentSessionMedicalOrderMedication(true);
@@ -1083,7 +1094,8 @@ const columnMedicalHistoryDetail = useMemo(() => {
     : [];
 }, [medicalRecordHistoryDetails, columnHeaderMapMedicalRecordHistoryDetail, buttonColumnConfigHistoryDetail]);
 const columnTreatmentSession = useMemo(() => {
-  return treatmentSessionList?.length > 0
+  // Kiểm tra sự tồn tại của treatmentSessionList trước khi truy cập vào .length
+  return treatmentSessionList && treatmentSessionList.length > 0
     ? createColumns(
         treatmentSessionList,
         undefined,
@@ -1096,8 +1108,10 @@ const columnTreatmentSession = useMemo(() => {
       )
     : [];
 }, [treatmentSessionList, columnTreatmentSessionHeaderMap, buttonColumnConfigTreatmentSessionDetail]);
+
+
 const columnMedicalOrder = useMemo(() => {
-  return treatmentSessionDetailMedicalOrderList?.length > 0
+  return treatmentSessionDetailMedicalOrderList&&treatmentSessionDetailMedicalOrderList?.length > 0
     ? createColumns(
       treatmentSessionDetailMedicalOrderList,
         undefined,
@@ -1111,7 +1125,7 @@ const columnMedicalOrder = useMemo(() => {
     : [];
 }, [treatmentSessionDetailMedicalOrderList, columnTreatmentSessionDetailMedicalOrderListHeaderMap, buttonColumnConfigTreatmentSessionDetailMedicalOrderDetail]);
 const columnDailyHealth = useMemo(() => {
-  return treatmentSessionDetailMedicalDailyHealthList?.length > 0
+  return treatmentSessionDetailMedicalDailyHealthList&&treatmentSessionDetailMedicalDailyHealthList?.length > 0
     ? createColumns(
       treatmentSessionDetailMedicalDailyHealthList,
         undefined,
@@ -1895,7 +1909,7 @@ const columnDailyHealth = useMemo(() => {
                 </Card> 
 
               }
-              {treatmentSessionList?.length > 0 &&
+              {treatmentSessionList&&treatmentSessionList?.length > 0 &&
                 <Card className='mb-5 mt-5 overflow-x-auto w-full'>
                 <CardHeader className='pb-4 border-b mb-4'>
                   <CardTitle>Thông tin điều trị của bệnh nhân</CardTitle>
@@ -1979,7 +1993,7 @@ const columnDailyHealth = useMemo(() => {
                       <div className="flex item-center justify-center w-full">
                         <LoadingWrapper loading={loading}>
                           <DataTable
-                            data={treatmentSessionDetailMedicalOrderList}
+                            data={treatmentSessionDetailMedicalOrderList ?? []}
                             columns={columnMedicalOrder}
                             totalRecords={totalRecords}
                             pageIndex={pageIndex}
@@ -2006,14 +2020,14 @@ const columnDailyHealth = useMemo(() => {
                       </div>
                       <div className="flex item-center justify-center w-full">
                         <LoadingWrapper loading={loading}>
-                          <DataTable
-                            data={treatmentSessionDetailMedicalDailyHealthList}
-                            columns={columnDailyHealth}
-                            totalRecords={totalRecords}
-                            pageIndex={pageIndex}
-                            pageSize={limit}
-                            onPageChange={setPageIndex}
-                          />
+                        <DataTable 
+                          data={treatmentSessionDetailMedicalDailyHealthList ?? []} // Nếu là undefined, sẽ dùng mảng rỗng
+                          columns={columnDailyHealth}
+                          totalRecords={totalRecords}
+                          pageIndex={pageIndex}
+                          pageSize={limit}
+                          onPageChange={setPageIndex}
+                        />
                         </LoadingWrapper>
                       </div>
                   </CardContent>

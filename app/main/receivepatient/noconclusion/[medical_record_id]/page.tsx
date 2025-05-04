@@ -114,15 +114,15 @@ const PatientDetail = () => {
 
 
   
-  const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-  const [details, setDetails] = useState<{ [key: string]: any }>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+    const [details, setDetails] = useState<{ [key: string]: any }>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [enrichedDetail, setEnrichedDetail] = useState<any[]>([]); // Dữ liệu chi tiết
+    const [enrichedDetail, setEnrichedDetail] = useState<any[]>([]); // Dữ liệu chi tiết
   
-  const [medicalReacordDetail, setMedicalRecordDetail]=useState<MedicalRecordRecordServiceDetail>();
+    const [medicalReacordDetail, setMedicalRecordDetail]=useState<MedicalRecordRecordServiceDetail>();
     const [serviceDetailPatients,setServiceDetailPatients]=useState<ServiceDetailPatientResul[]>([]);
     const [seletedService,setSeletedService]=useState<ServiceDetailPatientResul>();
     const [detailResultSelectedService,setDetailResultSelectedService]=useState<DetailResultService[]>([])
@@ -139,202 +139,198 @@ const PatientDetail = () => {
     const [editMedicationDetail, setEditMedicationDetail] = useState<MedicationDetail>();
     const [deleteMedicationDetail, setDeleteMedicationDetail] = useState<MedicationDetail>();
     const [isEditing, setIsEditing] = useState(true); // Ban đầu đang chỉnh sửa
-const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút Lưu hồ sơ bị khóa
+    const [isSaveDisabled, setIsSaveDisabled] = useState(true); // Ban đầu nút Lưu hồ sơ bị khóa
 
     const {medical_record_id}=useParams();
-  let currentUser: UserInfoType | null = null;
-  const user = useUser();  
-  // Kiểm tra nếu user và currentUser tồn tại
-  if (user && user.currentUser) {
-    currentUser = user.currentUser;
-  }
-  const formUpdateDiagnose=useForm<z.infer<typeof MedicalRecordUpdateDiagnose>>({
-    resolver:zodResolver(MedicalRecordUpdateDiagnose),
-  });
-  const formCreateMedication=useForm<z.infer<typeof CreateMedication>>({
-    resolver:zodResolver(CreateMedication),
-  });
-  const handleSelecLimit = (value: number | null) => {
-    console.log("Selected value:", value)
-    if (value) {
-      setLimit(value);
-      setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+    let currentUser: UserInfoType | null = null;
+    const user = useUser();  
+    // Kiểm tra nếu user và currentUser tồn tại
+    if (user && user.currentUser) {
+      currentUser = user.currentUser;
     }
-  }
+    const formUpdateDiagnose=useForm<z.infer<typeof MedicalRecordUpdateDiagnose>>({
+      resolver:zodResolver(MedicalRecordUpdateDiagnose),
+    });
+    const formCreateMedication=useForm<z.infer<typeof CreateMedication>>({
+      resolver:zodResolver(CreateMedication),
+    });
+    const handleSelecLimit = (value: number | null) => {
+      console.log("Selected value:", value)
+      if (value) {
+        setLimit(value);
+        setPageIndex(1); // Reset về trang 1 khi thay đổi limit
+      }
+    }
  
-  const fetchMedicalRecordDetail = async () => {
-    try {
-        const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/waitDiagnosis`;
-      const room_id = currentUser?.room_ids?.[0] ?? 0;  // Giá trị mặc định là 0 nếu không có room_id
-      const response = await axios.get(endpoint, { params: {
-          limit: 1000,
-          room_id: room_id,
-          id: Number(medical_record_id),
-        },
-      });
-  
-
-    
-      const dataList = response?.data?.data || [];  // Kiểm tra response đúng cách
-      const data = dataList[0]; // Lấy phần tử đầu tiên
-      if(data && data.patients){
-        const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
-          id: data.id,
-          patient_id: data.patient_id,
-          patient_name: data.patients.name,
-          patient_birthday: data.patients.birthday,
-          patient_phone: data.patients.phone,
-          patient_gender: data.patients.gender,
-          patient_address: data.patients.address,
-          patient_cccd_number: data.patients.cccd_number,
-          user_id: data.user_id,
-          room_id: data.room_id,
-          visit_date: data.visit_date,
-          diagnosis: data.diagnosis,
-          notes: data.notes,
-          apointment_date: data.appointment_date,
-          is_inpatient: data.is_inpatient,
-          inpatient_detail: data.inpatient_detail,
-          status: data.status,
-          services: data.medical_record_service.map((item:any) => ({
-              id: item.service_id,
-              name: item.service_name,
-              description: item.services.description,
-              health_insurance_applied: item.services.health_insurance_applied,
-              health_insurance_value: item.services.health_insurance_value,
-              assigning_doctor_id: item.users.id,
-              assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
-              pivot_id: item.id,
-              result_detail: item.result_details,
-            })) 
-        };
-    
-        if (fetchedMedicalRecordDetail) {
-          const serviceDetailPatients: ServiceDetailPatientResul[] = fetchedMedicalRecordDetail.services;
-          fetchMedicalRecordHistoryDetail(fetchedMedicalRecordDetail.patient_id);
-          setMedicalRecordDetail(fetchedMedicalRecordDetail);
-          setServiceDetailPatients(serviceDetailPatients);
-        }
-      }
-    
-    } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu bệnh án:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const fetchMedicationCatalogues = async () => {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues`;
-    
-    try {
-        const response = await axios.get(endpoint);
-        const totalRecords = response.data.data.total;
-
-        // Gọi API để lấy tất cả các bản ghi
-        const responseAll = await axios.get(endpoint, { params: { limit: totalRecords } });
-        const { data } = responseAll.data.data;
-
-        if (Array.isArray(data)) {
-            const medicationCatalogueList: MedicationCatalogue[] = data
-                .filter((item: any) => item.status === 1)
-                .map((item: any) => ({
-                    id: BigInt(item.id), // Chuyển id thành bigint
-                    name: item.name,
-                    description: item.description,
-                    status: item.status,
-                    level:item.level,
-                    parent_id:item.parent_id,
-                }));
-            setMedicationCatalogues(medicationCatalogueList);
-        } else {
-            console.warn("Data is not an array:", data);
-        }
-    } catch (err) {
-        console.error("Error fetching meidcation catalogues:", err);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not load meidcation catalogues.",
+    const fetchMedicalRecordDetail = async () => {
+      try {
+          const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/waitDiagnosis`;
+        const room_id = currentUser?.room_ids?.[0] ?? 0;  // Giá trị mặc định là 0 nếu không có room_id
+        const response = await axios.get(endpoint, { params: {
+            limit: 1000,
+            room_id: room_id,
+            id: Number(medical_record_id),
+          },
         });
-    }
-};
-
-  const fetchMedications = async (value:Number) => {
-    const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications`;
-    try {
-      const response = await axios.get(endpoint, {
-        params: {
-          limit: limit, // Số bản ghi trên mỗi trang
-          page: pageIndex, // Trang hiện tại
-          status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
-          keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
-        },
-      })
-      
-      const {data}    = response.data.data
-      // Lọc mảng theo medication_catalogue_id nếu cần
-
-      const medical = data.filter(
-        (item: any) => item.medication_catalogue_id === value
-      );
-
-      console.log("medical")
-    console.log(medical)
     
-      if (Array.isArray(medical)) {
-        const fetchedMedication: MedicationType[] = medical.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          description: item.description,
-          medication_catalogue_name:item.medication_catalogues.name,
-          price: item.price,
-          status:item.status,
-          unit:item.unit,
-          measure_count:item.measure_count,
-          medication_catalogue_id:item.medication_catalogue_id,
-        }));
-        console.log(fetchedMedication)
-        setMedications(fetchedMedication) // Cập nhật danh sách phòng ban
-      } else {
-        throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
-      }
-    } catch (err) {
-      console.error('Error fetching medication Catalogues:', err)
-    } finally {
 
+        const data = response?.data?.data || [];  // Kiểm tra response đúng cách
+        if(data && data.patients){
+          const fetchedMedicalRecordDetail: MedicalRecordRecordServiceDetail = {
+            id: data.id,
+            patient_id: data.patient_id,
+            patient_name: data.patients.name,
+            patient_birthday: data.patients.birthday,
+            patient_phone: data.patients.phone,
+            patient_gender: data.patients.gender,
+            patient_address: data.patients.address,
+            patient_cccd_number: data.patients.cccd_number,
+            user_id: data.user_id,
+            room_id: data.room_id,
+            visit_date: data.visit_date,
+            diagnosis: data.diagnosis,
+            notes: data.notes,
+            apointment_date: data.appointment_date,
+            is_inpatient: data.is_inpatient,
+            inpatient_detail: data.inpatient_detail,
+            status: data.status,
+            services: data.medical_record_service.map((item:any) => ({
+                id: item.service_id,
+                name: item.service_name,
+                description: item.services.description,
+                health_insurance_applied: item.services.health_insurance_applied,
+                health_insurance_value: item.services.health_insurance_value,
+                assigning_doctor_id: data.users.id,
+                assigning_doctor_name: data.users.name, // Assuming `currentUser` exists in scope
+                pivot_id: item.id,
+                result_detail: item.result_details,
+              })) 
+          };
+      
+          if (fetchedMedicalRecordDetail) {
+            const serviceDetailPatients: ServiceDetailPatientResul[] = fetchedMedicalRecordDetail.services;
+            fetchMedicalRecordHistoryDetail(fetchedMedicalRecordDetail.patient_id);
+            setMedicalRecordDetail(fetchedMedicalRecordDetail);
+            setServiceDetailPatients(serviceDetailPatients);
+          }
+        }
+      
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu bệnh án:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    const fetchMedicationCatalogues = async () => {
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues`;
+      
+      try {
+          const response = await axios.get(endpoint);
+          const totalRecords = response.data.data.total;
+
+          // Gọi API để lấy tất cả các bản ghi
+          const responseAll = await axios.get(endpoint, { params: { limit: totalRecords } });
+          const { data } = responseAll.data.data;
+
+          if (Array.isArray(data)) {
+              const medicationCatalogueList: MedicationCatalogue[] = data
+                  .filter((item: any) => item.status === 1)
+                  .map((item: any) => ({
+                      id: BigInt(item.id), // Chuyển id thành bigint
+                      name: item.name,
+                      description: item.description,
+                      status: item.status,
+                      level:item.level,
+                      parent_id:item.parent_id,
+                  }));
+              setMedicationCatalogues(medicationCatalogueList);
+          } else {
+              console.warn("Data is not an array:", data);
+          }
+      } catch (err) {
+          console.error("Error fetching meidcation catalogues:", err);
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Could not load meidcation catalogues.",
+          });
+      }
+    };
+
+    const fetchMedications = async (value:Number) => {
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medications`;
+      try {
+        const response = await axios.get(endpoint, {
+          params: {
+            limit: limit, // Số bản ghi trên mỗi trang
+            page: pageIndex, // Trang hiện tại
+            status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+            keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+          },
+        })
+        
+        const {data}    = response.data.data
+        // Lọc mảng theo medication_catalogue_id nếu cần
+
+        const medical = data.filter(
+          (item: any) => item.medication_catalogue_id === value
+        );
+
+        console.log("medical")
+      console.log(medical)
+      
+        if (Array.isArray(medical)) {
+          const fetchedMedication: MedicationType[] = medical.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            medication_catalogue_name:item.medication_catalogues.name,
+            price: item.price,
+            status:item.status,
+            unit:item.unit,
+            measure_count:item.measure_count,
+            medication_catalogue_id:item.medication_catalogue_id,
+          }));
+          console.log(fetchedMedication)
+          setMedications(fetchedMedication) // Cập nhật danh sách phòng ban
+        } else {
+          throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+        }
+      } catch (err) {
+        console.error('Error fetching medication Catalogues:', err)
+      } finally {
+
+      }
     }
-  }
-  
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        // Fetch medical record details
-        await fetchMedicalRecordDetail();
-        
-        // Fetch medication catalogues
-        await fetchMedicationCatalogues();
-      } catch (error) {
-        console.error("Error while fetching data:", error);
-      }
-    };
-  
-    fetchAllData();
-  }, [limit]);
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        // Fetch medical record details
-        await fetchMedicalRecordDetail();
-        
-        // Fetch medication catalogues
-        await fetchMedicationCatalogues();
-      } catch (error) {
-        console.error("Error while fetching data:", error);
-      }
-    };
-  
-    fetchAllData();
-  }, []);
+    
+    useEffect(() => {
+      const fetchAllData = async () => {
+        try {
+          // Fetch medical record details
+          await fetchMedicalRecordDetail();
+          // Fetch medication catalogues
+          await fetchMedicationCatalogues();
+        } catch (error) {
+          console.error("Error while fetching data:", error);
+        }
+      };
+      fetchAllData();
+    }, [limit]);
+    useEffect(() => {
+      const fetchAllData = async () => {
+        try {
+          // Fetch medical record details
+          await fetchMedicalRecordDetail();
+          
+          // Fetch medication catalogues
+          await fetchMedicationCatalogues();
+        } catch (error) {
+          console.error("Error while fetching data:", error);
+        }
+      };
+    
+      fetchAllData();
+    }, []);
   
 
   const onSubmit = (values: z.infer<typeof PatientServiceSchema>) => {
@@ -623,39 +619,97 @@ const handleSaveDedicalRecordPatient=async ()=>{
   try {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/patients/history/${id}`;
     const response = await axios.get(endpoint);
-    
+    console.log("response",response)
     const data = response?.data?.data ;  // Kiểm tra response đúng cách
-    const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item:any) => ({
-      id: item.id,
-      user_id: item.user_id,
-      user_name: item.users.name,
-      room_id: item.room_id,
-      visit_date: item.visit_date,
-      diagnosis: item.diagnosis,
-      notes: item.notes,
-      appointment_date: item.appointment_date,
-      is_inpatient: item.is_inpatient,
-      inpatient_detail: item.inpatient_detail,
-      services: item.services.map((service:any) => ({
-        id: service.id,
-        name: service.name,
-        description: service.description,
-        health_insurance_applied: service.health_insurance_applied,
-        health_insurance_value: service.health_insurance_value,
-        assigning_doctor_id: item.users.id,
-        assigning_doctor_name: item.users.name, // Assuming `currentUser` exists in scope
-        pivot_id: service.MedicalRecordService.id,
-        result_detail: service.MedicalRecordService.result_details,
-      })),
-      medications: item.medications.map((medication:any) => ({
-        id: medication.id,
-        name: medication.name,
-        dosage: medication.MedicalRecordMedication.dosage,
-        measure: medication.MedicalRecordMedication.measure, // Removed incorrect `medication.measure.pivot.measure`
-        description: medication.MedicalRecordMedication.description,
-      })),
-    }));
+    const fetchedMedicalRecordHistoryDetail: MedicalRecordHistoryDetail[] = data.medical_records.map((item1:any) => ({
+         id: item1.id,
+         user_id: item1.user_id,
+         user_name: item1.users.name,
+         room_id: item1.room_id,
+         visit_date: item1.visit_date,
+         diagnosis: item1.diagnosis,
+         notes: item1.notes,
+         appointment_date: item1.appointment_date,
+         is_inpatient: item1.is_inpatient,
+         inpatient_detail: item1.inpatient_detail,
+         services: item1.medical_record_service.map((item:any) => ({
+           id: item.services?.id ?? null,
+           name: item.service_name,
+           description: item.services.description,
+           health_insurance_applied: item.services.health_insurance_applied,
+           health_insurance_value: item.services.health_insurance_value,
+           assigning_doctor_id: item1.users.id,
+           assigning_doctor_name: item1.users.name, // Assuming `currentUser` exists in scope
+           pivot_id: item.id,
+           result_detail: item.result_details,
+         })),
+         medications: item1.medical_record_medication.map((item:any) => ({
+           id: item.medication_id,
+           pivot_id:item.id,
+           name: item.name,
+           dosage: item.dosage,
+           measure: item.unit, // Removed incorrect `medication.measure.pivot.measure`
+           description: item.description,
+         })),
+         treatment_sessions: item1.treatment_sessions?.map((session: any) => ({
+           id: session.id,
+           medical_record_id: session.medical_record_id,
+           bed_id: session.bed_id,
+           bed_code:session.beds.code,
+           room_id:session.room_id,
+           room_code:session.rooms.code,
+           department_id:session.department_id,
+           department_name:session.departments.name,
+           user_id:session.user_id,
+           user_name:session.users.name,
+           start_date: session.start_date,
+           end_date: session.end_date,
+           diagnosis: session.diagnosis,
+           notes: session.notes,
+           conclusion_of_treatment: session.conclusion_of_treatment,
+           status_treatment_session: session.status,
+           current_cost: session.current_cost,
+           total_advance_payment: session.total_advance_payment,
+           refunded_amount: session.refunded_amount,
+           payment_status_treatment_session: session.payment_status,
+           medical_orders: session.medical_orders?.map((order: any) => {
+             let parsedDetail;
+             try {
+               parsedDetail = JSON.parse(order.detail);
+             } catch (e) {
+               parsedDetail = null; // hoặc {} hoặc throw error tùy cách bạn xử lý
+             }
+           
+             return {
+               id: order.id,
+               treatment_session_id: order.treatment_session_id,
+               typeSub: parsedDetail.type==="services"?"Dịch vụ( Xét nghiệm, Tiểu phẫu,...)":"Đơn thuốc(Đơn thuốc điều trị)", // ← Bây giờ là object { type: 'services', pivot_ids: [...] }
+               typeEng: parsedDetail.type,
+               pivot_ids: parsedDetail.pivot_ids, // ← Bây giờ là object { type: 'services', pivot_ids: [...] }
+               notes: order.notes,
+               date: order.createdAt,
+             };
+           }) ?? [],
+           
+           daily_healths: session.daily_healths?.map((health: any) => ({
+             id: health.id,
+             treatment_session_id: health.treatment_session_id,
+             check_date: health.check_date,
+             temperature: health.temperature,
+             blood_pressure: health.blood_pressure,
+             heart_rate: health.heart_rate,
+             notes: health.notes,
+           })) ?? [],
+           advance_payments: session.advance_payments?.map((payment: any) => ({
+             id: payment.id,
+             treatment_session_id: payment.treatment_session_id,
+             amount: payment.amount,
+             payment_date: payment.payment_date,
+           })) ?? [],
+         })) ?? [],
+       }));
     if (fetchedMedicalRecordHistoryDetail) {
+      console.log("fetchedMedicalRecordHistoryDetail",fetchedMedicalRecordHistoryDetail)
       setMedicalRecordHistoryDetails(fetchedMedicalRecordHistoryDetail);
     }
   } catch (error) {

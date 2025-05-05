@@ -323,3 +323,17 @@ export const CreateMedication=z.object({
   measure: z.string().min(1,"Đơn vị không được để trống"),
   description: z.string().min(1,"Vui lòng nhập mô tả"),
 });
+// export const CreateMedicalOrder=z.object({
+//   name: z.string().min(1,"Tên dược phẩm không được để trống"),
+//   dosage: z.number().min(1, "Liều lượng vui lòng nhập số"),
+//   measure: z.string().min(1,"Đơn vị không được để trống"),
+//   description: z.string().min(1,"Vui lòng nhập mô tả"),
+// });
+export const CreateDailyHealth=z.object({
+  temperature: z.coerce.number()
+  .min(35, { message: "Nhiệt độ tối thiểu là 35 độ C" })
+  .max(42, { message: "Nhiệt độ tối đa là 42 độ C" }),
+  blood_pressure: z.string().min(1,"Vui lòng nhập huyết áp"),
+  heart_rate: z.string().min(1,"Vui lòng nhập nhịp tim"),
+  notes: z.string().min(1,"Vui lòng nhập ghi chú"),
+});

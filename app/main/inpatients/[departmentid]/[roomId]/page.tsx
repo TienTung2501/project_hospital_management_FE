@@ -1,1 +1,0 @@
-// hiển thị list bệnh nhân

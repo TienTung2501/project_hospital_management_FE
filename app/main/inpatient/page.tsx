@@ -33,8 +33,8 @@ const HomePage = () => {
         department_name: item.departments?.name || "N/A",
         room_catalogue_code: item.room_catalogues?.name || "N/A",
         description: item.room_catalogues?.description || "",
-        beds_count: item.beds_count,
-        occupied_beds:item.occupied_beds,
+        beds_count: item.total_beds,
+        occupied_beds: item.occupied_beds,
         status_bed: item.status_bed,
         status: item.status,
         department_id: item.department_id,
@@ -46,7 +46,6 @@ const HomePage = () => {
       const filteredRooms = fetchedRooms.filter((room) =>
         userRoomIds.includes(Number(room.id))
       );
-
       setRooms(filteredRooms); // Cập nhật danh sách phòng phụ trách
     } catch (err) {
       setError("Error fetching rooms. Please try again.");
@@ -109,7 +108,7 @@ const HomePage = () => {
                         (
                           <h2 className="font-semibold text-lg">Click vào đây để thêm thêm thông tin bệnh nhân</h2>
                         ):( 
-                          <><h2 className="font-semibold text-lg">Nhóm phòng: {room.room_catalogue_code}</h2>
+                          <><h2 className="font-semibold text-lg">{room.room_catalogue_code}</h2>
                           <p className="text-sm text-gray-600">Phòng: {room.code}</p>
                           <p className="text-sm text-gray-600">Khoa: {room.department_name}</p></>)
                       }
@@ -118,7 +117,7 @@ const HomePage = () => {
                 );
               })
             ) : (
-              <li className="text-gray-500">Đang đảm nhận một vai trò chung nên không hiển thị phòng phụ trách.</li>
+              <li className="text-gray-500">Không có phòng phụ trách.</li>
             )}
           </ul>
         </>

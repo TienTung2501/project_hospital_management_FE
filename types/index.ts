@@ -490,3 +490,19 @@ export type TreatmentSession= {
   daily_healths: DailyHealth[];
   advance_payments: AdvancePayment[];
 }
+export type TreatmentSessionInpatient= {
+  id: bigint;
+  patient_name:string;
+  bed_code:string;
+  visit_date?:string|undefined;
+  medical_record_id: bigint;
+  bed_id: bigint;
+  start_date: string;
+  end_date: string;
+  diagnosis: string;
+  notes: string;
+  conclusion_of_treatment: string;
+  status_treatment_session: number;
+}
+
+

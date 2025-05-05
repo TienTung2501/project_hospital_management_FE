@@ -36,6 +36,14 @@
   }
   ,
   {
+    "role": "Bác sĩ điều trị",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "inpatient", "name": "Tiếp nhận điều trị" },
+      { "path": "setting", "name": "Thông tin cá nhân" }
+    ]
+  },
+  {
     "role": "Điều dưỡng viên",
     "links": [
       { "path": "/", "name": "Trang chủ" },

@@ -605,12 +605,8 @@ const PatientReceive = () => {
       fetchMedications(value);
   };
   const handleSelectMedication = (value: bigint | null) => {
-    if(value!==null){
-      const medication=medications.find((item)=>item.id===value)
-      console.log(medication)
-      if(medication)
-        formCreateMedication.setValue('name',medication.name)
-    }
+    if(value)
+      formCreateMedication.setValue('name',BigInt(value))
   };
   const fetchMedicationCatalogues = async () => {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicationCatalogues`;
@@ -672,23 +668,26 @@ const PatientReceive = () => {
   // Hàm xử lý submit
   const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
   // Tạo ID mới, tăng từ 1 dựa trên mảng hiện tại
-  const newId = BigInt(medicationDetails.length > 0 ? Number(medicationDetails[medicationDetails.length - 1].id) + 1 : 1);
-
-  // Tạo đối tượng thuốc mới
-  const newMedication: MedicationDetail = {
-    id: newId,
-    name: data.name,
-    dosage: data.dosage,
-    measure: data.measure,
-    description: data.description || "",
-  };
-
+  const found = medications.find((item) => item.id === data.name);
+  
+    if (!found) {
+      // Xử lý khi không tìm thấy thuốc, ví dụ báo lỗi hoặc return
+      console.error("Không tìm thấy thuốc phù hợp");
+      return;
+    }
+    const newMedication: MedicationDetail = {
+      id: found.id,
+      name: found.name,
+      dosage: data.dosage,
+      measure: data.measure,
+      description: data.description || "",
+    };
   // Thêm vào danh sách thuốc
   setMedicationDetails((prevDetails) => [...prevDetails, newMedication]);
 
   // Reset form sau khi thêm thành công
   formCreateMedication.reset({
-    name:"",
+    name:undefined,
     dosage:0,
     measure:"",
     description:"",

@@ -318,7 +318,9 @@ export const MedicalRecordUpdateDiagnose=z.object({
     ),
 });
 export const CreateMedication=z.object({
-  name: z.string().min(1,"Tên dược phẩm không được để trống"),
+  name:  z.bigint().min(BigInt(1), {
+    message: "Yêu cầu chọn thuốc",
+}),
   dosage: z.number().min(1, "Liều lượng vui lòng nhập số"),
   measure: z.string().min(1,"Đơn vị không được để trống"),
   description: z.string().min(1,"Vui lòng nhập mô tả"),

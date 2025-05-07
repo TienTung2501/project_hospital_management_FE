@@ -21,6 +21,7 @@ enum ColumnType {
   PaymentStatus = "paymentStatus",
   InsuranceApplicable = "insuranceApplicable",
   health_insurance_applied = "health_insurance_applied",
+  payment_status = "payment_status",
   status_treatment_session = "status_treatment_session",
   payment_status_treatment_session = "payment_status_treatment_session",
   is_inpatient="is_inpatient",
@@ -93,7 +94,7 @@ const renderCellContent = (
     case ColumnType.Currency:
       return (
         <div className="text-right font-medium w-fit">
-          {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value)}
+        {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value)}
         </div>
       );
 
@@ -149,6 +150,12 @@ const renderCellContent = (
         return <div>Điều trị ngoại trú</div>;
       }
     case ColumnType.payment_status_treatment_session:
+      if (value === 1) {
+        return <div>Đã thanh toán</div>;
+      } else {
+        return <div>Chưa thanh toán</div>;
+      }
+    case ColumnType.payment_status:
       if (value === 1) {
         return <div>Đã thanh toán</div>;
       } else {
@@ -278,6 +285,9 @@ const keys = Object.keys(columnHeaderMap).filter(
     }
     else if (key === "status_treatment_session") {
       columnType = ColumnType.status_treatment_session;
+    }
+    else if (key === "payment_status") {
+      columnType = ColumnType.payment_status;
     }
 
     columns.push({

@@ -434,6 +434,20 @@ export type AdvancePayment= {
   amount: string;
   payment_date: string;
 }
+export type AdvancePaymentBill= {
+  id: bigint;
+  treatment_session_id: bigint;
+  patient_name:string;
+  patient_phone:string;
+  patient_cccd:string;
+  amount: string;
+  current_cost: string;
+  total_advance_payment: string;
+  refunded_amount: string;
+  payment_status_treatment_session:number;
+  patient:Patient;
+  payment_date:string;
+}
 
 // Daily Health
 export type DailyHealth= {
@@ -505,5 +519,51 @@ export type TreatmentSessionInpatient= {
   conclusion_of_treatment: string;
   status_treatment_session: number;
 }
+export type PatientBill= {
+  id: number;
+  name: string;
+  birthday: string;
+  address: string;
+  phone: string;
+  cccd_number: string;
+  health_insurance_code: string | null;
+  guardian_phone: string;
+  gender: number;
+  description: string | null;
+}
 
+export type BillDetail= {
+  id: bigint;
+  bill_id: bigint;
+  model_id: bigint;
+  model_type: string;
+  model_name: string;
+  unit: string;
+  quantity: number;
+  price: string;
+  total_price: string;
+  total_insurance_covered: string;
+  total_amount_due: string;
+  health_insurance_applied: number;
+  health_insurance_value: number;
+}
 
+export type Bill= {
+  id: bigint;
+  treatment_session_id: bigint;
+  patient_id: bigint;
+  patient_name: string,
+  patient_phone: string,
+  patient_cccd: string,
+  bill_type: string;
+  create_date:string;
+  total_price: string;
+  total_insurance_covered: string;
+  total_pay: string;
+  total_amount_due: string;
+  refunded_amount: string;
+  amount_due: string;
+  payment_status: number;
+  patients: PatientBill;
+  bill_details: BillDetail[];
+}

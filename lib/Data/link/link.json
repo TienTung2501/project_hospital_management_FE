@@ -50,5 +50,13 @@
       { "path": "newpatient", "name": "Tiếp nhận mới" },
       { "path": "setting", "name": "Thông tin cá nhân" }
     ]
+  },
+  {
+    "role": "Thanh toán viên",
+    "links": [
+      { "path": "/", "name": "Trang chủ" },
+      { "path": "billing", "name": "Tiếp nhận thanh toán" },
+      { "path": "setting", "name": "Thông tin cá nhân" }
+    ]
   }
 ]

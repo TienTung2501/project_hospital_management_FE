@@ -358,3 +358,7 @@ export const CreateTreatmentSession=z.object({
 export const SaveTreatmentSession=z.object({
   conclusion_of_treatment: z.string().min(1,"Vui lòng nhập kết luận"),
 });
+export const SaveAdvancePayment=z.object({
+  amount: z.coerce.number()
+  .min(200000, { message: "Cần đóng tối thiểu là 200.000VND" })
+});

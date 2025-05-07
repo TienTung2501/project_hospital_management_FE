@@ -181,7 +181,7 @@ const InpatientPage = () => {
               end_date: session.end_date,
               diagnosis: record.diagnosis,
               notes: record.notes,
-              conclusion_of_treatment: session.conclusion_of_treatment,
+              conclusion_of_treatment: session.conclusion_of_treatment||"Chưa kết luận",
               status_treatment_session: session.status,
             })) || []
           );

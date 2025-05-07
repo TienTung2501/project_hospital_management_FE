@@ -75,7 +75,8 @@ export interface LinkBaseRoleType {
     status: number; // Trạng thái hoạt động (1-đang hoạt động, 0-bị dừng)
     room_catalogue_id: bigint; // Tham chiếu đến bảng room_catalogues
     department_id: bigint; // Tham chiếu đến bảng departments
-    occupied_beds: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
+    user_id?: bigint; // Tham chiếu đến bảng departments
+    occupied_beds?: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
     beds_count: number; // Trạng thái giường (0 - chưa đầy, 1 - đầy)
     status_bed:number;
     department_name:string;

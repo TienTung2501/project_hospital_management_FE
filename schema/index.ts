@@ -339,3 +339,22 @@ export const CreateDailyHealth=z.object({
   heart_rate: z.string().min(1,"Vui lòng nhập nhịp tim"),
   notes: z.string().min(1,"Vui lòng nhập ghi chú"),
 });
+export const CreateTreatmentSession=z.object({
+  department_id:  z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn khoa",
+  }),
+  room_id:  z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn phòng",
+  }),
+  user_id:  z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn phòng",
+  }),
+  bed_id:  z.bigint().min(BigInt(1), {
+      message: "Yêu cầu chọn giường",
+  }),
+  notes: z.string().min(1,"Vui lòng nhập ghi chú"),
+  diagnosis: z.string().min(1,"Vui lòng nhập chuẩn đoán"),
+});
+export const SaveTreatmentSession=z.object({
+  conclusion_of_treatment: z.string().min(1,"Vui lòng nhập kết luận"),
+});

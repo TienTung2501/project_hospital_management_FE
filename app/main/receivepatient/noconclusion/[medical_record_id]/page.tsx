@@ -31,7 +31,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Combobox } from '@/components/combobox'
-import { DailyHealth, MedicalOrder, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServicePivot, ServiceType, TreatmentSession, UserInfoType } from '@/types';
+import { BedType, DailyHealth, DepartmentType, MedicalOrder, MedicalRecord, MedicalRecordHistoryDetail, MedicalRecordRecordServiceDetail, MedicationCatalogue, MedicationDetail, MedicationType, Patient, PatientCurrently , PatientServiceInfo, RoomType, ServiceCatalogue, ServiceDetailPatientResul, ServicePivot, ServiceType, TreatmentSession, UserInfoType } from '@/types';
 import { useParams, useRouter } from 'next/navigation'
 import createColumns from '@/components/column-custom';
 import { DataTable } from '@/components/data-table';
@@ -43,7 +43,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { Textarea } from '@/components/ui/textarea';
-import {  CreateMedication, MedicalRecordUpdateDiagnose, PatientServiceSchema } from '@/schema';
+import {  CreateMedication, CreateTreatmentSession, MedicalRecordUpdateDiagnose, PatientServiceSchema } from '@/schema';
 import axios from 'axios';
 import { useUser } from '@/components/context/UserContext';
 import { format } from 'date-fns';
@@ -365,7 +365,9 @@ const PatientDetail = () => {
         try {
           // Fetch medical record details
           await fetchMedicalRecordDetail();
-          
+          await fetchDepartments();
+          await fetchBeds();
+          await fetchRooms();
           // Fetch medication catalogues
           await fetchMedicationCatalogues();
         } catch (error) {
@@ -501,12 +503,8 @@ const PatientDetail = () => {
       fetchMedications(value);
   };
   const handleSelectMedication = (value: bigint | null) => {
-    if(value!==null){
-      const medication=medications.find((item)=>item.id===value)
-      console.log(medication)
-      if(medication)
-        formCreateMedication.setValue('name',medication.name)
-    }
+    if(value)
+      formCreateMedication.setValue('name',BigInt(value))
   };
 
 const buttonColumnConfig = {
@@ -575,28 +573,35 @@ const onSubmitDiagnose=(data: z.infer<typeof MedicalRecordUpdateDiagnose>)=>{
 // Hàm xử lý submit
 const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
   // Tạo ID mới, tăng từ 1 dựa trên mảng hiện tại
-  const newId = BigInt(medicationDetails.length > 0 ? Number(medicationDetails[medicationDetails.length - 1].id) + 1 : 1);
-
-  // Tạo đối tượng thuốc mới
-  const newMedication: MedicationDetail = {
-    id: newId,
-    name: data.name,
-    dosage: data.dosage,
-    measure: data.measure,
-    description: data.description || "",
-  };
-
-  // Thêm vào danh sách thuốc
-  setMedicationDetails((prevDetails) => [...prevDetails, newMedication]);
-
-  // Reset form sau khi thêm thành công
-  formCreateMedication.reset({
-    name:"",
-    dosage:0,
-    measure:"",
-    description:"",
-  });
-  setIsOpenAddMedication(false);
+    
+  
+    // Tạo đối tượng thuốc mới
+    const found = medications.find((item) => BigInt(item.id) === data.name);
+  
+    if (!found) {
+      // Xử lý khi không tìm thấy thuốc, ví dụ báo lỗi hoặc return
+      console.error("Không tìm thấy thuốc phù hợp");
+      return;
+    }
+    const newMedication: MedicationDetail = {
+      id: found.id,
+      name: found.name,
+      dosage: data.dosage,
+      measure: data.measure,
+      description: data.description || "",
+    };
+  
+    // Thêm vào danh sách thuốc
+    setMedicationDetails((prevDetails) => [...prevDetails, newMedication]);
+  
+    // Reset form sau khi thêm thành công
+    formCreateMedication.reset({
+      name:undefined,
+      dosage:0,
+      measure:"",
+      description:"",
+    });
+    setIsOpenAddMedication(false);
 };
 const convertTimestampToDate = (timestamp: number) => {
   const date = new Date(timestamp);
@@ -1024,7 +1029,236 @@ const columnDailyHealth = useMemo(() => {
       )
     : [];
 }, [treatmentSessionDetailMedicalDailyHealthList, columnTreatmentSessionDetailDailyHealthListHeaderMap]);
-  return (
+// create treatment session: 
+
+const [isPending,startTransition]=useTransition(); 
+const [error,setError]=useState<string|undefined>("");
+const [departments,setDepartments]=useState<DepartmentType[]>([]);
+const [rooms,setRooms]  =useState<RoomType[] >([]);
+const [beds,setBeds]=useState<BedType[]>([]);
+const [isOpenDialogCreateTreatmentSession, setIsOpenDialogCreateTreatmentSession] = useState(false);  
+const fetchDepartments = async () => {
+  setLoading(true) // Bắt đầu trạng thái loading
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/departments`;
+  try {
+    const response = await axios.get(endpoint, {
+      params: {
+        limit: limit, // Số bản ghi trên mỗi trang
+        page: pageIndex, // Trang hiện tại
+        status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+        keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+      },
+    })
+    const { data } = response.data.data
+
+    if (Array.isArray(data)) {
+      const fetchedDepartments: DepartmentType[] = data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        status: item.status,
+      })) // Chỉ lấy các thuộc tính cần thiết
+  
+      setDepartments(fetchedDepartments) // Cập nhật danh sách phòng ban
+      setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+    } else {
+      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+    }
+  } catch (err) {
+    setError('Error fetching departments') // Xử lý lỗi
+    console.error('Error fetching departments:', err)
+  } finally {
+    setLoading(false) // Kết thúc trạng thái loading
+  }
+}
+const fetchRooms = async () => {
+  setLoading(true) // Bắt đầu trạng thái loading
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/rooms`;
+  try {
+    const response = await axios.get(endpoint, {
+      params: {
+        limit: limit, // Số bản ghi trên mỗi trang
+        page: pageIndex, // Trang hiện tại
+        status: status!==2?status:undefined, // Thêm trạng thái vào tham số API
+        keyword: keyword.trim()!==""?keyword:undefined // Thêm từ khóa tìm kiếm vào tham số API
+      },
+    })
+    const { data } = response.data.data
+    if (Array.isArray(data)) {
+      const fetchedRooms: RoomType[] = data.map((item: any) => ({
+        id: item.id,
+        code: item.code,
+        department_name:item.departments.name,
+        room_catalogue_code:item.room_catalogues.name,
+        description: item.room_catalogues.description,
+        occupied_beds: item.occupied_beds,
+        beds_count: item.total_beds,
+        status_bed:item.status_bed,
+        status: item.status,
+        department_id: item.department_id,
+        room_catalogue_id: item.room_catalogue_id,
+        
+      }));
+      setRooms(fetchedRooms) // Cập nhật danh sách phòng ban
+      setTotalRecords(response.data.data.total) // Giả sử API trả về tổng số bản ghi
+    } else {
+      throw new Error('Invalid response format') // Xử lý trường hợp định dạng không hợp lệ
+    }
+  } catch (err) {
+    setError('Error fetching RoomCatalogues') // Xử lý lỗi
+    console.error('Error fetching RoomCatalogues:', err)
+  } finally {
+    setLoading(false) // Kết thúc trạng thái loading
+  }
+};
+const fetchBeds = async () => {
+  setLoading(true); // Bắt đầu trạng thái loading
+  const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/beds`;
+
+  try {
+      const response = await axios.get(endpoint, {
+          params: {
+              limit: limit, // Số bản ghi trên mỗi trang
+              page: pageIndex, // Trang hiện tại
+              keyword: keyword.trim() !== "" ? keyword : undefined // Thêm từ khóa tìm kiếm vào tham số API
+          },
+      });
+      const { data } = response.data.data||[];
+      if (Array.isArray(data)) {
+          const fetchedBedList: BedType[] = data.map((item: any) => ({
+              id: item.id,
+              code: item.code,
+              room_code: item.rooms.code,
+              department_id: item.rooms.department_id,
+              room_catalogue_id: item.rooms.room_catalogue_id,
+              room_id: item.rooms.id,
+              // Tạm thời để trống department_name và room_catalogue_name
+              department_name: "", 
+              room_catalogue_name: "", 
+              patient_id: item.patients?.id,
+              patient_name: item.patients?.name,
+              price: item.price,
+              unit: item.unit,
+              status: item.status,
+          }));
+          setBeds(fetchedBedList); // Cập nhật danh sách giường
+          setTotalRecords(response.data.data.total); // Giả sử API trả về tổng số bản ghi
+      } else {
+          throw new Error('Invalid response format'); // Xử lý trường hợp định dạng không hợp lệ
+      }
+  } catch (err) {
+      setError('Error fetching beds'); // Xử lý lỗi
+      console.error('Error fetching beds:', err);
+  } finally {
+      setLoading(false); // Kết thúc trạng thái loading
+  }
+};
+
+
+const formCreateTreatmentSession=useForm<z.infer<typeof CreateTreatmentSession>>({
+  resolver:zodResolver(CreateTreatmentSession),
+  });
+// Khi chọn khoa
+const handleSelectDepartmemtCreateTreatmentSession = (value: bigint | null) => {
+  if (value !== null) {
+    const depId = BigInt(value);
+    formCreateTreatmentSession.setValue('department_id', depId);
+
+    // Lọc các phòng thuộc khoa này
+    const filteredRooms = rooms.filter(room => room.department_id === depId);
+    setRooms(filteredRooms);
+  }
+};
+
+// Khi chọn phòng
+const handleSelectRoomCreateTreatmentSession = (value: bigint | null) => {
+  if (value !== null) {
+    const roomId = BigInt(value);
+    formCreateTreatmentSession.setValue('room_id', roomId);
+
+    const room = rooms.find((r) => r.id === roomId);
+    if (room?.user_id) {
+      formCreateTreatmentSession.setValue('user_id', room.user_id);
+    }
+
+    // Lọc giường của phòng này và có patient_id
+    const filteredBeds = beds.filter(bed => bed.room_id === roomId && bed.status===0);
+    setBeds(filteredBeds);
+  }
+};
+
+// Khi chọn giường
+const handleSelectBedCreateTreatmentSession = (value: bigint | null) => {
+  if (value !== null) {
+    formCreateTreatmentSession.setValue('bed_id', BigInt(value));
+  }
+};
+const onSubmitCreateTreatmentSession = async (values: z.infer<typeof CreateTreatmentSession>) => {
+  if (medical_record_id) {
+    toast({
+      variant: "destructive",
+      title: "Lỗi",
+      description: "Không tìm thấy hồ sơ bệnh án.",
+    });
+    return;
+  }
+
+  const payload = {
+    medical_record: {
+      medical_record_id: Number(medical_record_id),
+      data: {
+        is_inpatient: 1,
+        diagnosis: values.diagnosis,
+        notes: values.notes,
+      },
+    },
+    treatment_session: {
+      medical_record_id: Number(medical_record_id),
+      department_id: values.department_id,
+      room_id: values.room_id,
+      bed_id: values.bed_id,
+      user_id: values.user_id,
+      diagnosis: values.diagnosis,
+      notes: values.notes,
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivotTreatmentSession`,
+      payload,
+      { timeout: 5000 }
+    );
+
+    if (response.status === 200) {
+      toast({
+        variant: "success",
+        title: "Thành công",
+        description: "Tạo đợt điều trị thành công.",
+      });
+
+      // Đóng dialog và reset form
+      formCreateTreatmentSession.reset();
+      setIsOpenDialogCreateTreatmentSession(false);
+
+      // Refetch dữ liệu nếu cần
+      await fetchMedicalRecordDetail();
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Lỗi",
+        description: "Không thể tạo đợt điều trị.",
+      });
+    }
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: "Lỗi khi gửi yêu cầu",
+      description: error?.response?.data?.message || error.message,
+    });
+  }
+};
+return (
         <main className="flex w-full flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 col bg-muted/40">
         <div
           className="flex pb-5 flex-col flex-1 rounded-lg px-5 border border-dashed shadow-sm" x-chunk="dashboard-02-chunk-1"
@@ -1273,26 +1507,130 @@ const columnDailyHealth = useMemo(() => {
                       <Button variant="outline" className='mr-5'  disabled={!isEditing} onClick={formUpdateDiagnose.handleSubmit(onSubmitDiagnose)}> Lưu thông tin</Button>
                       <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleEditInformation}> Sửa thông tin</Button>
                       <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline">Nhập viện</Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                          <DialogHeader>
-                            <DialogTitle>Thông tin nhập viện</DialogTitle>
-                            <DialogDescription>
-                              
-                            </DialogDescription>
-                          </DialogHeader>
-                          <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Lỗi</AlertTitle>
-                        <AlertDescription>
-                        Hệ thống chưa cập nhật tính năng, vui lòng trở lại sau.
-                        </AlertDescription>
-                      </Alert>
-                        </DialogContent>
-                      </Dialog>
+                     <Dialog open={isOpenDialogCreateTreatmentSession} onOpenChange={setIsOpenDialogCreateTreatmentSession}>
+                                               <DialogTrigger asChild>
+                                                 <Button className='ml-5' size="sm">Chuyển khoa</Button>
+                                               </DialogTrigger>
+                                               
+                                               <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+                                             <Card x-chunk="dashboard-07-chunk-3">
+                                                       <CardHeader>
+                                                         <CardTitle>Chỉ định nơi điều trị cho bệnh nhân</CardTitle>
+                                                         <CardDescription>
+                                                           Ghi chú, chuẩn đoán, Chỉ định khoa, phòng, giường cho bệnh nhân.
+                                                         </CardDescription>
+                                                       </CardHeader>
+                                                       <CardContent>
+                                                       <div className="flex flex-col gap-4">
+                                                       <Form {...formCreateTreatmentSession}>
+                                                        <form onSubmit={formCreateTreatmentSession.handleSubmit(onSubmitCreateTreatmentSession)}>
+                                                       <FormField
+                                                           control={formCreateTreatmentSession.control}
+                                                           name="notes"
+                                                           render={({field})=>(
+                                                             <FormItem>
+                                                               <FormLabel>
+                                                                 Ghi chú
+                                                               </FormLabel>
+                                                               <FormControl>
+                                                                 <Textarea {...field}
+                                                                   disabled={isPending}
+                                                                   placeholder='Example: Cần nhập viện điều trị hoặc chuyển khoa điều trị.'
+                                                                 />
+                                                               </FormControl>
+                                                               <FormMessage/>
+                                                             </FormItem>
+                                                           )}
+                                                         />
+                                                       <FormField
+                                                         control={formCreateTreatmentSession.control}
+                                                         name="diagnosis"
+                                                         render={({field})=>(
+                                                           <FormItem>
+                                                             <FormLabel>
+                                                               Ghi chú
+                                                             </FormLabel>
+                                                             <FormControl>
+                                                               <Textarea {...field}
+                                                                 disabled={isPending}
+                                                                 placeholder='Example: Chuẩn đoán bệnh tình bệnh nhân để có phương hướng điều trị tiếp theo.'
+                                                               />
+                                                             </FormControl>
+                                                             <FormMessage/>
+                                                           </FormItem>
+                                                         )}
+                                                       />
+                                                       <FormField
+                       control={formCreateTreatmentSession.control}
+                       name="department_id"
+                       render={({ field }) => (
+                         <FormItem className="flex flex-col">
+                           <FormLabel>Khoa</FormLabel>
+                           <FormControl>
+                             <Combobox<bigint>
+                               options={departments.map(dep => ({ value: dep.id, label: dep.name }))}
+                               placeholder="Chọn khoa"
+                               onSelect={handleSelectDepartmemtCreateTreatmentSession}
+                               defaultValue={field.value}
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                     
+                     <FormField
+                       control={formCreateTreatmentSession.control}
+                       name="room_id"
+                       render={({ field }) => (
+                         <FormItem className="flex flex-col">
+                           <FormLabel>Phòng</FormLabel>
+                           <FormControl>
+                             <Combobox<bigint>
+                               options={rooms.map(room => ({ value: room.id, label: room.code }))}
+                               placeholder="Chọn phòng"
+                               onSelect={handleSelectRoomCreateTreatmentSession}
+                               defaultValue={field.value}
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                     
+                     <FormField
+                       control={formCreateTreatmentSession.control}
+                       name="bed_id"
+                       render={({ field }) => (
+                         <FormItem className="flex flex-col">
+                           <FormLabel>Giường</FormLabel>
+                           <FormControl>
+                             <Combobox<bigint>
+                               options={beds.map(bed => ({ value: bed.id, label: `${bed.code}` }))}
+                               placeholder="Chọn giường"
+                               onSelect={handleSelectBedCreateTreatmentSession}
+                               defaultValue={field.value}
+                             />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                     </form>
+                     </Form>
+                                         </div>
+                                                       </CardContent>
+                                             </Card>
+                                             </DialogContent>
+                                             <DialogFooter className="justify-end">
+                                               <Button
+                                                 type="button"
+                                                 onClick={formCreateTreatmentSession.handleSubmit(onSubmitCreateTreatmentSession)}
+                                               >
+                                                 Lưu
+                                               </Button>
+                                             </DialogFooter>
+                                           </Dialog>
       
             
                       </CardContent>

@@ -288,6 +288,7 @@ const PatientReceive = () => {
           occupied_beds: item.occupied_beds,
           beds_count: item.total_beds,
           status_bed:item.status_bed,
+          user_id:item.users[0]?.id,
           status: item.status,
           department_id: item.department_id,
           room_catalogue_id: item.room_catalogue_id,

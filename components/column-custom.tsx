@@ -115,7 +115,7 @@ const renderCellContent = (
     case ColumnType.Date:
       return (
         <div>
-          {value?formatDateCustom(value):"No Date"}
+          {value?formatDateCustom(value):"Chưa có ngày"}
         </div>
       );
 

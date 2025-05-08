@@ -55,10 +55,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { create_patient } from '@/actions/patient/newpatient/create';
 import { DayPicker } from 'react-day-picker';
 import { FormError } from '@/components/form-error';
-import { Dialog, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogFooter, DialogHeader,DialogContent,DialogDescription,DialogTitle } from '@/components/ui/dialog';
 import LoadingWrapper from '@/components/LoadingWrapper';
-import { DialogContent, DialogDescription, DialogTitle } from '@radix-ui/react-dialog';
 
+import {formatDateCustom} from '@/utils'
 
 
 const columnBillHeaderMap: { [key: string]: string } = {
@@ -80,7 +80,7 @@ const columnAdvancePaymentBillHeaderMap: { [key: string]: string } = {
   patient_phone: "Số điện thoại",
   patient_cccd: "CCCD",
   payment_date:"Ngày tạm ứng",
-  amount: "Số tiền tạm ứng",
+  amount_advance: "Số tiền tạm ứng",
   current_cost: "Chi phí hiện tại",
   total_advance_payment: "Tổng tạm ứng",
   refunded_amount: "Đã hoàn",
@@ -107,8 +107,8 @@ const numberOptions = [
   { value: 40, label: "40 bản ghi" },
 ]
 const statusOptions = [
-  { value: 0, label: "Không hoạt động" },
-  { value: 1, label: "Hoạt động" },
+  { value: 0, label: "Chưa thanh toán" },
+  { value: 1, label: "Đã thanh toán" },
   { value: 2, label: "Tât cả" },
 ]
 const Billing = () => {
@@ -124,34 +124,20 @@ const Billing = () => {
   const [billDetails,setBillDetails]=useState<BillDetail[]>();
   const [advancePayment,setAdvancePayment]=useState<AdvancePaymentBill[]>();
   const [advancePaymentDetail,setAdvancePaymentDetail]=useState<AdvancePaymentBill>();
+  const [amountToSubmit,setAmountToSubmit]=useState<Number>();
 
   const [loading, setLoading] = useState(false);
 
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isOpenDialogBillDetail, setIsOpenDialogBillDetail] = useState(false);
   const [isOpenDialogSaveAdvancePayment, setIsOpenDialogSaveAdvancePayment] = useState(false);
   const [showConfirmDialogSaveAdvancePayment, setShowConfirmDialogSaveAdvancePayment] = useState(false);
   const [showConfirmDialogSaveBill, setShowConfirmDialogSaveBill] = useState(false);
-  
-  
-  
-  
-  
-  
-  
-  
 
-  const handleOpenSubmitDialog = () => {
-    setShowConfirmDialog(true); // Mở dialog xác nhận
-  };
+
   // action end treatment session
   const formSaveAdvancePayment=useForm<z.infer<typeof SaveAdvancePayment>>({
     resolver:zodResolver(SaveAdvancePayment),
     });
-  const handleConfirmSubmit = () => {
-    setShowConfirmDialog(false);
-    formSaveAdvancePayment.handleSubmit(onSubmitSaveAvancePayment)(); // <-- cần có () để gọi hàm
-  };
 
   const fetchBill = async () => {
     setLoading(true);
@@ -207,11 +193,9 @@ const Billing = () => {
           total_insurance_covered: detail.total_insurance_covered,
           total_amount_due: detail.total_amount_due,
           health_insurance_applied: detail.health_insurance_applied,
-          health_insurance_value: detail.health_insurance_value,
+          health_insurance_value: detail.health_insurance_value||"0",
         })),
       }));
-      console.log(data)
-      console.log("bills",bills)
       setBills(bills)
     } catch (error) {
       console.error("Error fetching bills:", error);
@@ -244,12 +228,12 @@ const Billing = () => {
             : null;
       
           return {
-            id: BigInt(item.id),
+            id: BigInt(session.id),
             treatment_session_id: BigInt(session.id),
             patient_name: patient?.name || "",
             patient_phone: patient?.phone || "",
             patient_cccd: patient?.cccd_number || "",
-            amount: session.total_advance_payment || "0.00",
+            amount_advance: session.total_advance_payment || "0.00",
             current_cost: session.current_cost || "0.00",
             total_advance_payment: session.total_advance_payment || "0.00",
             refunded_amount: session.refunded_amount || "0.00",
@@ -262,7 +246,7 @@ const Billing = () => {
               address: patient?.address || "",
               phone: patient?.phone || "",
               cccd_number: patient?.cccd_number || "",
-              health_insurance_code: patient?.health_insurance_code || "",
+              health_insurance_code: patient?.health_insurance_code || "Không có",
               guardian_phone: patient?.guardian_phone || "",
               gender: patient?.gender || 0,
               description: patient?.description || null,
@@ -281,32 +265,110 @@ const Billing = () => {
     }
   };
   
-  const onSubmitSaveAvancePayment = async (data: { amount: number }) => {
-    if (!advancePaymentDetail?.treatment_session_id) return;
+  
+  const onSubmitSaveAvancePayment = async (values: z.infer<typeof SaveAdvancePayment>) => {
+    setAmountToSubmit(values.amount);
+    setShowConfirmDialogSaveAdvancePayment(true); // chỉ mở xác nhận nếu chưa thanh toán đủ
+  };
+  
+  
+  const handleConfirmSubmit = async () => {
+    if (!advancePaymentDetail?.treatment_session_id || !amountToSubmit) return;
+  
     setLoading(true);
+    const payload = {
+      treatment_session_id: Number(advancePaymentDetail.treatment_session_id),
+      amount: amountToSubmit,
+    };
     try {
-     
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/treatmentSessions/createPivotAdvancePayment`,
+        payload,
+        { timeout: 5000 }
+      );
+  
+  
+      if (response.status === 200) {
+        toast({
+          variant: "success",
+          title: "Thành công",
+          description: "Ứng tiền viện phí thành công.",
+        });
+  
+        // Đóng dialog và reset form
+  
+        // Refetch dữ liệu nếu cần
+        await fetchBill();
+        await fetchAdvance();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Không thể ứng tiền viện phí.",
+        });
+      }
+    
       setIsOpenDialogSaveAdvancePayment(false);
-    } catch (error) {
-      
-    } finally {
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Lỗi khi gửi yêu cầu",
+        description: error?.response?.data?.message || error.message,
+      })} finally {
       setLoading(false);
     }
   };
+  
   
   const onSubmitSaveBill = async () => {
     if (!billSelected?.id) return;
+    if (billSelected?.payment_status===1) {
+      alert("Bệnh nhân đã thanh toán đủ, không cần thanh toán nữa!");
+      return;
+    }
+    const payload = {
+      status: 1  };
     setLoading(true);
     try {
-     
-      setIsOpenDialogBillDetail(false);
-    } catch (error) {
+      const response = await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/bills/${billSelected.id}`,
+        payload,
+        { timeout: 5000 }
+      );
+  
+      if (response.status === 200) {
+        toast({
+          variant: "success",
+          title: "Thành công",
+          description: "Thanh toán thành công.",
+        });
+  
+        // Đóng dialog và reset form
+  
+        // Refetch dữ liệu nếu cần
+        await fetchBill();
+        await fetchAdvance();
+
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: "Thanh toán không thành công.",
+        });
+      }
     
-    } finally {
+      setIsOpenDialogBillDetail(false);
+    } catch (error: any) {
+      console.log(error)
+      toast({
+        variant: "destructive",
+        title: "Lỗi khi gửi yêu cầu",
+        description: error?.response?.data?.message || error.message,
+      })} finally {
       setLoading(false);
     }
   };
-  
+      
   
   const router = useRouter(); 
   const handleSelecLimit = (value: number | null) => {
@@ -320,10 +382,16 @@ const Billing = () => {
     setPageIndex(1); // Reset về trang 1 khi thay đổi limit
 }
   const buttonBillColumnConfig = {
-    id: 'customButtobuttonBillColumnConfign',
+    id: 'buttonBillColumnConfig',
     header: 'Chi tiết',
     onClickConfig: (id: string | bigint) => {
-      
+      const billSelect=bills?.find((item:Bill)=>BigInt(item.id)===BigInt(id))
+      if(billSelect){
+        setBillSelected(billSelect);
+        setPatient(billSelect.patients);
+        setBillDetails(billSelect.bill_details);
+        setIsOpenDialogBillDetail(true);
+      }
       // set thông tin cho bill sellected
     },
     content: 'Xem',
@@ -332,8 +400,19 @@ const Billing = () => {
     id: 'buttonAdvanceColumnConfig',
     header: 'Tạm ứng cho bệnh nhân',
     onClickConfig: (id: string | bigint) => {
-    // set thông tin cho advancepaymentdetail
-    // sau đó gọi ra dialog
+      console.log(advancePayment)
+      const advanceData=advancePayment?.find((item:AdvancePaymentBill)=>BigInt(item.id)===BigInt(id))
+      if(advanceData){
+        console.log(advanceData)
+        if (advanceData?.payment_status_treatment_session===1) {
+          alert("Bệnh nhân đã thanh toán đủ, không cần ứng thêm");
+          return;
+        }
+        setAdvancePaymentDetail(advanceData);
+        setPatient(advanceData.patient);
+        formSaveAdvancePayment.setValue("amount",Number(advanceData.current_cost)-Number(advanceData.refunded_amount));
+        setIsOpenDialogSaveAdvancePayment(true);
+      }
       
     },
     content: 'Đóng tiền',
@@ -359,7 +438,7 @@ const Billing = () => {
           undefined,
           undefined,
           undefined,
-          columnBillHeaderMap,
+          columnBillDetailHeaderMap,
           { view: false, edit: false, delete: false }
         )
       : [];
@@ -434,7 +513,7 @@ const Billing = () => {
                                 options={statusOptions}
                                 onSelect={handleSelectStatus}
                                 defaultValue={null} // No default selection for status
-                                placeholder="Chọn tình trạng"  // Thêm placeholder tùy chỉnh
+                                placeholder="Chọn trạng thái thanh toán"  // Thêm placeholder tùy chỉnh
                               />
                             </div>
                             <div className="flex items-center space-x-2 bg-white">
@@ -465,39 +544,8 @@ const Billing = () => {
                     </div>
                     </CardContent>
                   </Card>
-                  <Dialog open={isOpenDialogBillDetail} onOpenChange={setIsOpenDialogBillDetail}>
-
-                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                    <DialogTitle>
-                      Chi tiết hóa đơn
-                    </DialogTitle>
-                    <DialogDescription>
-                      List các dịch vụ, đơn thuốc, viện phí cần thanh toán
-                    </DialogDescription>
-                    <div className='flex mt-5 justify-between'>
-                    
-                    <Combobox<number>
-                    options={numberOptions}
-                    onSelect={handleSelecLimit}
-                    placeholder="Chọn số bản ghi"  // Thêm placeholder tùy chỉnh
-                    />
-                  </div>
-                  <div className="flex item-center justify-center w-full">
-                    <LoadingWrapper loading={loading}>
-                      <DataTable
-                        data={billDetails??[]}
-                        columns={columnBillDetail}
-                        totalRecords={billDetails?billDetails.length:0}
-                        pageIndex={pageIndex}
-                        pageSize={limit}
-                        onPageChange={setPageIndex}
-                      />
-                    </LoadingWrapper>
-                  </div>
-                    </DialogContent>
-                  </Dialog>
                 </TabsContent>
-                <TabsContent value="AdvanPayment"></TabsContent>
+                <TabsContent value="AdvanPayment">
                 <Card>
                   <CardHeader>
 
@@ -541,7 +589,7 @@ const Billing = () => {
                       <DataTable
                         data={advancePayment??[]}
                         columns={columnAdvancePayment}
-                        totalRecords={bills?bills.length:0}
+                        totalRecords={advancePayment?advancePayment.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -553,17 +601,31 @@ const Billing = () => {
                     </div>
                     </CardContent>
                   </Card>
+                </TabsContent>
+                
                   <Dialog open={isOpenDialogSaveAdvancePayment} onOpenChange={setIsOpenDialogSaveAdvancePayment}
                   
                   >
-
-                    <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
                     <DialogTitle>
-                      Chi tiết hóa đơn
+                     Đóng tiền tạm ứng viện phí
                     </DialogTitle>
                     <DialogDescription>
-                      List các dịch vụ, đơn thuốc, viện phí cần thanh toán
+                    Đóng tiền tạm ứng viện phí
                     </DialogDescription>
+                     <div className="grid grid-cols-1 p-4 col-span-1">
+                      <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                      <p><strong>Ngày sinh:</strong> {patient?.birthday? formatDateCustom(patient.birthday): "Không có"}</p>
+                      <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                      <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                      <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                      <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                      <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                      <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+                      </div>
+                    </DialogHeader>
+                   
                      <Form {...formSaveAdvancePayment}>
                           <form onSubmit={formSaveAdvancePayment.handleSubmit(onSubmitSaveAvancePayment)}>
                           <FormField
@@ -572,7 +634,7 @@ const Billing = () => {
                               render={({field})=>(
                                 <FormItem>
                                   <FormLabel>
-                                    Ghi chú
+                                    Số tiền đóng
                                   </FormLabel>
                                   <FormControl>
                                     <Input
@@ -593,7 +655,10 @@ const Billing = () => {
                             />
                                                          <DialogFooter>
                                             <Button
-                                              type="submit"
+                                            className='mt-4'
+                                            size="sm"
+                                            type="submit"
+                                            variant="outline"
                                             >
                                               Lưu
                                             </Button>
@@ -620,24 +685,90 @@ const Billing = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                   <AlertDialog open={showConfirmDialogSaveBill} onOpenChange={setShowConfirmDialogSaveBill}>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Xác nhận thanh toán</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Bạn có chắc chắn muốn xác nhận thanh toán 
-                        {/* thêm thông tin về số tiền và tên bệnh nhân, cccd */}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Hủy</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleConfirmSubmit}>
-                        Xác nhận
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <AlertDialog open={showConfirmDialogSaveBill} onOpenChange={setShowConfirmDialogSaveBill}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Xác nhận thanh toán</AlertDialogTitle>
+      <AlertDialogDescription>
+        Bạn có chắc chắn muốn xác nhận thanh toán cho bệnh nhân{" "}
+        <strong>{billSelected?.patients?.name}</strong>, CCCD:{" "}
+        <strong>{billSelected?.patients?.cccd_number}</strong> với số tiền{" "}
+        <strong>
+          {billSelected?.total_amount_due != null
+            ? new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND",
+              }).format(Number(billSelected.total_amount_due))
+            : "—"}
+        </strong>
+        ?
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Hủy</AlertDialogCancel>
+      <AlertDialogAction onClick={onSubmitSaveBill}>
+        Xác nhận
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+
                 </Tabs>
+                <Dialog open={isOpenDialogBillDetail} onOpenChange={setIsOpenDialogBillDetail}>
+                    <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                    <DialogTitle>
+                      Chi tiết hóa đơn
+                    </DialogTitle>
+                    <DialogDescription>
+                      List các dịch vụ, đơn thuốc, viện phí cần thanh toán
+                    </DialogDescription>
+                    <div className="grid grid-cols-1 p-4 col-span-1">
+                      <p><strong>Tên bệnh nhân:</strong> {patient?.name || "Không có"}</p>
+                      <p><strong>Ngày sinh:</strong> {patient?.birthday? formatDateCustom(patient.birthday): "Không có"}</p>
+                      <p><strong>Giới tính:</strong> {patient?.gender === 1 ? "Nam" : patient?.gender === 2 ? "Nữ" : "Không có"}</p>
+                      <p><strong>Điện thoại:</strong> {patient?.phone || "Không có"}</p>
+                      <p><strong>Địa chỉ:</strong> {patient?.address || "Không có"}</p>
+                      <p><strong>Số CCCD:</strong> {patient?.cccd_number || "Không có"}</p>
+                      <p><strong>Mã thẻ BHYT:</strong> {patient?.health_insurance_code || "Không có"}</p>
+                      <p><strong>Điện thoại người giám hộ:</strong> {patient?.guardian_phone || "Không có"}</p>
+                      </div>
+                    </DialogHeader>
+                  
+
+                    
+
+                  <div className="flex item-center justify-center w-full">
+                    <LoadingWrapper loading={loading}>
+                      <DataTable
+                        data={billDetails??[]}
+                        columns={columnBillDetail}
+                        totalRecords={billDetails?billDetails.length:0}
+                        pageIndex={pageIndex}
+                        pageSize={limit}
+                        onPageChange={setPageIndex}
+                      />
+                    </LoadingWrapper>
+                  </div>
+                  <div className='flex justify-end'>
+                    Tổng tiền thanh toán:{" "}
+                    <strong>
+                      {billSelected?.total_amount_due != null
+                        ? new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(Number(billSelected.total_amount_due))
+                        : "—"}
+                    </strong>
+                  </div>
+                  <DialogFooter>
+                    <Button size="sm" variant="outline" onClick={() => setShowConfirmDialogSaveBill(true)}>
+                      Xác nhận thanh toán
+                    </Button>
+                  </DialogFooter>
+
+                  </DialogContent>
+                  </Dialog>
     </div>
     </main>
   )

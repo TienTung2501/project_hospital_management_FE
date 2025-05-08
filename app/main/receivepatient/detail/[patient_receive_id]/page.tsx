@@ -1397,7 +1397,7 @@ const columnDailyHealth = useMemo(() => {
                                         <DataTable
                                           data={servicePatients}
                                           columns={columnServicePatient}
-                                          totalRecords={totalRecords}
+                                          totalRecords={servicePatients?servicePatients.length:0}
                                           pageIndex={pageIndex}
                                           pageSize={limit}
                                           onPageChange={setPageIndex}
@@ -1698,7 +1698,7 @@ const columnDailyHealth = useMemo(() => {
                                             <DataTable
                                               data={medicationDetails}
                                               columns={columnMedicationDetail}
-                                              totalRecords={totalRecords}
+                                              totalRecords={medicationDetails?medicationDetails.length:0}
                                               pageIndex={pageIndex}
                                               pageSize={limit}
                                               onPageChange={setPageIndex}
@@ -1771,7 +1771,7 @@ const columnDailyHealth = useMemo(() => {
                       <DataTable
                         data={medicalRecordHistoryDetails}
                         columns={columnMedicalHistoryDetail}
-                        totalRecords={totalRecords}
+                        totalRecords={medicalRecordHistoryDetails?medicalRecordHistoryDetails.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -1836,7 +1836,7 @@ const columnDailyHealth = useMemo(() => {
                       <DataTable
                         data={servicePatientNotInTreatmentSessions}
                         columns={columnServiceDetails}
-                        totalRecords={totalRecords}
+                        totalRecords={servicePatientNotInTreatmentSessions?servicePatientNotInTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -1860,7 +1860,7 @@ const columnDailyHealth = useMemo(() => {
                     <DataTable
                       data={detailResultSelectedService}
                       columns={columnServiceDetailsResult}
-                      totalRecords={totalRecords}
+                      totalRecords={detailResultSelectedService?detailResultSelectedService.length:0}
                       pageIndex={pageIndex}
                       pageSize={limit}
                       onPageChange={setPageIndex}
@@ -1898,7 +1898,7 @@ const columnDailyHealth = useMemo(() => {
                           <DataTable
                             data={medicationPatientNotInTreatmentSessions}
                             columns={columnMedicationDetailHistory}
-                            totalRecords={totalRecords}
+                            totalRecords={medicationPatientNotInTreatmentSessions?medicationPatientNotInTreatmentSessions.length:0}
                             pageIndex={pageIndex}
                             pageSize={limit}
                             onPageChange={setPageIndex}
@@ -1923,7 +1923,7 @@ const columnDailyHealth = useMemo(() => {
                         <DataTable
                           data={treatmentSessionList}
                           columns={columnTreatmentSession}
-                          totalRecords={totalRecords}
+                          totalRecords={treatmentSessionList?treatmentSessionList.length:0}
                           pageIndex={pageIndex}
                           pageSize={limit}
                           onPageChange={setPageIndex}
@@ -1995,7 +1995,7 @@ const columnDailyHealth = useMemo(() => {
                           <DataTable
                             data={treatmentSessionDetailMedicalOrderList ?? []}
                             columns={columnMedicalOrder}
-                            totalRecords={totalRecords}
+                            totalRecords={treatmentSessionDetailMedicalOrderList?treatmentSessionDetailMedicalOrderList.length:0}
                             pageIndex={pageIndex}
                             pageSize={limit}
                             onPageChange={setPageIndex}
@@ -2023,7 +2023,7 @@ const columnDailyHealth = useMemo(() => {
                         <DataTable 
                           data={treatmentSessionDetailMedicalDailyHealthList ?? []} // Nếu là undefined, sẽ dùng mảng rỗng
                           columns={columnDailyHealth}
-                          totalRecords={totalRecords}
+                          totalRecords={treatmentSessionDetailMedicalDailyHealthList?treatmentSessionDetailMedicalDailyHealthList.length:0}
                           pageIndex={pageIndex}
                           pageSize={limit}
                           onPageChange={setPageIndex}
@@ -2054,7 +2054,7 @@ const columnDailyHealth = useMemo(() => {
                       <DataTable
                         data={servicePatientTreatmentSessions}
                         columns={columnServiceDetails}
-                        totalRecords={totalRecords}
+                        totalRecords={servicePatientTreatmentSessions?servicePatientTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -2082,7 +2082,7 @@ const columnDailyHealth = useMemo(() => {
                       <DataTable
                         data={medicationPatientTreatmentSessions}
                         columns={columnMedicationDetailHistory}
-                        totalRecords={totalRecords}
+                        totalRecords={medicationPatientTreatmentSessions?medicationPatientTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}

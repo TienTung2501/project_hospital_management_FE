@@ -274,7 +274,7 @@ const InpatientPage = () => {
                   <DataTable
                   data={inpatient}
                   columns={columnPatientNotExamined}
-                  totalRecords={totalRecords}
+                  totalRecords={inpatient?inpatient.length:0}
                   pageIndex={pageIndex}
                   pageSize={limit}
                   onPageChange={(newPageIndex) => {

@@ -381,7 +381,7 @@ const AdminPage = () => {
                   <DataTable
                   data={patientNotExamined}
                   columns={columnPatientNotExamined}
-                  totalRecords={totalRecords}
+                  totalRecords={patientNotExamined?patientNotExamined.length:0}
                   pageIndex={pageIndex}
                   pageSize={limit}
                   onPageChange={(newPageIndex) => {

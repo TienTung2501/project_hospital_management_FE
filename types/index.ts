@@ -440,12 +440,12 @@ export type AdvancePaymentBill= {
   patient_name:string;
   patient_phone:string;
   patient_cccd:string;
-  amount: string;
+  amount_advance: string;
   current_cost: string;
   total_advance_payment: string;
   refunded_amount: string;
   payment_status_treatment_session:number;
-  patient:Patient;
+  patient:PatientBill;
   payment_date:string;
 }
 

@@ -813,7 +813,7 @@ useEffect(() => {
                                 <DataTable
                                 data={patientNotExaminedWithRoomInfo}
                                 columns={columnPatientNotExamined}
-                                totalRecords={totalRecords}
+                                totalRecords={patientNotExaminedWithRoomInfo?patientNotExaminedWithRoomInfo.length:0}
                                 pageIndex={pageIndex}
                                 pageSize={limit}
                                 onPageChange={(newPageIndex) => {

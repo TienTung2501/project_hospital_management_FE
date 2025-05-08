@@ -1350,7 +1350,7 @@ return (
                           <DataTable
                           data={serviceDetailPatients}
                           columns={columnServiceDetails}
-                          totalRecords={totalRecords}
+                          totalRecords={serviceDetailPatients?serviceDetailPatients.length:0}
                           pageIndex={pageIndex}
                           pageSize={limit}
                           onPageChange={(newPageIndex) => {
@@ -1380,7 +1380,7 @@ return (
                     <DataTable
                     data={detailResultSelectedService}
                     columns={columnServiceDetailsResult}
-                    totalRecords={totalRecords}
+                    totalRecords={detailResultSelectedService?detailResultSelectedService.length:0}
                     pageIndex={pageIndex}
                     pageSize={limit}
                     onPageChange={(newPageIndex) => {
@@ -1793,7 +1793,7 @@ return (
                                 <DataTable
                                   data={medicationDetails}
                                   columns={columnMedicationDetail}
-                                  totalRecords={totalRecords}
+                                  totalRecords={medicationDetails?medicationDetails.length:0}
                                   pageIndex={pageIndex}
                                   pageSize={limit}
                                   onPageChange={(newPageIndex) => {
@@ -1862,7 +1862,7 @@ return (
                       <DataTable
                         data={medicalRecordHistoryDetails}
                         columns={columnMedicalHistoryDetail}
-                        totalRecords={totalRecords}
+                        totalRecords={medicalRecordHistoryDetails?medicalRecordHistoryDetails.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -1927,7 +1927,7 @@ return (
                       <DataTable
                         data={servicePatientNotInTreatmentSessions}
                         columns={columnServiceDetailHistorys}
-                        totalRecords={totalRecords}
+                        totalRecords={servicePatientNotInTreatmentSessions?servicePatientNotInTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -1951,7 +1951,7 @@ return (
                     <DataTable
                       data={detailResultSelectedService}
                       columns={columnServiceDetailsResult}
-                      totalRecords={totalRecords}
+                      totalRecords={detailResultSelectedService?detailResultSelectedService.length:0}
                       pageIndex={pageIndex}
                       pageSize={limit}
                       onPageChange={setPageIndex}
@@ -1989,7 +1989,7 @@ return (
                           <DataTable
                             data={medicationPatientNotInTreatmentSessions}
                             columns={columnMedicationDetailHistory}
-                            totalRecords={totalRecords}
+                            totalRecords={medicationPatientNotInTreatmentSessions?medicationPatientNotInTreatmentSessions.length:0}
                             pageIndex={pageIndex}
                             pageSize={limit}
                             onPageChange={setPageIndex}
@@ -2014,7 +2014,7 @@ return (
                         <DataTable
                           data={treatmentSessionList}
                           columns={columnTreatmentSession}
-                          totalRecords={totalRecords}
+                          totalRecords={treatmentSessionList?treatmentSessionList.length:0}
                           pageIndex={pageIndex}
                           pageSize={limit}
                           onPageChange={setPageIndex}
@@ -2086,7 +2086,7 @@ return (
                           <DataTable
                             data={treatmentSessionDetailMedicalOrderList ?? []}
                             columns={columnMedicalOrder}
-                            totalRecords={totalRecords}
+                            totalRecords={treatmentSessionDetailMedicalOrderList?treatmentSessionDetailMedicalOrderList.length:0}
                             pageIndex={pageIndex}
                             pageSize={limit}
                             onPageChange={setPageIndex}
@@ -2114,7 +2114,7 @@ return (
                         <DataTable 
                           data={treatmentSessionDetailMedicalDailyHealthList ?? []} // Nếu là undefined, sẽ dùng mảng rỗng
                           columns={columnDailyHealth}
-                          totalRecords={totalRecords}
+                          totalRecords={treatmentSessionDetailMedicalDailyHealthList?treatmentSessionDetailMedicalDailyHealthList.length:0}
                           pageIndex={pageIndex}
                           pageSize={limit}
                           onPageChange={setPageIndex}
@@ -2145,7 +2145,7 @@ return (
                       <DataTable
                         data={servicePatientTreatmentSessions}
                         columns={columnServiceDetailHistorys}
-                        totalRecords={totalRecords}
+                        totalRecords={servicePatientTreatmentSessions?servicePatientTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}
@@ -2173,7 +2173,7 @@ return (
                       <DataTable
                         data={medicationPatientTreatmentSessions}
                         columns={columnMedicationDetailHistory}
-                        totalRecords={totalRecords}
+                        totalRecords={medicationPatientTreatmentSessions?medicationPatientTreatmentSessions.length:0}
                         pageIndex={pageIndex}
                         pageSize={limit}
                         onPageChange={setPageIndex}

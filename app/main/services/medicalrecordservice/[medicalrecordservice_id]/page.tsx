@@ -150,14 +150,14 @@ const ServiceForm = () => {
         console.error("Dữ liệu không phải là một mảng:", data);
         return;
       }
-  
+      console.log(data)
       const fetchedMedicalRecord: MedicalRecordRecordServicePivot[] = data
         .filter((item: any) => {
           // Kiểm tra nếu item và item.services tồn tại và là một mảng
-          return item && Array.isArray(item.services) && item.services.length > 0 && Number(item.id) === Number(medicalrecordservice_id);
+          return item && Array.isArray(item.medical_record_service) && item.medical_record_service.length > 0 && Number(item.id) === Number(medicalrecordservice_id);
         })
         .map((item: any) => {
-          if (!item || !Array.isArray(item.services)) {
+          if (!item || !Array.isArray(item.medical_record_service)) {
             console.warn("Dữ liệu không hợp lệ, thiếu dịch vụ", item);
             return null; // Nếu không có dịch vụ hợp lệ, trả về null
           }
@@ -181,15 +181,15 @@ const ServiceForm = () => {
             is_inpatient: item.is_inpatient,
             inpatient_detail: item.inpatient_detail,
             status: item.status,
-            services: Array.isArray(item.services) ? item.services.map((service: any) => ({
-              id: service.id,
-              name: service.name,
-              detail: service.detail,
-              description: service.description,
-              service_description: service.description,
-              pivot: service.MedicalRecordService ? {
-                id: service.MedicalRecordService.id,
-                result_detail: service.MedicalRecordService.resultDetail, // Lấy thông tin từ pivot
+            services: Array.isArray(item.medical_record_service) ? item.medical_record_service.map((item2: any) => ({
+              id: item2.services.id,
+              name: item2.services.name,
+              detail: item2.services.detail,
+              description: item2.services.description,
+              service_description: item2.services.description,
+              pivot: item2 ? {
+                id: item2.id,
+                result_detail: item2.resultDetail, // Lấy thông tin từ pivot
               } : null
             })) : [], // Nếu không có dịch vụ, trả về mảng rỗng
           };

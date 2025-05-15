@@ -171,7 +171,7 @@ const renderCellContent = (
     case ColumnType.StatusNewPatient:
       return (() => {
         const status = rowData?.status_newpatient;
-        const diagnosis = rowData?.diagnosis;
+        const diagnosis = rowData?.diagnosis_newpatient;
         
         if (status === 0) return "Đợi khám lâm sàng";
         if (status === 1 && (!diagnosis)) return "Đang thực hiện các xét nghiệm";

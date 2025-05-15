@@ -154,7 +154,7 @@ const Billing = () => {
       const { data } = response.data.data;
       const bills: Bill[] = data.map((item: any) => ({
         id: BigInt(item.id),
-        treatment_session_id: BigInt(item.treatment_session_id),
+        treatment_session_id: item.treatment_session_id != null ? BigInt(item.treatment_session_id) : null,
         patient_id: BigInt(item.patient_id),
         patient_name:item.patients.name,
         patient_phone:item.patients.phone,
@@ -207,7 +207,7 @@ const Billing = () => {
   const fetchAdvance = async () => {
     setLoading(true);
     try {
-      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords`;
+      const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/showAdvance`;
       const response = await axios.get(endpoint, {
         params: {
           limit: limit, // Số bản ghi trên mỗi trang

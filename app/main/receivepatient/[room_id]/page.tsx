@@ -220,14 +220,19 @@ const AdminPage = () => {
         // Chuyển đổi dữ liệu API thành kiểu `MedicalRecord`
         const fetchedPatientNotExamined: MedicalRecord[] = data1.map((item: any) => {
           const service_names = item.medical_record_service.map((s: any) => s.service_name);
-          const hasDiagnosis = item.diagnosis;
-          const hasService = service_names.length > 0;
-        
-          const status_no_examined = hasDiagnosis
-            ? hasService
-              ? "Khám và chỉ định dịch vụ xong"
-              : "Khám xong và không cần xét nghiệm"
-            : "Chưa khám";
+        const hasDiagnosis = !!item.diagnosis;
+        const hasService = service_names.length > 0;
+
+        let status_no_examined = "Chưa khám";
+
+        if (hasDiagnosis && hasService) {
+          status_no_examined = "Đã xong";
+        } else if (hasDiagnosis && !hasService) {
+          status_no_examined = "Khám xong và không cần xét nghiệm";
+        } else if (!hasDiagnosis && hasService) {
+          status_no_examined = "Khám và chỉ định dịch vụ xong";
+}
+
         
           return {
             id: item.id,

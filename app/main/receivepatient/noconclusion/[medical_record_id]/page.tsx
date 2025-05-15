@@ -611,29 +611,28 @@ const convertTimestampToDate = (timestamp: number) => {
   return `${year}-${month}-${day}`;
 };
 const handleSaveDedicalRecordPatient=async ()=>{
-  const apointment_date= convertTimestampToDate(formUpdateDiagnose.getValues('apointment_date'));
+  const appointment_date= convertTimestampToDate(formUpdateDiagnose.getValues('apointment_date'));
   const diagnosis=formUpdateDiagnose.getValues('diagnosis');
   const notes=formUpdateDiagnose.getValues('notes');
     try {
-      const payload = {
-        medical_record: {
-          medical_record_id: medical_record_id, // ID hồ sơ y tế
-          data: {
-            appointment_date:apointment_date, // Ngày tái khám
-            diagnosis:diagnosis, // Chẩn đoán
-            notes:notes, // Ghi chú
-          },
-        },
-        medications: {
-          data: medicationDetails.map((medication) => ({
-            medication_id: Number(medication.id), // ID của thuốc
-            name: medication.name, // Tên thuốc
-            dosage:medication.dosage.toString(),
-            measure: medication.measure, // Đơn vị đo
-            description: medication.description, // Mô tả
-          })),
-        },
-      };
+            const payload = {
+                medical_record: {
+                  medical_record_id: Number(medical_record_id),
+                  patient_id: Number(patient?.id),
+                  data: {
+                    appointment_date,
+                    diagnosis,
+                    notes,
+                  },
+                },
+                medications: medicationDetails.map((medication) => ({
+                  medication_id: Number(medication.id),
+                  name: medication.name,
+                  dosage: medication.dosage.toString(),
+                  measure: medication.measure,
+                  description: medication.description,
+                })),
+              };
       const updateMedicalRecord = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/save`;
       const response =await  axios.post(updateMedicalRecord, payload, { timeout: 5000 });
       if (response.status === 200) {
@@ -1509,7 +1508,7 @@ return (
                       <Button variant="outline" className='mr-5'  disabled={isSaveDisabled} onClick={handleSaveDedicalRecordPatient}> Lưu hồ sơ</Button>
                      <Dialog open={isOpenDialogCreateTreatmentSession} onOpenChange={setIsOpenDialogCreateTreatmentSession}>
                                                <DialogTrigger asChild>
-                                                 <Button className='ml-5' size="sm">Chuyển khoa</Button>
+                                                 <Button className='ml-5' variant="outline" size="sm">Nhập viện điều trị</Button>
                                                </DialogTrigger>
                                                
                                                <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
@@ -1621,7 +1620,6 @@ return (
                                          </div>
                                                        </CardContent>
                                              </Card>
-                                             </DialogContent>
                                              <DialogFooter className="justify-end">
                                                <Button
                                                  type="button"
@@ -1630,7 +1628,8 @@ return (
                                                  Lưu
                                                </Button>
                                              </DialogFooter>
-                                           </Dialog>
+                                             </DialogContent>
+                      </Dialog>
       
             
                       </CardContent>

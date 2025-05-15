@@ -218,6 +218,8 @@ const PatientReceive = () => {
   };
   const handleSaveConfirmed = () => {
     const payload = {
+      patient_id:Number(patient?.id),
+      treatment_session_id:null,
       medical_record_id: Number(patient_receive_id), // ID của hồ sơ bệnh án
       services: servicePatients.map(({ service_id, room_id, service_name }) => ({
         service_id: Number(service_id),
@@ -226,7 +228,7 @@ const PatientReceive = () => {
         patient_id: Number(patient?.id),
       })),
     };
-  
+    console.log(payload)
     axios
       .post(`${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/createPivot`, payload)
       .then((res) => {
@@ -250,15 +252,24 @@ const PatientReceive = () => {
         }
       })
       .catch((err) => {
-        console.error("Lỗi chỉ định:", err);
-  
-        toast({
-          variant: "destructive",
-          title: "Lỗi",
-          description: err?.response?.data?.message || err.message,
-        });
-      });
-  };
+  if (axios.isAxiosError(err)) {
+    console.error("🔥 AxiosError:", {
+      message: err.message,
+      status: err.response?.status,
+      data: err.response?.data, // thông báo lỗi chi tiết từ backend
+      headers: err.response?.headers,
+    });
+  } else {
+    console.error("❗Lỗi không phải AxiosError:", err);
+  }
+
+  toast({
+    variant: "destructive",
+    title: "Lỗi",
+    description: err?.response?.data?.message || err.message,
+  });
+});
+  }
   const handleDelete = (id:bigint|string) => {
     // Xóa dịch vụ khỏi danh sách
     setServicePatients((prev) =>
@@ -669,7 +680,7 @@ const PatientReceive = () => {
   // Hàm xử lý submit
   const onSubmitCreateMedication = (data: z.infer<typeof CreateMedication>) => {
   // Tạo ID mới, tăng từ 1 dựa trên mảng hiện tại
-  const found = medications.find((item) => item.id === data.name);
+  const found = medications.find((item) => BigInt(item.id) === data.name);
   
     if (!found) {
       // Xử lý khi không tìm thấy thuốc, ví dụ báo lỗi hoặc return
@@ -707,26 +718,24 @@ const PatientReceive = () => {
   const diagnosis=formUpdateDiagnose.getValues('diagnosis');
   const notes=formUpdateDiagnose.getValues('notes');
     try {
-      const payload = {
-        medical_record: {
-          medical_record_id: patient_receive_id, // ID hồ sơ y tế
-          status:1,
-          data: {
-            appointment_date:appointment_date, // Ngày tái khám
-            diagnosis:diagnosis, // Chẩn đoán
-            notes:notes, // Ghi chú
+        const payload = {
+          medical_record: {
+            medical_record_id: Number(patient_receive_id),
+            patient_id: Number(patient?.id),
+            data: {
+              appointment_date,
+              diagnosis,
+              notes,
+            },
           },
-        },
-        medications: {
-          data: medicationDetails.map((medication) => ({
-            medication_id: Number(medication.id), // ID của thuốc
-            name: medication.name, // Tên thuốc
-            dosage:medication.dosage.toString(),
-            measure: medication.measure, // Đơn vị đo
-            description: medication.description, // Mô tả
+          medications: medicationDetails.map((medication) => ({
+            medication_id: Number(medication.id),
+            name: medication.name,
+            dosage: medication.dosage.toString(),
+            measure: medication.measure,
+            description: medication.description,
           })),
-        },
-      };
+        };
       const updateMedicalRecord = `${process.env.NEXT_PUBLIC_API_URL}/api/medicalRecords/save`;
       const response =await  axios.post(updateMedicalRecord, payload, { timeout: 5000 });
       if (response.status === 200) {
@@ -1057,7 +1066,7 @@ const columnMedicationDetail = useMemo(() => {
         medicationDetails,
         undefined,
         undefined,
-        handleDelete,
+        handleDeleteMedication,
         columnHeaderMapMedicationDetail,
         { view: false, edit: false, delete: true }
       )
